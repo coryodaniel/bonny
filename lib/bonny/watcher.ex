@@ -1,3 +1,34 @@
+defmodule Test.Bonny.WidgetList do
+  defstruct [:api_version, :items, :kind, :metadata]
+  @type t :: %Test.Bonny.WidgetList{
+    api_version: String.t(),
+    items: list(Test.Bonny.Widget.t()),
+    kind: String.t(),
+    metadata: Kazan.Models.Apimachinery.Meta.V1.ListMeta.t()
+  }
+end
+
+defmodule Test.Bonny.Widget do
+  defstruct [:api_version, :kind, :metadata, :spec, :status]
+  @type t :: %Test.Bonny.Widget{
+    api_version: String.t(),
+    kind: String.t(),
+    metadata: Kazan.Models.Apimachinery.Meta.V1.ObjectMeta.t(),
+    spec: Test.Bonny.WidgetSpec.t(),
+    status: Test.Bonny.WidgetStatus.t()
+  }
+end
+
+defmodule Test.Bonny.WidgetSpec do
+  defstruct [:finalizers]
+  @type t :: %Test.Bonny.WidgetSpec{finalizers: String.t()}
+end
+
+defmodule Test.Bonny.WidgetStatus do
+  defstruct [:phase]
+  @type t :: %Test.Bonny.WidgetStatus{phase: String.t()}
+end
+
 defmodule Bonny.Watcher do
   require Logger
   use GenServer
@@ -17,6 +48,16 @@ defmodule Bonny.Watcher do
     Logger.info("CRD Request")
     Logger.info(inspect(crd_request))
     {:ok, _} = Kazan.Watcher.start_link(crd_request, send_to: self())
+
+    custom_request = %Kazan.Request{
+      method: "get",
+      path: "/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/widgets.bonny.coryodaniel.com",
+      query_params: %{},
+      response_schema: Test.Bonny.WidgetList
+    }
+    Logger.info("Custom Request")
+    Logger.info(inspect(custom_request))
+    {:ok, _} = Kazan.Watcher.start_link(custom_request, send_to: self())
 
     {:ok, %{}}
   end
