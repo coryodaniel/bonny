@@ -6,10 +6,8 @@ defmodule Bonny.Application do
   use Application
 
   def start(_type, _args) do
-    # List all child processes to be supervised
     children = [
-      # Starts a worker by calling: Bonny.Worker.start_link(arg)
-      # {Bonny.Worker, arg},
+      {Bonny.Watcher, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

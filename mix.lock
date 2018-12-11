@@ -6,7 +6,7 @@
   "httpotion": {:hex, :httpotion, "3.1.0", "14d20d9b0ce4e86e253eb91e4af79e469ad949f57a5d23c0a51b2f86559f6589", [:mix], [{:ibrowse, "~> 4.4", [hex: :ibrowse, repo: "hexpm", optional: false]}], "hexpm"},
   "ibrowse": {:hex, :ibrowse, "4.4.1", "2b7d0637b0f8b9b4182de4bd0f2e826a4da2c9b04898b6e15659ba921a8d6ec2", [:rebar3], [], "hexpm"},
   "idna": {:hex, :idna, "6.0.0", "689c46cbcdf3524c44d5f3dde8001f364cd7608a99556d8fbd8239a5798d4c10", [:rebar3], [{:unicode_util_compat, "0.4.1", [hex: :unicode_util_compat, repo: "hexpm", optional: false]}], "hexpm"},
-  "kazan": {:hex, :kazan, "0.10.0", "15b0af019b3b91998ae4bec9cc0c7cef83a729d27bd204cfa28dd3110f416cf8", [:mix], [{:httpoison, "~> 0.10 or ~> 1.0", [hex: :httpoison, repo: "hexpm", optional: false]}, {:poison, "~> 2.0 or ~> 3.0 or ~> 4.0", [hex: :poison, repo: "hexpm", optional: false]}, {:yaml_elixir, "~> 2.0", [hex: :yaml_elixir, repo: "hexpm", optional: false]}], "hexpm"},
+  "kazan": {:git, "https://github.com/obmarg/kazan.git", "54be673d14f873c772b3c5e92665e1a695b20df1", [branch: "feature/custom-oai-specs"]},
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], [], "hexpm"},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], [], "hexpm"},
   "mix_test_watch": {:hex, :mix_test_watch, "0.9.0", "c72132a6071261893518fa08e121e911c9358713f62794a90c95db59042af375", [:mix], [{:file_system, "~> 0.2.1 or ~> 0.3", [hex: :file_system, repo: "hexpm", optional: false]}], "hexpm"},

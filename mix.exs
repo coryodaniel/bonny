@@ -22,7 +22,9 @@ defmodule Bonny.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:kazan, "~> 0.10"},
+      # {:kazan, "~> 0.10"},
+      # {:kazan, path: "/Users/coryodaniel/Workspace/coryodaniel/kazan"},
+      {:kazan, github: "obmarg/kazan", branch: "feature/custom-oai-specs"},
       # {:poison, "~>4.0"},
       # {:httpotion, "~>3.1"},
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false}
