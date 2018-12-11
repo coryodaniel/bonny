@@ -3,6 +3,7 @@ defmodule Bonny.Watcher do
   use GenServer
 
   def start_link(opts) do
+    Logger.info("Starting watcher")
     GenServer.start_link(__MODULE__, :ok, opts)
   end
 
