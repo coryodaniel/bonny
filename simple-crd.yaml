@@ -1,0 +1,18 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: widgets.bonny.coryodaniel.com
+spec:
+  group: bonny.coryodaniel.com
+  names:
+    kind: Widget
+    plural: widgets
+  scope: Namespaced
+  version: v1
+---
+apiVersion: bonny.coryodaniel.com/v1
+kind: Widget
+metadata:
+  name: test-widget
