@@ -1,0 +1,15 @@
+apiVersion: bonny.example.io/v1
+kind: Widget
+metadata:
+  name: test-widget
+  labels:
+    foo: bar
+spec:
+  whizbangs: 3
+---
+apiVersion: bonny.example.io/v1
+kind: Cog
+metadata:
+  name: test-cog
+spec:
+  levers: 9000

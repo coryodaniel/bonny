@@ -1,20 +1,18 @@
 defmodule Bonny.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
 
   def start(_type, _args) do
-    # List all child processes to be supervised
-    children = [
-      # Starts a worker by calling: Bonny.Worker.start_link(arg)
-      # {Bonny.Worker, arg},
-    ]
+    children =
+      crds()
+      |> Enum.map(fn crd ->
+        Supervisor.child_spec({Bonny.Watcher, crd}, id: crd)
+      end)
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Bonny.Supervisor]
     Supervisor.start_link(children, opts)
   end
+
+  def crds(), do: Application.get_env(:bonny, :crds, [])
 end
