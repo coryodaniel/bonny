@@ -1,10 +1,13 @@
 defmodule Bonny.CRD do
   @moduledoc """
-  Kubernetes [CustomResourceDefinition](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/)
+  Represents the `spec` portion of a Kubernetes [CustomResourceDefinition](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/) manifest.
+
+  > The CustomResourceDefinition API resource allows you to define custom resources. Defining a CRD object creates a new custom resource with a name and schema that you specify. The Kubernetes API serves and handles the storage of your custom resource.
   """
   alias Bonny.CRD
 
-  @crd_version "apiextensions.k8s.io/v1beta1"
+  @api_version "apiextensions.k8s.io/v1beta1"
+  @kind "CustomResourceDefinition"
 
   @type names_t :: %{
           kind: String.t(),
@@ -57,6 +60,40 @@ defmodule Bonny.CRD do
   @spec read_path(Bonny.CRD.t(), String.t()) :: binary
   def read_path(crd = %CRD{}, name) do
     "#{base_path(crd)}/#{name}"
+  end
+
+  @doc """
+  Generates the map equivalent of the Kubernetes CRD YAML manifest
+
+  ```yaml
+  ---
+  apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    creationTimestamp: null
+    name: widgets.bonny.example.io
+  spec:
+    group: bonny.example.io
+    names:
+      kind: Widget
+      plural: widgets
+    scope: Namespaced
+    version: v1
+  ```
+  """
+  @spec to_manifest(Bonny.CRD.t()) :: map
+  def to_manifest(crd = %CRD{scope: scope}) do
+    cased_scope = String.capitalize("#{scope}")
+
+    %{
+      apiVersion: @api_version,
+      kind: @kind,
+      metadata: %{
+        name: "#{crd.names.plural}.#{crd.group}",
+        labels: Bonny.Operator.labels()
+      },
+      spec: %{crd | scope: cased_scope}
+    }
   end
 
   defp base_path(%CRD{

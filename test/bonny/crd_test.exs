@@ -3,6 +3,27 @@ defmodule Bonny.CRDTest do
   use ExUnit.Case, async: true
   alias Bonny.CRD
 
+  describe "to_manifest/1" do
+    test "generates a kubernetes manifest" do
+      spec = Widget.crd_spec()
+      manifest = CRD.to_manifest(spec)
+
+      expected = %{
+        apiVersion: "apiextensions.k8s.io/v1beta1",
+        kind: "CustomResourceDefinition",
+        metadata: %{labels: %{bonny: "0.1.0"}, name: "widgets.bonny.example.io"},
+        spec: %Bonny.CRD{
+          group: "bonny.example.io",
+          names: %{kind: "Widget", plural: "widgets", short_names: nil, singular: "widget"},
+          scope: "Namespaced",
+          version: "v1"
+        }
+      }
+
+      assert expected == manifest
+    end
+  end
+
   describe "list_path/1" do
     test "returns the cluster-wide URL path to list a CRD's resources" do
       widget = Widget.crd_spec()

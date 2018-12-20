@@ -28,6 +28,40 @@ defmodule Bonny do
     end
   end
 
+  @doc """
+  Kubernetes service account name to run operator as.
+
+  Name must consist of only lowercase letters and hyphens.
+
+  Defaults to operator name.
+  """
+  def service_account() do
+    service_account_name = Application.get_env(:bonny, :service_account_name, Bonny.name())
+
+    service_account_name
+    |> String.downcase()
+    |> String.replace(~r/[^a-z-]/, "-\\1\\g{1}")
+  end
+
+  @doc """
+  The name of the operator.
+
+  Name must consist of only lowercase letters and hyphens.
+
+  Defaults to "bonny"
+  """
+  def name() do
+    operator_name = Application.get_env(:bonny, :operator_name, "bonny")
+
+    operator_name
+    |> String.downcase()
+    |> String.replace(~r/[^a-z-]/, "-\\1\\g{1}")
+  end
+
+  @doc "List of all enabled controller modules"
+  @spec controllers() :: list(atom)
+  def controllers(), do: Application.get_env(:bonny, :controllers, [])
+
   defp config_path do
     System.get_env("BONNY_CONFIG_FILE") || Application.get_env(:bonny, :kubeconf_file)
   end

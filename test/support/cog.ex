@@ -1,6 +1,6 @@
 defmodule Cog do
   @moduledoc false
-  use Bonny.Operator
+  use Bonny.Controller
   require Logger
 
   @spec add(any()) :: :ok | {:error, any()}
