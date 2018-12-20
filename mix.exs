@@ -4,12 +4,24 @@ defmodule Bonny.MixProject do
   def project do
     [
       app: :bonny,
+      description: "Kubernetes Operator SDK: Extend the Kubernetes API with Elixir",
       version: "0.1.0",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      elixirc_paths: elixirc_paths(Mix.env()),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [coveralls: :test, "coveralls.travis": :test, "coveralls.html": :test],
+      docs: [
+        extras: ["README.md"],
+        main: "readme"
+      ],
+      package: package()
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
   def application do
@@ -22,10 +34,31 @@ defmodule Bonny.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:kazan, "~> 0.10"},
-      # {:poison, "~>4.0"},
-      # {:httpotion, "~>3.1"},
-      {:mix_test_watch, "~> 0.8", only: :dev, runtime: false}
+      {:poison, "~> 4.0"},
+      {:httpoison, "~> 1.0"},
+      {:yaml_elixir, "~> 2.1"},
+      {:k8s_conf, "~> 0.1"},
+
+      # Dev deps
+      {:mix_test_watch, "~> 0.8", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.4", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.19", only: :dev},
+      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
+
+      # Test deps
+      {:bypass, "~> 1.0", only: :test},
+      {:excoveralls, "~> 0.10", only: :test}
+    ]
+  end
+
+  defp package do
+    [
+      name: :bonny,
+      maintainers: ["Cory O'Daniel"],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/coryodaniel/bonny"
+      }
     ]
   end
 end

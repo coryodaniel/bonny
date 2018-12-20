@@ -1,0 +1,103 @@
+defmodule Bonny.Watcher.ImplTest do
+  @moduledoc false
+  use ExUnit.Case, async: true
+  alias Bonny.Watcher.Impl
+
+  setup do
+    bypass = Bypass.open()
+    k8s_config = K8s.Conf.from_file("test/support/kubeconfig.yaml")
+    k8s_config = %{k8s_config | url: "http://localhost:#{bypass.port}/"}
+
+    {:ok, bypass: bypass, k8s_config: k8s_config}
+  end
+
+  defmodule Whizbang do
+    @moduledoc false
+    def add(evt), do: send(self(), {:added, evt})
+    def modify(evt), do: send(self(), {:modified, evt})
+    def delete(evt), do: send(self(), {:deleted, evt})
+  end
+
+  def added_chunk do
+    "{\"type\":\"ADDED\",\"object\":{\"apiVersion\":\"bonny.example.io/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"bonny.example.io/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705460\",\"selfLink\":\"/apis/bonny.example.io/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
+  end
+
+  def deleted_chunk do
+    "{\"type\":\"DELETED\",\"object\":{\"apiVersion\":\"bonny.example.io/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"bonny.example.io/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705464\",\"selfLink\":\"/apis/bonny.example.io/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
+  end
+
+  describe "new/1" do
+    test "returns the default state" do
+      assert %Impl{mod: Widget, spec: %Bonny.CRD{}, config: %K8s.Conf{}} = Impl.new(Widget)
+    end
+  end
+
+  describe "get_resource_version/2" do
+    test "returns the kubernetes resource version", %{bypass: bypass, k8s_config: k8s_config} do
+      Bypass.expect_once(bypass, fn conn ->
+        assert conn.method == "GET"
+        assert conn.request_path == "/apis/bonny.example.io/v1/namespaces/default/widgets"
+        Plug.Conn.resp(conn, 200, ~s<{"metadata": {"resourceVersion": "1337"}}>)
+      end)
+
+      state = Impl.new(Widget)
+      state = %{state | config: k8s_config}
+      {:ok, %{resource_version: rv}} = Impl.get_resource_version(state)
+
+      assert rv == "1337"
+    end
+  end
+
+  describe "watch_for_changes/2" do
+    test "returns changes to a CRD resource", %{bypass: bypass, k8s_config: k8s_config} do
+      added = added_chunk()
+      deleted = deleted_chunk()
+
+      Bypass.expect_once(bypass, fn conn ->
+        assert conn.method == "GET"
+        assert conn.request_path == "/apis/bonny.example.io/v1/namespaces/default/widgets"
+        assert conn.query_string == "resourceVersion=1337&watch=true"
+
+        conn = Plug.Conn.send_chunked(conn, 200)
+        {:ok, conn} = Plug.Conn.chunk(conn, added)
+        {:ok, conn} = Plug.Conn.chunk(conn, deleted)
+        conn
+      end)
+
+      state = Impl.new(Widget)
+      state = %{state | config: k8s_config}
+      state = %{state | resource_version: "1337"}
+
+      Impl.watch_for_changes(state, self())
+
+      assert_receive %HTTPoison.AsyncStatus{code: 200}, 1_000
+      assert_receive %HTTPoison.AsyncHeaders{}, 1_000
+      assert_receive %HTTPoison.AsyncChunk{chunk: ^added}, 1_000
+      assert_receive %HTTPoison.AsyncChunk{chunk: ^deleted}, 1_000
+      assert_receive %HTTPoison.AsyncEnd{}, 1_000
+    end
+  end
+
+  describe "parse_chunk/1" do
+    test "strips whitespace and parses json" do
+      result = added_chunk() |> Impl.parse_chunk()
+      assert %{"type" => "ADDED"} = result
+    end
+
+    test "parses last applied configuration" do
+      result = added_chunk() |> Impl.parse_chunk()
+      %{"object" => object} = result
+      %{"metadata" => metadata} = object
+      %{"annotations" => annotations} = metadata
+      assert %{} = annotations["kubectl.kubernetes.io/last-applied-configuration"]
+    end
+  end
+
+  describe "dispatch/2" do
+    test "dispatches a kubernetes API event to the given module" do
+      added_event = added_chunk() |> Impl.parse_chunk()
+      Impl.dispatch(added_event, Whizbang)
+      assert_received({:added, added_event})
+    end
+  end
+end
