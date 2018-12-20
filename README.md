@@ -13,30 +13,25 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/bonny](https://hexdocs.pm/bonny).
-
-## Notes
+Add to `config.exs`:
 
 ```elixir
 config :bonny, 
-  crds: [Widget, Cog],
-  kubeconf_file: "path/to/kube/config",
-  kubeconf_opts: [
-    user: "other-user",
-    context: "...",
-    cluster": "..."
-  ]
-  # Only used if the CRDs are `namespaced`
-  # override_namespace: nil
-  # defaults to Env var "BONNY_POD_NAMESPACE"
+  # Add each CRD module for this operator to load here
+  crds: [],           
+  # Kubernetes YAML config, defaults to the service account of the pod
+  kubeconf_file: "",
+  # Defaults to "current-context" if a config file is provided, override user, cluster. or context here
+  kubeconf_opts: []
 ```
 
-If no config file is given, bonny will default to the service account on the pod
+## Bonny Generators
 
-K8s.Conf.from_file(path, opts)
-K8s.Conf.from_service_account
+`mix help
+
+Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
+and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
+be found at [https://hexdocs.pm/bonny](https://hexdocs.pm/bonny).
 
 ## Starting a test iex session
 
