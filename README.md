@@ -1,18 +1,19 @@
-# Bonny
-
 ![Bonny](./banner.png "Bonny")
 
 
 [![Build Status](https://travis-ci.org/coryodaniel/bonny.svg?branch=master)](https://travis-ci.org/coryodaniel/bonny)
 [![Coverage Status](https://coveralls.io/repos/github/coryodaniel/bonny/badge.svg?branch=master)](https://coveralls.io/github/coryodaniel/bonny?branch=master)
 [![Hex.pm](http://img.shields.io/hexpm/v/bonny.svg?style=flat)](https://hex.pm/packages/bonny)
-[![Documentation](https://img.shields.io/badge/documentation-on%20hexdocs-green.svg)](https://hexdocs.pm/bonny/)
+[![Documentation](https://img.shields.io/badge/documentation-on hexdocs-green.svg)](https://hexdocs.pm/bonny/)
 ![Hex.pm](https://img.shields.io/hexpm/l/bonny.svg?style=flat)
 
-Kubernetes Operator SDK in Elixir. Extend the Kubernetes API and implement CustomResourceDefinitions in Elixir.
+# Bonny
+
+Kubernetes Operator SDK written in Elixir. 
+
+Extend the Kubernetes API and implement CustomResourceDefinitions lifecycles in Elixir.
 
 If Kubernetes CRDs and controllers are new to you, read up on the [terminology](#terminology).
-
 
 ## Installation
 

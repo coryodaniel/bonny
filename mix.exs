@@ -4,7 +4,7 @@ defmodule Bonny.MixProject do
   def project do
     [
       app: :bonny,
-      description: "Kubernetes Operator SDK: Extend the Kubernetes API with Elixir",
+      description: description(),
       version: "0.1.0",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
@@ -59,5 +59,11 @@ defmodule Bonny.MixProject do
         "GitHub" => "https://github.com/coryodaniel/bonny"
       }
     ]
+  end
+
+  defp description do
+    """
+    Kubernetes Operator SDK: Extend the Kubernetes API with Elixir
+    """
   end
 end

@@ -24,5 +24,7 @@ defmodule Mix.Tasks.Bonny.Gen.ManifestTest do
       assert output =~ "ClusterRoleBinding"
       assert output =~ "ClusterRole"
     end
+
+    # test "manifest includes Deployment"
   end
 end
