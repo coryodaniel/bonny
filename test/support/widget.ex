@@ -1,7 +1,10 @@
 defmodule Widget do
   @moduledoc false
-  use Bonny.Operator
+  use Bonny.Controller
   require Logger
+
+  @rule {"apps", ["deployments", "services"], ["*"]}
+  @rule {"", ["configmaps"], ["create", "read"]}
 
   @spec add(any()) :: :ok | {:error, any()}
   def add(obj), do: Logger.info("add: #{inspect(obj)}")

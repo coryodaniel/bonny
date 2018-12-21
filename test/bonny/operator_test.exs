@@ -1,48 +1,85 @@
 defmodule Bonny.OperatorTest do
-  @moduledoc false
   use ExUnit.Case, async: true
+  alias Bonny.Operator
 
-  describe "crd_spec/0" do
-    test "without attributes" do
-      crd_spec = %Bonny.CRD{
-        group: "bonny.example.io",
-        scope: :namespaced,
-        version: "v1",
-        names: %{
-          plural: "whizbangs",
-          singular: "whizbang",
-          kind: "Whizbang",
-          short_names: nil
-        }
-      }
+  test "cluster_role/0" do
+    manifest = Operator.cluster_role()
 
-      assert crd_spec == V1.Whizbang.crd_spec()
-    end
-
-    test "with attributes" do
-      crd_spec = %Bonny.CRD{
-        group: "kewl.example.io",
-        scope: :cluster,
-        version: "v2alpha1",
-        names: %{
-          plural: "foos",
-          singular: "foo",
-          kind: "Foo"
-        }
-      }
-
-      assert crd_spec == V2.Whizbang.crd_spec()
-    end
+    assert manifest == %{
+             apiVersion: "rbac.authorization.k8s.io/v1",
+             kind: "ClusterRole",
+             metadata: %{name: "bonny", labels: %{bonny: "0.1.0"}},
+             rules: [
+               %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
+               %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
+             ]
+           }
   end
 
-  describe "rules/0" do
-    test "defines RBAC rules" do
-      rules = V2.Whizbang.rules()
+  test "service_account/1" do
+    manifest = Operator.service_account("default")
 
-      assert rules == [
-               %{apiGroups: ["apiextensions.k8s.io"], resources: ["bar"], verbs: ["*"]},
-               %{apiGroups: ["apiextensions.k8s.io"], resources: ["foo"], verbs: ["*"]}
-             ]
-    end
+    assert manifest == %{
+             metadata: %{name: "bonny", labels: %{bonny: "0.1.0"}, namespace: "default"},
+             apiVersion: "v1",
+             kind: "ServiceAccount"
+           }
+  end
+
+  test "crds/0" do
+    manifest = Operator.crds()
+
+    assert manifest == [
+             %{
+               apiVersion: "apiextensions.k8s.io/v1beta1",
+               kind: "CustomResourceDefinition",
+               metadata: %{
+                 labels: %{bonny: "0.1.0"},
+                 name: "widgets.bonny.example.io"
+               },
+               spec: %Bonny.CRD{
+                 group: "bonny.example.io",
+                 names: %{
+                   kind: "Widget",
+                   plural: "widgets",
+                   short_names: nil,
+                   singular: "widget"
+                 },
+                 scope: "Namespaced",
+                 version: "v1"
+               }
+             },
+             %{
+               apiVersion: "apiextensions.k8s.io/v1beta1",
+               kind: "CustomResourceDefinition",
+               metadata: %{
+                 labels: %{bonny: "0.1.0"},
+                 name: "cogs.bonny.example.io"
+               },
+               spec: %Bonny.CRD{
+                 group: "bonny.example.io",
+                 names: %{
+                   kind: "Cog",
+                   plural: "cogs",
+                   short_names: nil,
+                   singular: "cog"
+                 },
+                 scope: "Namespaced",
+                 version: "v1"
+               }
+             }
+           ]
+  end
+
+  test "cluster_role_binding/1" do
+    manifest = Operator.cluster_role_binding("default")
+
+    assert manifest == %{
+             apiVersion: "rbac.authorization.k8s.io/v1",
+             kind: "ClusterRoleBinding",
+             metadata: %{name: "bonny", labels: %{bonny: "0.1.0"}},
+             roleRef: %{apiGroup: "rbac.authorization.k8s.io", kind: "ClusterRole", name: "bonny"},
+             subjects: [%{kind: "ServiceAccount", name: "bonny", namespace: "default"}]
+           }
   end
 end

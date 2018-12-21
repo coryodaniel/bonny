@@ -1,6 +1,6 @@
 defmodule V1.Whizbang do
   @moduledoc false
-  use Bonny.Operator
+  use Bonny.Controller
   def add(_), do: nil
   def modify(_), do: nil
   def delete(_), do: nil
@@ -8,7 +8,7 @@ end
 
 defmodule V2.Whizbang do
   @moduledoc false
-  use Bonny.Operator
+  use Bonny.Controller
 
   @rule {"apiextensions.k8s.io", ["bar"], ["*"]}
   @rule {"apiextensions.k8s.io", ["foo"], ["*"]}

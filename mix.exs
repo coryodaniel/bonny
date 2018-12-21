@@ -36,7 +36,6 @@ defmodule Bonny.MixProject do
     [
       {:poison, "~> 4.0"},
       {:httpoison, "~> 1.0"},
-      {:yaml_elixir, "~> 2.1"},
       {:k8s_conf, "~> 0.1"},
 
       # Dev deps

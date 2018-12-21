@@ -4,13 +4,13 @@ defmodule Bonny.Watcher do
   alias Bonny.Watcher.Impl
   require Logger
 
-  def start_link(operator) do
-    GenServer.start_link(Bonny.Watcher, operator, name: operator)
+  def start_link(controller) do
+    GenServer.start_link(Bonny.Watcher, controller, name: controller)
   end
 
   @impl true
-  def init(operator) do
-    state = Impl.new(operator)
+  def init(controller) do
+    state = Impl.new(controller)
     schedule_watcher()
     {:ok, state}
   end
@@ -21,7 +21,7 @@ defmodule Bonny.Watcher do
 
   def handle_info(:watch, state) do
     {:ok, state} = Impl.get_resource_version(state)
-    Logger.debug("Starting watch from resource version: #{state.resource_version}")
+    Logger.debug(fn -> "Starting watch from resource version: #{state.resource_version}" end)
     Impl.watch_for_changes(state, self())
 
     {:noreply, state}
@@ -31,7 +31,7 @@ defmodule Bonny.Watcher do
   def handle_info(%HTTPoison.AsyncStatus{code: 200}, state), do: {:noreply, state}
 
   def handle_info(%HTTPoison.AsyncStatus{code: code}, state) do
-    Logger.debug("Received HTTP error from Kubernetes API: #{code}")
+    Logger.debug(fn -> "Received HTTP error from Kubernetes API: #{code}" end)
     {:stop, :normal, state}
   end
 
@@ -49,21 +49,21 @@ defmodule Bonny.Watcher do
 
   @impl GenServer
   def handle_info(%HTTPoison.AsyncEnd{}, state = %Impl{}) do
-    Logger.debug("Received async end: #{state.resource_version}")
+    Logger.debug(fn -> "Received async end: #{state.resource_version}" end)
     send(self(), :watch)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(%HTTPoison.Error{reason: {:closed, :timeout}}, state = %Impl{}) do
-    Logger.debug("Received timeout: #{state.resource_version}")
+    Logger.debug(fn -> "Received timeout: #{state.resource_version}" end)
     send(self(), :watch)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(other, state = %Impl{}) do
-    Logger.warn("Received unhandled info: #{inspect(other)}")
+    Logger.warn(fn -> "Received unhandled info: #{inspect(other)}" end)
     {:noreply, state}
   end
 end
