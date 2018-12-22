@@ -11,7 +11,7 @@ defmodule Bonny.CRDTest do
       expected = %{
         apiVersion: "apiextensions.k8s.io/v1beta1",
         kind: "CustomResourceDefinition",
-        metadata: %{labels: %{bonny: "0.1.0"}, name: "widgets.bonny.example.io"},
+        metadata: %{labels: %{bonny: "true"}, name: "widgets.bonny.example.io"},
         spec: %Bonny.CRD{
           group: "bonny.example.io",
           names: %{kind: "Widget", plural: "widgets", short_names: nil, singular: "widget"},

@@ -16,18 +16,10 @@ defmodule Bonny.Operator do
       kind: "ClusterRole",
       metadata: %{
         name: Bonny.service_account(),
-        labels: Bonny.Operator.labels()
+        labels: labels()
       },
       rules: rules
     }
-  end
-
-  def labels(addl \\ %{}) do
-    default_labels = %{
-      bonny: "#{Application.spec(:bonny, :vsn)}"
-    }
-
-    Map.merge(default_labels, addl)
   end
 
   @doc false
@@ -39,7 +31,7 @@ defmodule Bonny.Operator do
       metadata: %{
         name: Bonny.service_account(),
         namespace: namespace,
-        labels: Bonny.Operator.labels()
+        labels: labels()
       }
     }
   end
@@ -60,7 +52,7 @@ defmodule Bonny.Operator do
       kind: "ClusterRoleBinding",
       metadata: %{
         name: Bonny.service_account(),
-        labels: Bonny.Operator.labels()
+        labels: labels()
       },
       roleRef: %{
         apiGroup: "rbac.authorization.k8s.io",
@@ -75,5 +67,85 @@ defmodule Bonny.Operator do
         }
       ]
     }
+  end
+
+  @doc false
+  @spec deployment(binary(), binary()) :: map
+  def deployment(image, namespace) do
+    deployment_labels = %{"k8s-app" => Bonny.name()}
+
+    %{
+      apiVersion: "apps/v1beta2",
+      kind: "Deployment",
+      metadata: %{
+        labels: labels(),
+        name: Bonny.service_account(),
+        namespace: namespace
+      },
+      spec: %{
+        replicas: 1,
+        selector: %{matchLabels: deployment_labels},
+        template: %{
+          metadata: %{labels: deployment_labels},
+          spec: %{
+            containers: [
+              %{
+                image: image,
+                name: Bonny.name(),
+                resources: default_resources(),
+                securityContext: %{
+                  allowPrivilegeEscalation: false,
+                  readOnlyRootFilesystem: true
+                },
+                env: env_vars()
+              }
+            ],
+            securityContext: %{runAsNonRoot: true, runAsUser: 65_534},
+            serviceAccountName: Bonny.service_account()
+          }
+        }
+      }
+    }
+  end
+
+  @doc false
+  def labels(), do: labels(%{})
+  def labels(addl) do
+    default_labels = %{
+      bonny: "true"
+    }
+
+    Map.merge(default_labels, addl)
+  end
+
+  @doc false
+  defp default_resources do
+    %{
+      limits: %{cpu: "200m", memory: "200Mi"},
+      requests: %{cpu: "200m", memory: "200Mi"}
+    }
+  end
+
+  @doc false
+  defp env_field_ref(name, path) do
+    %{
+      name: name,
+      valueFrom: %{
+        fieldRef: %{
+          fieldPath: path
+        }
+      }
+    }
+  end
+
+  @doc false
+  defp env_vars() do
+    [
+      %{name: "MIX_ENV", value: "prod"},
+      env_field_ref("BONNY_POD_NAME", "metadata.name"),
+      env_field_ref("BONNY_POD_NAMESPACE", "metadata.namespace"),
+      env_field_ref("BONNY_POD_IP", "status.podIP"),
+      env_field_ref("BONNY_POD_SERVICE_ACCOUNT", "spec.serviceAccountName"),
+    ]
   end
 end

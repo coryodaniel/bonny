@@ -9,7 +9,7 @@ defmodule Bonny.OperatorTest do
     assert manifest == %{
              apiVersion: "rbac.authorization.k8s.io/v1",
              kind: "ClusterRole",
-             metadata: %{name: "bonny", labels: %{bonny: "0.1.0"}},
+             metadata: %{name: "bonny", labels: %{bonny: "true"}},
              rules: [
                %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
                %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
@@ -21,7 +21,7 @@ defmodule Bonny.OperatorTest do
     manifest = Operator.service_account("default")
 
     assert manifest == %{
-             metadata: %{name: "bonny", labels: %{bonny: "0.1.0"}, namespace: "default"},
+             metadata: %{name: "bonny", labels: %{bonny: "true"}, namespace: "default"},
              apiVersion: "v1",
              kind: "ServiceAccount"
            }
@@ -35,7 +35,7 @@ defmodule Bonny.OperatorTest do
                apiVersion: "apiextensions.k8s.io/v1beta1",
                kind: "CustomResourceDefinition",
                metadata: %{
-                 labels: %{bonny: "0.1.0"},
+                 labels: %{bonny: "true"},
                  name: "widgets.bonny.example.io"
                },
                spec: %Bonny.CRD{
@@ -54,7 +54,7 @@ defmodule Bonny.OperatorTest do
                apiVersion: "apiextensions.k8s.io/v1beta1",
                kind: "CustomResourceDefinition",
                metadata: %{
-                 labels: %{bonny: "0.1.0"},
+                 labels: %{bonny: "true"},
                  name: "cogs.bonny.example.io"
                },
                spec: %Bonny.CRD{
@@ -78,7 +78,7 @@ defmodule Bonny.OperatorTest do
     assert manifest == %{
              apiVersion: "rbac.authorization.k8s.io/v1",
              kind: "ClusterRoleBinding",
-             metadata: %{name: "bonny", labels: %{bonny: "0.1.0"}},
+             metadata: %{name: "bonny", labels: %{bonny: "true"}},
              roleRef: %{apiGroup: "rbac.authorization.k8s.io", kind: "ClusterRole", name: "bonny"},
              subjects: [%{kind: "ServiceAccount", name: "bonny", namespace: "default"}]
            }
