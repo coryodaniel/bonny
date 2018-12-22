@@ -58,6 +58,11 @@ defmodule Bonny do
     |> String.replace(~r/[^a-z-]/, "-\\1\\g{1}")
   end
 
+  @doc false
+  def version() do
+    "#{Application.spec(:bonny, :vsn)}"
+  end
+
   @doc "List of all enabled controller modules"
   @spec controllers() :: list(atom)
   def controllers(), do: Application.get_env(:bonny, :controllers, [])

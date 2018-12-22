@@ -24,7 +24,7 @@ defmodule Bonny.Operator do
 
   def labels(addl \\ %{}) do
     default_labels = %{
-      bonny: "#{Application.spec(:bonny, :vsn)}"
+      bonny: "#{Bonny.version()}"
     }
 
     Map.merge(default_labels, addl)
@@ -74,6 +74,51 @@ defmodule Bonny.Operator do
           namespace: namespace
         }
       ]
+    }
+  end
+
+  defp default_resources do
+    %{
+      limits: %{cpu: "200m", memory: "200Mi"},
+      requests: %{cpu: "200m", memory: "200Mi"}
+    }
+  end
+
+  @doc false
+  @spec deployment(binary(), binary()) :: map
+  def deployment(image, namespace) do
+    deployment_labels = %{"k8s-app" => Bonny.name()}
+
+    %{
+      apiVersion: "apps/v1beta2",
+      kind: "Deployment",
+      metadata: %{
+        labels: Bonny.Operator.labels(),
+        name: Bonny.service_account(),
+        namespace: namespace
+      },
+      spec: %{
+        replicas: 1,
+        selector: %{matchLabels: deployment_labels},
+        template: %{
+          metadata: %{labels: deployment_labels},
+          spec: %{
+            containers: [
+              %{
+                image: image,
+                name: Bonny.name(),
+                resources: default_resources(),
+                securityContext: %{
+                  allowPrivilegeEscalation: false,
+                  readOnlyRootFilesystem: true
+                }
+              }
+            ],
+            securityContext: %{runAsNonRoot: true, runAsUser: 65_534},
+            serviceAccountName: Bonny.service_account()
+          }
+        }
+      }
     }
   end
 end

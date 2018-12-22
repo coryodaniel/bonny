@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Bonny.Gen.ManifestTest do
     test "manifest includes CRDs" do
       output =
         capture_io(fn ->
-          Manifest.run(["--out", "-"])
+          Manifest.run(["-i", "quay.io/foo/bar", "--out", "-"])
         end)
 
       assert output =~ "CustomResourceDefinition"
@@ -17,12 +17,22 @@ defmodule Mix.Tasks.Bonny.Gen.ManifestTest do
     test "manifest includes RBAC" do
       output =
         capture_io(fn ->
-          Manifest.run(["--out", "-"])
+          Manifest.run(["-i", "quay.io/foo/bar", "--out", "-"])
         end)
 
       assert output =~ "ServiceAccount"
       assert output =~ "ClusterRoleBinding"
       assert output =~ "ClusterRole"
+    end
+
+    test "manifest includes Deployment" do
+      output =
+        capture_io(fn ->
+          Manifest.run(["-i", "quay.io/foo/bar", "--out", "-"])
+        end)
+
+      assert output =~ "Deployment"
+      assert output =~ "quay.io/foo/bar"
     end
   end
 end

@@ -1,6 +1,32 @@
 defmodule Mix.Tasks.Bonny.Gen.Controller do
   @moduledoc """
   Generates a new CRD controller
+
+  An operator can have multiple controllers. Each controller handles the lifecycle of a custom resource.
+
+  By default controllers are generated in the `V1` version scope.
+
+  ```shell
+  mix bonny.gen.controller Widget widget
+  ```
+
+  You can specify the version flag to create a new version of a controller. Bonny will dispatch the controller for the given version. So old versions of resources can live alongside new versions.
+
+  ```shell
+  mix bonny.gen.controller Widget widget --version v2alpha1
+  ```
+
+  *Note:* The one restriction with versions is that they will be camelized into a module name.
+
+  Open up your controller and add functionality for your resoures lifecycle:
+
+  * Add
+  * Modify
+  * Delete
+
+  Each controller can create multiple resources.
+
+  For example, a *todo app* controller could deploy a `Deployment` and a `Service`.
   """
 
   use Mix.Task
