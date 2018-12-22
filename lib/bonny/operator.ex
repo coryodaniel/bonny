@@ -76,46 +76,4 @@ defmodule Bonny.Operator do
       ]
     }
   end
-
-  @doc false
-  @spec deployment(binary()) :: map
-  def deployment(namespace) do
-    deployment_labels = %{"k8s-app" => Bonny.name()}
-
-    %{
-      apiVersion: "apps/v1beta2",
-      kind: "Deployment",
-      metadata: %{
-        labels: Bonny.Operator.labels(),
-        name: Bonny.service_account(),
-        namespace: namespace
-      },
-      spec: %{
-        replicas: 1,
-        selector: %{matchLabels: deployment_labels},
-        template: %{
-          metadata: %{labels: deployment_labels},
-          spec: %{
-            containers: [
-              %{
-                args: ["--kubelet-service=kube-system/kubelet"],
-                image: "quay.io/coreos/prometheus-operator:v0.24.0",
-                name: Bonny.name(),
-                resources: %{
-                  limits: %{cpu: "200m", memory: "200Mi"},
-                  requests: %{cpu: "100m", memory: "100Mi"}
-                },
-                securityContext: %{
-                  allowPrivilegeEscalation: false,
-                  readOnlyRootFilesystem: true
-                }
-              }
-            ],
-            securityContext: %{runAsNonRoot: true, runAsUser: 65_534},
-            serviceAccountName: Bonny.service_account()
-          }
-        }
-      }
-    }
-  end
 end

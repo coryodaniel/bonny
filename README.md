@@ -23,7 +23,7 @@ by adding `bonny` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:bonny, "~> 0.1.0"}
+    {:bonny, "~> 0.1"}
   ]
 end
 ```
@@ -33,7 +33,11 @@ Add to `config.exs`:
 ```elixir
 config :bonny, 
   # Add each CRD Controller module for this operator to load here
-  controllers: [],
+  controllers: [
+    MyApp.Controllers.V1.WebServer,
+    MyApp.Controllers.V1.Database,
+    MyApp.Controllers.V1.Memcached
+  ],
   
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
@@ -89,6 +93,11 @@ Each controller can create multiple resources.
 For example, a *todo app* controller could deploy a `Deployment` and a `Service`.
 
 Your operator can also have multiple controllers if you want to split up your lifecycle logic!
+
+Check out the two test controllers:
+
+* [Cog](./test/support/cog.ex)
+* [Widget](./test/support/widget.ex)
 
 ### Generating a dockerfile
 

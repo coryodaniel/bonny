@@ -16,7 +16,8 @@ defmodule Bonny.MixProject do
         extras: ["README.md"],
         main: "readme"
       ],
-      package: package()
+      package: package(),
+      aliases: aliases()
     ]
   end
 
@@ -59,6 +60,14 @@ defmodule Bonny.MixProject do
         "GitHub" => "https://github.com/coryodaniel/bonny"
       }
     ]
+  end
+
+  defp aliases do
+    [docs: ["docs", &copy_images/1]]
+  end
+
+  defp copy_images(_) do
+    File.cp! "./banner.png", "./doc/banner.png"
   end
 
   defp description do

@@ -22,8 +22,7 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
         [
           Operator.cluster_role(),
           Operator.service_account(opts[:namespace]),
-          Operator.cluster_role_binding(opts[:namespace]),
-          Operator.deployment(opts[:namespace])
+          Operator.cluster_role_binding(opts[:namespace])
         ]
 
     manifest =
