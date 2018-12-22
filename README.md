@@ -4,7 +4,6 @@
 [![Build Status](https://travis-ci.org/coryodaniel/bonny.svg?branch=master)](https://travis-ci.org/coryodaniel/bonny)
 [![Coverage Status](https://coveralls.io/repos/github/coryodaniel/bonny/badge.svg?branch=master)](https://coveralls.io/github/coryodaniel/bonny?branch=master)
 [![Hex.pm](http://img.shields.io/hexpm/v/bonny.svg?style=flat)](https://hex.pm/packages/bonny)
-[![Documentation](https://img.shields.io/badge/documentation-on hexdocs-green.svg)](https://hexdocs.pm/bonny/)
 ![Hex.pm](https://img.shields.io/hexpm/l/bonny.svg?style=flat)
 
 # Bonny
