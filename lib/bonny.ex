@@ -39,6 +39,9 @@ defmodule Bonny do
   @doc """
   Kubernetes service account name to run operator as.
 
+  *Note:* if a kube config file is provided, this service account will still be created
+  and assigned to pods, but the *config file auth will be used* when making requests to the Kube API.
+
   Name must consist of only lowercase letters and hyphens.
 
   Defaults to operator name.

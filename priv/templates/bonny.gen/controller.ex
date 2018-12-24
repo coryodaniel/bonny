@@ -66,7 +66,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @doc """
   Handles a `MODIFIED` event
   """
-  @spec add(map()) :: :ok | :error
+  @spec modify(map()) :: :ok | :error
   def modify(payload) do
     IO.inspect(payload)
     :ok
@@ -75,7 +75,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @doc """
   Handles a `DELETED` event
   """
-  @spec add(map()) :: :ok | :error
+  @spec delete(map()) :: :ok | :error
   def delete(payload) do
     IO.inspect(payload)
     :ok
