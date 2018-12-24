@@ -126,8 +126,10 @@ This will generate the entire manifest for this operator including:
 * Service Account
 * Operator Deployment
 
+The operator manifest generator requires the `image` flag to be passed. This is the docker image URL of your operators docker image created by `mix bonny.gen.docker` above.
+
 ```shell
-mix bonny.gen.manifest --out manifest.yaml
+mix bonny.gen.manifest --image ${BONNY_IMAGE}
 ```
 
 **Note:** YAML output is JSON formatted YAML. Sorry, elixirland isn't fond of YAML :D
