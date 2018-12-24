@@ -75,13 +75,13 @@ An operator can have multiple controllers. Each controller handles the lifecycle
 By default controllers are generated in the `V1` version scope.
 
 ```shell
-mix bonny.gen.controller Widget widget
+mix bonny.gen.controller Widget widgets
 ```
 
 You can specify the version flag to create a new version of a controller. Bonny will dispatch the controller for the given version. So old versions of resources can live alongside new versions.
 
 ```shell
-mix bonny.gen.controller Widget widget --version v2alpha1
+mix bonny.gen.controller Widget widgets --version v2alpha1
 ```
 
 *Note:* The one restriction with versions is that they will be camelized into a module name.
@@ -193,7 +193,7 @@ This will load two modules in the operator, `Widget` and `Cog`.
 kubectl apply -f ./test/support/crd.yaml
 ```
 
-vStart the session:**
+Start the session:**
 
 ```elixir
 BONNY_CONFIG_FILE=~/.kube/config MIX_ENV=test iex -S mix
