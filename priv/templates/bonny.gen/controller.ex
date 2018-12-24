@@ -11,7 +11,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   # Kubernetes API version of this CRD, defaults to value in module name
   @version "v2alpha1"
 
-  # Kubernetes API group of this CRD, defaults to "bonny.example.io"
+  # Kubernetes API group of this CRD, defaults to "bonny.test"
   @group "kewl.example.io"
 
   The scope of the CRD. Defaults to `:namespaced`

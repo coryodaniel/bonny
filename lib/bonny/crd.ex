@@ -31,6 +31,10 @@ defmodule Bonny.CRD do
             names: nil,
             version: nil
 
+  @doc "Plural name of CRD"
+  @spec plural(Bonny.CRD.t()) :: binary
+  def plural(%Bonny.CRD{names: %{plural: plural}}), do: plural
+
   @doc """
   URL Path to list a CRD's resources
 
@@ -38,7 +42,7 @@ defmodule Bonny.CRD do
   /apis/bonny.example.om/v1/namespaces/default/widgets
 
   *Cluster Resource URL Path & `--all-namespaces` path*
-  /apis/bonny.example.io/v1/widgets
+  /apis/bonny.test/v1/widgets
   """
   @spec list_path(Bonny.CRD.t()) :: binary
   def list_path(crd = %CRD{}), do: base_path(crd)
@@ -52,10 +56,10 @@ defmodule Bonny.CRD do
   URL path to read the specified CustomResourceDefinition
 
   *Namespaced CRD Resource URL Path*
-  /apis/bonny.example.io/v1/namespaces/default/widgets/test-widget
+  /apis/bonny.test/v1/namespaces/default/widgets/test-widget
 
   *Cluster CRD Resource URL Path & `--all-namespaces` path*
-  /apis/bonny.example.io/v1/widgets/test-widget
+  /apis/bonny.test/v1/widgets/test-widget
   """
   @spec read_path(Bonny.CRD.t(), String.t()) :: binary
   def read_path(crd = %CRD{}, name) do
@@ -71,9 +75,9 @@ defmodule Bonny.CRD do
   kind: CustomResourceDefinition
   metadata:
     creationTimestamp: null
-    name: widgets.bonny.example.io
+    name: widgets.bonny.test
   spec:
-    group: bonny.example.io
+    group: bonny.test
     names:
       kind: Widget
       plural: widgets

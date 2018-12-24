@@ -67,7 +67,7 @@ defmodule Bonny.MixProject do
   end
 
   defp copy_images(_) do
-    File.cp! "./banner.png", "./doc/banner.png"
+    File.cp!("./banner.png", "./doc/banner.png")
   end
 
   defp description do

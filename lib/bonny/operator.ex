@@ -3,14 +3,9 @@ defmodule Bonny.Operator do
   Encapsulates Kubernetes resource manifests for an operator
   """
 
-  @doc false
+  @doc "Cluster role manifest"
   @spec cluster_role() :: map()
   def cluster_role() do
-    rules =
-      Enum.reduce(Bonny.controllers(), [], fn controller, acc ->
-        acc ++ controller.rules()
-      end)
-
     %{
       apiVersion: "rbac.authorization.k8s.io/v1",
       kind: "ClusterRole",
@@ -18,11 +13,32 @@ defmodule Bonny.Operator do
         name: Bonny.service_account(),
         labels: labels()
       },
-      rules: rules
+      rules: rules()
     }
   end
 
-  @doc false
+  @doc "Cluster role rules"
+  def rules do
+    plural_names = Enum.map(Bonny.controllers(), &Bonny.CRD.plural(&1.crd_spec()))
+
+    base_rules = [
+      %{
+        apiGroups: ["apiextensions.k8s.io"],
+        resources: ["customresourcedefinitions"],
+        verbs: ["*"]
+      },
+      %{apiGroups: [Bonny.group()], resources: plural_names, verbs: ["*"]}
+    ]
+
+    controller_rules =
+      Enum.reduce(Bonny.controllers(), [], fn controller, acc ->
+        acc ++ controller.rules()
+      end)
+
+    base_rules ++ controller_rules
+  end
+
+  @doc "Service account manifest"
   @spec service_account(binary()) :: map()
   def service_account(namespace) do
     %{
@@ -36,7 +52,7 @@ defmodule Bonny.Operator do
     }
   end
 
-  @doc false
+  @doc "CRD manifests"
   @spec crds() :: list(map())
   def crds() do
     Enum.map(Bonny.controllers(), fn controller ->
@@ -44,7 +60,7 @@ defmodule Bonny.Operator do
     end)
   end
 
-  @doc false
+  @doc "Cluster role binding manifest"
   @spec cluster_role_binding(binary()) :: map()
   def cluster_role_binding(namespace) do
     %{
@@ -69,11 +85,9 @@ defmodule Bonny.Operator do
     }
   end
 
-  @doc false
+  @doc "Deployment manifest"
   @spec deployment(binary(), binary()) :: map
   def deployment(image, namespace) do
-    deployment_labels = %{"k8s-app" => Bonny.name()}
-
     %{
       apiVersion: "apps/v1beta2",
       kind: "Deployment",
@@ -84,9 +98,9 @@ defmodule Bonny.Operator do
       },
       spec: %{
         replicas: 1,
-        selector: %{matchLabels: deployment_labels},
+        selector: %{matchLabels: labels()},
         template: %{
-          metadata: %{labels: deployment_labels},
+          metadata: %{labels: labels()},
           spec: %{
             containers: [
               %{
@@ -109,16 +123,16 @@ defmodule Bonny.Operator do
   end
 
   @doc false
-  def labels(), do: labels(%{})
-  def labels(addl) do
-    default_labels = %{
-      bonny: "true"
-    }
+  @spec labels() :: map()
+  def labels() do
+    operator_labels = Bonny.labels()
+    default_labels = %{"k8s-app" => Bonny.name()}
 
-    Map.merge(default_labels, addl)
+    Map.merge(default_labels, operator_labels)
   end
 
   @doc false
+  @spec default_resources() :: map()
   defp default_resources do
     %{
       limits: %{cpu: "200m", memory: "200Mi"},
@@ -127,6 +141,7 @@ defmodule Bonny.Operator do
   end
 
   @doc false
+  @spec env_field_ref(binary, binary) :: map()
   defp env_field_ref(name, path) do
     %{
       name: name,
@@ -139,13 +154,14 @@ defmodule Bonny.Operator do
   end
 
   @doc false
+  @spec env_vars() :: list(map())
   defp env_vars() do
     [
       %{name: "MIX_ENV", value: "prod"},
       env_field_ref("BONNY_POD_NAME", "metadata.name"),
       env_field_ref("BONNY_POD_NAMESPACE", "metadata.namespace"),
       env_field_ref("BONNY_POD_IP", "status.podIP"),
-      env_field_ref("BONNY_POD_SERVICE_ACCOUNT", "spec.serviceAccountName"),
+      env_field_ref("BONNY_POD_SERVICE_ACCOUNT", "spec.serviceAccountName")
     ]
   end
 end

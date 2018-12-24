@@ -44,11 +44,16 @@ config :bonny,
 
   # Name must only consist of only lowercase letters and hyphens.
   # Defaults to "bonny"
-  operator_name: "your-operator"
+  operator_name: "your-operator",
 
   # Name must only consist of only lowercase letters and hyphens.
   # Defaults to operator name
-  service_account_name: "your-operator"
+  service_account_name: "your-operator",
+
+  # Labels to apply to the operator's resources.
+  labels: %{
+    "kewl": "true"
+  }
 
   # Kubernetes YAML config, defaults to the service account of the pod
   kubeconf_file: "",

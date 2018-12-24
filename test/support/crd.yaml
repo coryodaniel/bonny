@@ -3,9 +3,9 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  name: widgets.bonny.example.io
+  name: widgets.bonny.test
 spec:
-  group: bonny.example.io
+  group: bonny.test
   names:
     kind: Widget
     plural: widgets
@@ -16,9 +16,9 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  name: cogs.bonny.example.io
+  name: cogs.bonny.test
 spec:
-  group: bonny.example.io
+  group: bonny.test
   names:
     kind: Cog
     plural: cogs

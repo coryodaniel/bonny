@@ -60,6 +60,7 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
 
   defp validate_opts!(opts) when is_list(opts), do: opts |> Enum.into(%{}) |> validate_opts!
   defp validate_opts!(%{image: _image}), do: true
+
   defp validate_opts!(_) do
     raise_with_help("Invalid arguments.")
   end

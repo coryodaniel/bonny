@@ -1,4 +1,4 @@
-apiVersion: bonny.example.io/v1
+apiVersion: bonny.test/v1
 kind: Widget
 metadata:
   name: test-widget
@@ -7,7 +7,7 @@ metadata:
 spec:
   whizbangs: 3
 ---
-apiVersion: bonny.example.io/v1
+apiVersion: bonny.test/v1
 kind: Cog
 metadata:
   name: test-cog

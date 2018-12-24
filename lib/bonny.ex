@@ -6,7 +6,7 @@ defmodule Bonny do
   @doc """
   The namespace to watch for `Namespaced` CRDs.
   """
-  @spec namespace() :: String.t()
+  @spec namespace() :: binary
   def namespace() do
     Application.get_env(:bonny, :override_namespace) || System.get_env("BONNY_POD_NAMESPACE") ||
       "default"
@@ -29,12 +29,21 @@ defmodule Bonny do
   end
 
   @doc """
+  Kubernetes API Group of this operator
+  """
+  @spec group() :: binary
+  def group do
+    Application.get_env(:bonny, :group)
+  end
+
+  @doc """
   Kubernetes service account name to run operator as.
 
   Name must consist of only lowercase letters and hyphens.
 
   Defaults to operator name.
   """
+  @spec service_account() :: binary
   def service_account() do
     service_account_name = Application.get_env(:bonny, :service_account_name, Bonny.name())
 
@@ -44,12 +53,24 @@ defmodule Bonny do
   end
 
   @doc """
+  Labels to apply to all operator resources.
+
+  *Note:* These are only applied to the resoures that compose the operator itself,
+  not the resources created by the operator.
+  """
+  @spec labels() :: map()
+  def labels() do
+    Application.get_env(:bonny, :labels, %{})
+  end
+
+  @doc """
   The name of the operator.
 
   Name must consist of only lowercase letters and hyphens.
 
   Defaults to "bonny"
   """
+  @spec name() :: binary
   def name() do
     operator_name = Application.get_env(:bonny, :operator_name, "bonny")
 
