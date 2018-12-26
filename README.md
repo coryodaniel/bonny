@@ -193,7 +193,7 @@ This will load two modules in the operator, `Widget` and `Cog`.
 kubectl apply -f ./test/support/crd.yaml
 ```
 
-Start the session:**
+**Start the session:**
 
 ```elixir
 BONNY_CONFIG_FILE=~/.kube/config MIX_ENV=test iex -S mix
@@ -207,7 +207,7 @@ The GenServers wait about 5 seconds to start watching.
 kubectl apply -f ./test/support/widget.yaml
 ```
 
-If log level is set to `debug` you will see the events being
+If log level is set to `debug` you will see the events get sent to the pod's logs.
 
 
 ## Reading
