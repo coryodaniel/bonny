@@ -64,7 +64,7 @@ config :bonny,
 
 ## Bonny Generators
 
-There are a number of generators to help create kubernetes manifests.
+There are a number of generators to help create a kubernetes operator.
 
 `mix help | grep bonny`
 
@@ -96,7 +96,7 @@ Each controller can create multiple resources.
 
 For example, a *todo app* controller could deploy a `Deployment` and a `Service`.
 
-Your operator can also have multiple controllers if you want to split up your lifecycle logic!
+Your operator can also have multiple controllers if you want to support multiple resources in your operator!
 
 Check out the two test controllers:
 
