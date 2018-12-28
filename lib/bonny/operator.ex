@@ -3,7 +3,7 @@ defmodule Bonny.Operator do
   Encapsulates Kubernetes resource manifests for an operator
   """
 
-  @doc "Cluster role manifest"
+  @doc "ClusterRole manifest"
   @spec cluster_role() :: map()
   def cluster_role() do
     %{
@@ -17,7 +17,7 @@ defmodule Bonny.Operator do
     }
   end
 
-  @doc "Cluster role rules"
+  @doc "ClusterRole rules"
   def rules do
     plural_names = Enum.map(Bonny.controllers(), &Bonny.CRD.plural(&1.crd_spec()))
 
@@ -38,7 +38,7 @@ defmodule Bonny.Operator do
     base_rules ++ controller_rules
   end
 
-  @doc "Service account manifest"
+  @doc "ServiceAccount manifest"
   @spec service_account(binary()) :: map()
   def service_account(namespace) do
     %{
@@ -60,7 +60,7 @@ defmodule Bonny.Operator do
     end)
   end
 
-  @doc "Cluster role binding manifest"
+  @doc "ClusterRoleBinding manifest"
   @spec cluster_role_binding(binary()) :: map()
   def cluster_role_binding(namespace) do
     %{
