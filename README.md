@@ -210,6 +210,6 @@ kubectl apply -f ./test/support/widget.yaml
 If log level is set to `debug` you will see the events get sent to the pod's logs.
 
 
-## Reading
+## Operator Blog Posts
 
 * [Why Kubernetes Operators are a game changer](https://blog.couchbase.com/kubernetes-operators-game-changer/)
