@@ -1,8 +1,8 @@
 workflow "Run tests" {
   on = "push"
-  resolves = ["GitHub Action for Docker"]
+  resolves = ["docker run"]
 }
 
-action "GitHub Action for Docker" {
+action "docker run" {
   uses = "actions/docker/cli@76ff57a"
 }
