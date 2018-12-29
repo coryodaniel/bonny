@@ -106,7 +106,7 @@ defmodule Bonny.CRD do
          group: group,
          names: %{plural: plural}
        }) do
-    "/apis/#{group}/#{version}/namespaces/#{Bonny.namespace()}/#{plural}"
+    "/apis/#{group}/#{version}/namespaces/#{Bonny.Config.namespace()}/#{plural}"
   end
 
   defp base_path(%CRD{scope: :cluster, version: version, group: group, names: %{plural: plural}}) do

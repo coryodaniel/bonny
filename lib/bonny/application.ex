@@ -5,7 +5,7 @@ defmodule Bonny.Application do
 
   def start(_type, _args) do
     children =
-      Bonny.controllers()
+      Bonny.Config.controllers()
       |> Enum.map(fn controller ->
         Supervisor.child_spec({Bonny.Watcher, controller}, id: controller)
       end)

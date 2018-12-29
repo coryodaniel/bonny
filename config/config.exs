@@ -14,7 +14,6 @@ if Mix.env() == :dev do
     tasks: [
       "test --cover",
       "format",
-      "credo",
-      "docs"
+      "credo"
     ]
 end
