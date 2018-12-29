@@ -6,9 +6,7 @@
 [![Hex.pm](http://img.shields.io/hexpm/v/bonny.svg?style=flat)](https://hex.pm/packages/bonny)
 ![Hex.pm](https://img.shields.io/hexpm/l/bonny.svg?style=flat)
 
-# Bonny
-
-Kubernetes Operator SDK written in Elixir. 
+# Bonny: Kubernetes Operator Framework
 
 Extend the Kubernetes API and implement CustomResourceDefinitions lifecycles in Elixir.
 
@@ -51,16 +49,26 @@ config :bonny,
   service_account_name: "your-operator",
 
   # Labels to apply to the operator's resources.
-  labels: %{
-    "kewl": "true"
-  }
+  # labels: %{
+  #   "kewl": "true"
+  # }
+
+  # Operator deployment resources. These are the defaults.
+  # resources: %{
+  #   limits: %{cpu: "200m", memory: "200Mi"},
+  #   requests: %{cpu: "200m", memory: "200Mi"}
+  # }
 
   # Kubernetes YAML config, defaults to the service account of the pod
-  kubeconf_file: "",
+  # kubeconf_file: "",
   
   # Defaults to "current-context" if a config file is provided, override user, cluster. or context here
-  kubeconf_opts: []
+  # kubeconf_opts: []
 ```
+
+## Example Operators built with Bonny
+
+* [Hello Operator](https://github.com/coryodaniel/hello_operator)
 
 ## Bonny Generators
 
@@ -151,6 +159,9 @@ mix bonny.gen.manifest --out - -n test | kubectl apply -f - -n test
 ### Generating a resource
 
 TODO: Need to support validation / OpenAPI.
+
+* https://github.com/coryodaniel/bonny/issues/9
+* https://github.com/coryodaniel/bonny/issues/10
 
 ## Terminology
 

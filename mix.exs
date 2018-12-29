@@ -5,7 +5,7 @@ defmodule Bonny.MixProject do
     [
       app: :bonny,
       description: description(),
-      version: "0.1.2",
+      version: "0.1.3",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -72,7 +72,7 @@ defmodule Bonny.MixProject do
 
   defp description do
     """
-    Kubernetes Operator SDK: Extend the Kubernetes API with Elixir
+    Bonny: Kubernetes Operator Development Framework. Extend Kubernetes with Elixir
     """
   end
 end

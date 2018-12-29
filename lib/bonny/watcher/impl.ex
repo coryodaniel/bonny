@@ -74,7 +74,7 @@ defmodule Bonny.Watcher.Impl do
 
   @spec do_dispatch(atom, atom, map) :: nil
   defp do_dispatch(operator, event, object) do
-    Logger.debug("Dispatching to: #{inspect(operator)}.#{event}/1")
+    Logger.debug(fn -> "Dispatching to: #{inspect(operator)}.#{event}/1" end)
     apply(operator, event, [object])
 
     nil

@@ -89,7 +89,7 @@ defmodule Bonny.Operator do
   @spec deployment(binary(), binary()) :: map
   def deployment(image, namespace) do
     %{
-      apiVersion: "apps/v1beta2",
+      apiVersion: "apps/v1",
       kind: "Deployment",
       metadata: %{
         labels: labels(),
@@ -106,7 +106,7 @@ defmodule Bonny.Operator do
               %{
                 image: image,
                 name: Bonny.name(),
-                resources: default_resources(),
+                resources: resources(),
                 securityContext: %{
                   allowPrivilegeEscalation: false,
                   readOnlyRootFilesystem: true
@@ -132,12 +132,12 @@ defmodule Bonny.Operator do
   end
 
   @doc false
-  @spec default_resources() :: map()
-  defp default_resources do
-    %{
+  @spec resources() :: map()
+  defp resources do
+    Application.get_env(:bonny, :resources, %{
       limits: %{cpu: "200m", memory: "200Mi"},
       requests: %{cpu: "200m", memory: "200Mi"}
-    }
+    })
   end
 
   @doc false
