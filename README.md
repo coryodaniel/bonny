@@ -12,6 +12,8 @@ Extend the Kubernetes API and implement CustomResourceDefinitions lifecycles in 
 
 If Kubernetes CRDs and controllers are new to you, read up on the [terminology](#terminology).
 
+[HelloOperator Tutorial](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) and [source code](https://gitub.com/coryodaniel/hello_operator)
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
@@ -27,9 +29,7 @@ end
 
 ### Configuration
 
-All configuration is optional. Configuration is introspected from the mix project.
-
-To change configuration add to `config.exs`:
+The only configuration parameter required is `controllers`:
 
 ```elixir
 config :bonny,
