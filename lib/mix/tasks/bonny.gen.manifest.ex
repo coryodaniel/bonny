@@ -39,17 +39,9 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
 
     validate_opts!(opts)
 
-    resource_manifests =
-      Operator.crds() ++
-        [
-          Operator.cluster_role(),
-          Operator.service_account(opts[:namespace]),
-          Operator.cluster_role_binding(opts[:namespace]),
-          Operator.deployment(opts[:image], opts[:namespace])
-        ]
-
     manifest =
-      resource_manifests
+      opts
+      |> resource_manifests
       |> Enum.map(fn m -> ["---\n", Poison.encode!(m, pretty: true), "\n"] end)
       |> List.flatten()
 
@@ -58,11 +50,22 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
     Mix.Bonny.render(manifest, out)
   end
 
-  defp validate_opts!(opts) when is_list(opts), do: opts |> Enum.into(%{}) |> validate_opts!
-  defp validate_opts!(%{image: _image}), do: true
+  defp validate_opts!(_), do: true
 
-  defp validate_opts!(_) do
-    raise_with_help("Invalid arguments.")
+  defp resource_manifests(opts) when is_list(opts), do: opts |> Enum.into(%{}) |> resource_manifests
+  defp resource_manifests(%{image: image, namespace: namespace}) do
+    deployment = Operator.deployment(image, namespace)
+    manifests = resource_manifests(%{namespace: namespace})
+    [deployment | manifests]
+  end
+
+  defp resource_manifests(%{namespace: namespace}) do
+    Operator.crds() ++
+    [
+      Operator.cluster_role(),
+      Operator.service_account(namespace),
+      Operator.cluster_role_binding(namespace)
+    ]
   end
 
   @doc false
@@ -71,11 +74,15 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
     Mix.raise("""
     #{msg}
 
-    mix bonny.gen.manifest expects a docker image name. You may optionally provide a namespace.
+    mix bonny.gen.manifest expects a docker image name if deploying to a cluster. You may optionally provide a namespace.
 
     For example:
-       mix bonny.gen.manifest --image YOUR_DOCKER_IMAGE_NAME
-       mix bonny.gen.manifest --image YOUR_DOCKER_IMAGE_NAME --namespace prod
+
+      mix bonny.gen.manifest --image YOUR_DOCKER_IMAGE_NAME
+      mix bonny.gen.manifest --image YOUR_DOCKER_IMAGE_NAME --namespace prod
+
+    To skip the `deployment` for running an operator outside of the cluster (like in development) simply omit the `--image` flag:
+      mix bonny.gen.manifest
     """)
   end
 end

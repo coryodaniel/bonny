@@ -25,6 +25,15 @@ defmodule Mix.Tasks.Bonny.Gen.ManifestTest do
       assert output =~ "ClusterRole"
     end
 
+    test "manifest excludes Deployment" do
+      output =
+        capture_io(fn ->
+          Manifest.run(["--out", "-"])
+        end)
+
+      refute output =~ "Deployment"
+    end
+
     test "manifest includes Deployment" do
       output =
         capture_io(fn ->
