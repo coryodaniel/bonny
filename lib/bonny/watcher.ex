@@ -1,5 +1,7 @@
 defmodule Bonny.Watcher do
-  @moduledoc false
+  @moduledoc """
+  Dispatches lifecycle functions in response to events from the Kubernetes Watch API for a given controller.
+  """
   use GenServer
   alias Bonny.Watcher.Impl
   require Logger
@@ -8,7 +10,7 @@ defmodule Bonny.Watcher do
     GenServer.start_link(Bonny.Watcher, controller, name: controller)
   end
 
-  @impl true
+  @impl GenServer
   def init(controller) do
     state = Impl.new(controller)
     Logger.debug(fn -> "Starting new Bonny.Watcher #{inspect(state)}" end)

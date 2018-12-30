@@ -16,11 +16,11 @@ defmodule Bonny.Watcher.Impl do
 
   defstruct [:spec, :config, :mod, :resource_version]
 
-  def new(operator) do
+  def new(controller) do
     %__MODULE__{
       config: Bonny.Config.kubeconfig(),
-      mod: operator,
-      spec: apply(operator, :crd_spec, []),
+      mod: controller,
+      spec: apply(controller, :crd_spec, []),
       resource_version: nil
     }
   end
@@ -49,33 +49,35 @@ defmodule Bonny.Watcher.Impl do
   end
 
   @doc """
-  Watches a CRD resource for `ADDED`, `MODIFIED`, and `DELETED` events from the Kubernetes API
+  Watches a CRD resource for `ADDED`, `MODIFIED`, and `DELETED` events from the Kubernetes API.
+
+  Streams HTTPoison response to `Bonny.Watcher`
   """
   @spec watch_for_changes(Impl.t(), pid()) :: nil
-  def watch_for_changes(state = %Impl{}, to) do
+  def watch_for_changes(state = %Impl{}, watcher) do
     path = Bonny.CRD.watch_path(state.spec, state.resource_version)
-    request(path, state, stream_to: to, recv_timeout: 5 * 60 * 1000)
+    request(path, state, stream_to: watcher, recv_timeout: 5 * 60 * 1000)
 
     nil
   end
 
   @doc """
-  Dispatches an `ADDED`, `MODIFIED`, and `DELETED` events to an operator
+  Dispatches an `ADDED`, `MODIFIED`, and `DELETED` events to an controller
   """
   @spec dispatch(map, atom) :: nil
-  def dispatch(%{"type" => "ADDED", "object" => object}, operator),
-    do: do_dispatch(operator, :add, object)
+  def dispatch(%{"type" => "ADDED", "object" => object}, controller),
+    do: do_dispatch(controller, :add, object)
 
-  def dispatch(%{"type" => "MODIFIED", "object" => object}, operator),
-    do: do_dispatch(operator, :modify, object)
+  def dispatch(%{"type" => "MODIFIED", "object" => object}, controller),
+    do: do_dispatch(controller, :modify, object)
 
-  def dispatch(%{"type" => "DELETED", "object" => object}, operator),
-    do: do_dispatch(operator, :delete, object)
+  def dispatch(%{"type" => "DELETED", "object" => object}, controller),
+    do: do_dispatch(controller, :delete, object)
 
   @spec do_dispatch(atom, atom, map) :: nil
-  defp do_dispatch(operator, event, object) do
-    Logger.debug(fn -> "Dispatching to: #{inspect(operator)}.#{event}/1" end)
-    apply(operator, event, [object])
+  defp do_dispatch(controller, event, object) do
+    Logger.debug(fn -> "Dispatching to: #{inspect(controller)}.#{event}/1" end)
+    apply(controller, event, [object])
 
     nil
   end
