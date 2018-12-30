@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Bonny.Gen.Manifest do
   @moduledoc """
-  Generates the Kubernetes YAML manifest for this FUCK
+  Generates the Kubernetes YAML manifest for this operator
+
+  mix bonny.gen.manifest expects a docker image name if deploying to a cluster. You may optionally provide a namespace.
 
   ## Examples
 
@@ -21,6 +23,12 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
   mix bonny.gen.manifest --image $(YOUR_IMAGE_URL):latest --namespace default
   kubectl apply -f manifest.yaml -n default
   ```
+
+  To skip the `deployment` for running an operator outside of the cluster (like in development) simply omit the `--image` flag:
+
+  ```shell
+  mix bonny.gen.manifest
+  ```
   """
 
   use Mix.Task
@@ -37,8 +45,6 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
     {opts, _, _} =
       Mix.Bonny.parse_args(args, @default_opts, switches: @switches, aliases: @aliases)
 
-    validate_opts!(opts)
-
     manifest =
       opts
       |> resource_manifests
@@ -49,8 +55,6 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
 
     Mix.Bonny.render(manifest, out)
   end
-
-  defp validate_opts!(_), do: true
 
   defp resource_manifests(opts) when is_list(opts), do: opts |> Enum.into(%{}) |> resource_manifests
   defp resource_manifests(%{image: image, namespace: namespace}) do
@@ -66,23 +70,5 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
       Operator.service_account(namespace),
       Operator.cluster_role_binding(namespace)
     ]
-  end
-
-  @doc false
-  @spec raise_with_help(String.t()) :: no_return()
-  def raise_with_help(msg) do
-    Mix.raise("""
-    #{msg}
-
-    mix bonny.gen.manifest expects a docker image name if deploying to a cluster. You may optionally provide a namespace.
-
-    For example:
-
-      mix bonny.gen.manifest --image YOUR_DOCKER_IMAGE_NAME
-      mix bonny.gen.manifest --image YOUR_DOCKER_IMAGE_NAME --namespace prod
-
-    To skip the `deployment` for running an operator outside of the cluster (like in development) simply omit the `--image` flag:
-      mix bonny.gen.manifest
-    """)
   end
 end
