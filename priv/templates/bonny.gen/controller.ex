@@ -21,7 +21,8 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @names %{
     plural: "foos",
     singular: "foo",
-    kind: "Foo"
+    kind: "Foo",
+    short_names: ["f", "fo"]
   }
   ```
 
@@ -44,12 +45,14 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
 
   # @group "your-operator.your-domain.com"
   # @version "v1"
-  # @scope :namespaced
-  # @names %{
-  #   plural: "foos",
-  #   singular: "foo",
-  #   kind: "Foo"
-  # }
+
+  @scope :namespaced
+  @names %{
+    plural: "<%= plural %>",
+    singular: "<%= singular %>",
+    kind: "<%= mod_name %>",
+    short_names: []
+  }
 
   # @rule {"", ["pods", "configmap"], ["*"]}
   # @rule {"", ["secrets"], ["create"]}

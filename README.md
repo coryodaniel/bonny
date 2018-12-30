@@ -25,6 +25,8 @@ def deps do
 end
 ```
 
+### Configuration
+
 All configuration is optional. Configuration is introspected from the mix project.
 
 To change configuration add to `config.exs`:
