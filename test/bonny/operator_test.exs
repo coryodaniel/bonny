@@ -16,7 +16,7 @@ defmodule Bonny.OperatorTest do
           resources: ["customresourcedefinitions"],
           verbs: ["*"]
         },
-        %{apiGroups: ["bonny.test"], resources: ["widgets", "cogs"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["widgets", "cogs"], verbs: ["*"]},
         %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
         %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
       ]
@@ -34,7 +34,7 @@ defmodule Bonny.OperatorTest do
         resources: ["customresourcedefinitions"],
         verbs: ["*"]
       },
-      %{apiGroups: ["bonny.test"], resources: ["widgets", "cogs"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["widgets", "cogs"], verbs: ["*"]},
       %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
       %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
     ]
@@ -63,10 +63,10 @@ defmodule Bonny.OperatorTest do
         kind: "CustomResourceDefinition",
         metadata: %{
           labels: %{"k8s-app" => "bonny"},
-          name: "widgets.bonny.test"
+          name: "widgets.example.com"
         },
         spec: %Bonny.CRD{
-          group: "bonny.test",
+          group: "example.com",
           names: %{
             kind: "Widget",
             plural: "widgets",
@@ -82,10 +82,10 @@ defmodule Bonny.OperatorTest do
         kind: "CustomResourceDefinition",
         metadata: %{
           labels: %{"k8s-app" => "bonny"},
-          name: "cogs.bonny.test"
+          name: "cogs.example.com"
         },
         spec: %Bonny.CRD{
-          group: "bonny.test",
+          group: "example.com",
           names: %{
             kind: "Cog",
             plural: "cogs",

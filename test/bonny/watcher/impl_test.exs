@@ -19,11 +19,11 @@ defmodule Bonny.Watcher.ImplTest do
   end
 
   def added_chunk do
-    "{\"type\":\"ADDED\",\"object\":{\"apiVersion\":\"bonny.test/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"bonny.test/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705460\",\"selfLink\":\"/apis/bonny.test/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
+    "{\"type\":\"ADDED\",\"object\":{\"apiVersion\":\"example.com/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"example.com/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705460\",\"selfLink\":\"/apis/example.com/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
   end
 
   def deleted_chunk do
-    "{\"type\":\"DELETED\",\"object\":{\"apiVersion\":\"bonny.test/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"bonny.test/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705464\",\"selfLink\":\"/apis/bonny.test/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
+    "{\"type\":\"DELETED\",\"object\":{\"apiVersion\":\"example.com/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"example.com/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705464\",\"selfLink\":\"/apis/example.com/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
   end
 
   describe "new/1" do
@@ -36,7 +36,7 @@ defmodule Bonny.Watcher.ImplTest do
     test "returns the kubernetes resource version", %{bypass: bypass, k8s_config: k8s_config} do
       Bypass.expect_once(bypass, fn conn ->
         assert conn.method == "GET"
-        assert conn.request_path == "/apis/bonny.test/v1/namespaces/default/widgets"
+        assert conn.request_path == "/apis/example.com/v1/namespaces/default/widgets"
         Plug.Conn.resp(conn, 200, ~s<{"metadata": {"resourceVersion": "1337"}}>)
       end)
 
@@ -55,7 +55,7 @@ defmodule Bonny.Watcher.ImplTest do
 
       Bypass.expect_once(bypass, fn conn ->
         assert conn.method == "GET"
-        assert conn.request_path == "/apis/bonny.test/v1/namespaces/default/widgets"
+        assert conn.request_path == "/apis/example.com/v1/namespaces/default/widgets"
         assert conn.query_string == "resourceVersion=1337&watch=true"
 
         conn = Plug.Conn.send_chunked(conn, 200)

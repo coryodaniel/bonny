@@ -43,7 +43,7 @@ defmodule Bonny.Controller do
         version = module_components |> Enum.at(1, "v1") |> String.downcase()
 
         %Bonny.CRD{
-          group: @group || Application.get_env(:bonny, :group, "bonny.test"),
+          group: @group || Bonny.Config.group(),
           scope: @scope || :namespaced,
           version: @version || version,
           names: @names || crd_spec_names(name)

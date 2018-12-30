@@ -42,7 +42,7 @@ defmodule Bonny.CRD do
   /apis/bonny.example.om/v1/namespaces/default/widgets
 
   *Cluster Resource URL Path & `--all-namespaces` path*
-  /apis/bonny.test/v1/widgets
+  /apis/example.com/v1/widgets
   """
   @spec list_path(Bonny.CRD.t()) :: binary
   def list_path(crd = %CRD{}), do: base_path(crd)
@@ -56,10 +56,10 @@ defmodule Bonny.CRD do
   URL path to read the specified CustomResourceDefinition
 
   *Namespaced CRD Resource URL Path*
-  /apis/bonny.test/v1/namespaces/default/widgets/test-widget
+  /apis/example.com/v1/namespaces/default/widgets/test-widget
 
   *Cluster CRD Resource URL Path & `--all-namespaces` path*
-  /apis/bonny.test/v1/widgets/test-widget
+  /apis/example.com/v1/widgets/test-widget
   """
   @spec read_path(Bonny.CRD.t(), String.t()) :: binary
   def read_path(crd = %CRD{}, name) do
@@ -75,9 +75,9 @@ defmodule Bonny.CRD do
   kind: CustomResourceDefinition
   metadata:
     creationTimestamp: null
-    name: widgets.bonny.test
+    name: widgets.example.com
   spec:
-    group: bonny.test
+    group: example.com
     names:
       kind: Widget
       plural: widgets
@@ -106,7 +106,7 @@ defmodule Bonny.CRD do
          group: group,
          names: %{plural: plural}
        }) do
-    "/apis/#{group}/#{version}/namespaces/#{Bonny.namespace()}/#{plural}"
+    "/apis/#{group}/#{version}/namespaces/#{Bonny.Config.namespace()}/#{plural}"
   end
 
   defp base_path(%CRD{scope: :cluster, version: version, group: group, names: %{plural: plural}}) do

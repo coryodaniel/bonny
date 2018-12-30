@@ -10,7 +10,7 @@ defmodule Bonny.Operator do
       apiVersion: "rbac.authorization.k8s.io/v1",
       kind: "ClusterRole",
       metadata: %{
-        name: Bonny.service_account(),
+        name: Bonny.Config.service_account(),
         labels: labels()
       },
       rules: rules()
@@ -19,7 +19,7 @@ defmodule Bonny.Operator do
 
   @doc "ClusterRole rules"
   def rules do
-    plural_names = Enum.map(Bonny.controllers(), &Bonny.CRD.plural(&1.crd_spec()))
+    plural_names = Enum.map(Bonny.Config.controllers(), &Bonny.CRD.plural(&1.crd_spec()))
 
     base_rules = [
       %{
@@ -27,11 +27,11 @@ defmodule Bonny.Operator do
         resources: ["customresourcedefinitions"],
         verbs: ["*"]
       },
-      %{apiGroups: [Bonny.group()], resources: plural_names, verbs: ["*"]}
+      %{apiGroups: [Bonny.Config.group()], resources: plural_names, verbs: ["*"]}
     ]
 
     controller_rules =
-      Enum.reduce(Bonny.controllers(), [], fn controller, acc ->
+      Enum.reduce(Bonny.Config.controllers(), [], fn controller, acc ->
         acc ++ controller.rules()
       end)
 
@@ -45,7 +45,7 @@ defmodule Bonny.Operator do
       apiVersion: "v1",
       kind: "ServiceAccount",
       metadata: %{
-        name: Bonny.service_account(),
+        name: Bonny.Config.service_account(),
         namespace: namespace,
         labels: labels()
       }
@@ -55,7 +55,7 @@ defmodule Bonny.Operator do
   @doc "CRD manifests"
   @spec crds() :: list(map())
   def crds() do
-    Enum.map(Bonny.controllers(), fn controller ->
+    Enum.map(Bonny.Config.controllers(), fn controller ->
       Bonny.CRD.to_manifest(controller.crd_spec())
     end)
   end
@@ -67,18 +67,18 @@ defmodule Bonny.Operator do
       apiVersion: "rbac.authorization.k8s.io/v1",
       kind: "ClusterRoleBinding",
       metadata: %{
-        name: Bonny.service_account(),
+        name: Bonny.Config.service_account(),
         labels: labels()
       },
       roleRef: %{
         apiGroup: "rbac.authorization.k8s.io",
         kind: "ClusterRole",
-        name: Bonny.service_account()
+        name: Bonny.Config.service_account()
       },
       subjects: [
         %{
           kind: "ServiceAccount",
-          name: Bonny.service_account(),
+          name: Bonny.Config.service_account(),
           namespace: namespace
         }
       ]
@@ -93,7 +93,7 @@ defmodule Bonny.Operator do
       kind: "Deployment",
       metadata: %{
         labels: labels(),
-        name: Bonny.service_account(),
+        name: Bonny.Config.service_account(),
         namespace: namespace
       },
       spec: %{
@@ -105,7 +105,7 @@ defmodule Bonny.Operator do
             containers: [
               %{
                 image: image,
-                name: Bonny.name(),
+                name: Bonny.Config.name(),
                 resources: resources(),
                 securityContext: %{
                   allowPrivilegeEscalation: false,
@@ -115,7 +115,7 @@ defmodule Bonny.Operator do
               }
             ],
             securityContext: %{runAsNonRoot: true, runAsUser: 65_534},
-            serviceAccountName: Bonny.service_account()
+            serviceAccountName: Bonny.Config.service_account()
           }
         }
       }
@@ -125,8 +125,8 @@ defmodule Bonny.Operator do
   @doc false
   @spec labels() :: map()
   def labels() do
-    operator_labels = Bonny.labels()
-    default_labels = %{"k8s-app" => Bonny.name()}
+    operator_labels = Bonny.Config.labels()
+    default_labels = %{"k8s-app" => Bonny.Config.name()}
 
     Map.merge(default_labels, operator_labels)
   end

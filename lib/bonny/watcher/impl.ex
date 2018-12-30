@@ -18,7 +18,7 @@ defmodule Bonny.Watcher.Impl do
 
   def new(operator) do
     %__MODULE__{
-      config: Bonny.kubeconfig(),
+      config: Bonny.Config.kubeconfig(),
       mod: operator,
       spec: apply(operator, :crd_spec, []),
       resource_version: nil

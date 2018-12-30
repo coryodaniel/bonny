@@ -5,7 +5,7 @@ if Mix.env() == :test do
 
   config :bonny,
     controllers: [Widget, Cog],
-    group: "bonny.test",
+    group: "example.com",
     kubeconf_file: "./test/support/kubeconfig.yaml"
 end
 
@@ -14,7 +14,6 @@ if Mix.env() == :dev do
     tasks: [
       "test --cover",
       "format",
-      "credo",
-      "docs"
+      "credo"
     ]
 end

@@ -5,7 +5,7 @@ defmodule Bonny.ControllerTest do
   describe "crd_spec/0" do
     test "without attributes" do
       crd_spec = %Bonny.CRD{
-        group: "bonny.test",
+        group: "example.com",
         scope: :namespaced,
         version: "v1",
         names: %{

@@ -106,8 +106,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     Mix.raise("""
     #{msg}
 
-    mix bonny.gen.controller expects a module name followed by a the plural
-    name of the generated resource.
+    mix bonny.gen.controller expects a module name followed by the plural name of the resource.
 
     For example:
        mix bonny.gen.controller Webhook webhooks
