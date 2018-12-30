@@ -75,9 +75,7 @@ defmodule Bonny.Config do
   @doc """
   List of all controller modules to watch.
 
-  Defaults to all implementations of Bonny.Controller.
-
-  This can be set in config.exs:
+  This *must* be set in config.exs:
 
   ```
   config :bonny, controllers: [MyController1, MyController2]
@@ -85,15 +83,7 @@ defmodule Bonny.Config do
   """
   @spec controllers() :: list(atom)
   def controllers() do
-    default_controllers =
-      :code.all_loaded()
-      |> Enum.filter(fn {mod, _} ->
-        behaviours = mod.module_info(:attributes)[:behaviour]
-        behaviours && Enum.member?(behaviours, Bonny.Controller)
-      end)
-      |> Enum.map(&elem(&1, 0))
-
-    Application.get_env(:bonny, :controllers, default_controllers)
+    Application.get_env(:bonny, :controllers, [])
   end
 
   @doc """

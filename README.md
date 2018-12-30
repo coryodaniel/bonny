@@ -32,7 +32,7 @@ To change configuration add to `config.exs`:
 ```elixir
 config :bonny,
   # Add each CRD Controller module for this operator to load here
-  # Defaults to all implementations of Bonny.Controller
+  # Defaults to none. This *must* be set.
   controllers: [
     MyApp.Controllers.V1.WebServer,
     MyApp.Controllers.V1.Database,
@@ -54,13 +54,13 @@ config :bonny,
   # Labels to apply to the operator's resources.
   labels: %{
     "kewl": "true"
-  }
+  },
 
   # Operator deployment resources. These are the defaults.
   resources: %{
     limits: %{cpu: "200m", memory: "200Mi"},
     requests: %{cpu: "200m", memory: "200Mi"}
-  }
+  },
 
   # Kubernetes YAML config, defaults to the service account of the pod
   kubeconf_file: "",

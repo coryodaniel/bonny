@@ -94,16 +94,7 @@ defmodule Bonny.ConfigTest do
   end
 
   describe "controllers/0" do
-    test "defaults to implementations of Bonny.Controller" do
-      original = Application.get_env(:bonny, :controllers)
-
-      Application.delete_env(:bonny, :controllers)
-      assert Enum.sort(Config.controllers()) == [Cog, V1.Whizbang, V2.Whizbang, Widget]
-
-      Application.put_env(:bonny, :controllers, original)
-    end
-
-    test "can be set via config.exs" do
+    test "must be set via config.exs" do
       original = Application.get_env(:bonny, :controllers)
 
       Application.put_env(:bonny, :controllers, [Test, Foo])
