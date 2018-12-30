@@ -76,8 +76,16 @@ defmodule Bonny.Watcher.Impl do
 
   @spec do_dispatch(atom, atom, map) :: nil
   defp do_dispatch(controller, event, object) do
-    Logger.debug(fn -> "Dispatching to: #{inspect(controller)}.#{event}/1" end)
-    apply(controller, event, [object])
+    Logger.debug(fn -> "Dispatching: #{inspect(controller)}.#{event}/1" end)
+
+    case apply(controller, event, [object]) do
+      :ok ->
+        Logger.debug(fn -> "#{inspect(controller)}.#{event}/1 succeeded" end)
+      :error ->
+        Logger.error(fn -> "#{inspect(controller)}.#{event}/1 failed" end)
+      invalid ->
+        Logger.error(fn -> "Unsupported response from #{inspect(controller)}.#{event}/1: #{inspect(invalid)}" end)
+    end
 
     nil
   end
@@ -93,6 +101,7 @@ defmodule Bonny.Watcher.Impl do
          }
        )
        when is_binary(chunk) do
+
     put_in(
       payload,
       ["object", "metadata", "annotations", "kubectl.kubernetes.io/last-applied-configuration"],

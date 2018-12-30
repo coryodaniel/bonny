@@ -13,9 +13,14 @@ defmodule Bonny.Watcher.ImplTest do
 
   defmodule Whizbang do
     @moduledoc false
-    def add(evt), do: send(self(), {:added, evt})
-    def modify(evt), do: send(self(), {:modified, evt})
-    def delete(evt), do: send(self(), {:deleted, evt})
+    def add(evt), do: emit(:added, evt)
+    def modify(evt), do: emit(:modified, evt)
+    def delete(evt), do: emit(:deleted, evt)
+
+    defp emit(type, evt) do
+      send(self(), {type, evt})
+      :ok
+    end
   end
 
   def added_chunk do
