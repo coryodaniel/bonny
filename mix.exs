@@ -17,7 +17,8 @@ defmodule Bonny.MixProject do
         main: "readme"
       ],
       package: package(),
-      aliases: aliases()
+      aliases: aliases(),
+      dialyzer: [plt_add_apps: [:mix, :eex]]
     ]
   end
 
