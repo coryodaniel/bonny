@@ -22,7 +22,7 @@ by adding `bonny` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:bonny, "~> 0.1"}
+    {:bonny, "~> 0.2"}
   ]
 end
 ```
