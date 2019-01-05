@@ -12,7 +12,10 @@ Extend the Kubernetes API and implement CustomResourceDefinitions lifecycles in 
 
 If Kubernetes CRDs and controllers are new to you, read up on the [terminology](#terminology).
 
-[HelloOperator Tutorial](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) and [source code](https://gitub.com/coryodaniel/hello_operator)
+*Tutorials and Examples:*
+
+* HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
+* HelloOperator [source code](https://gitub.com/coryodaniel/hello_operator)
 
 ## Installation
 
