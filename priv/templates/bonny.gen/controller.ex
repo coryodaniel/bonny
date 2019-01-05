@@ -22,7 +22,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
     plural: "foos",
     singular: "foo",
     kind: "Foo",
-    short_names: ["f", "fo"]
+    shortNames: ["f", "fo"]
   }
   ```
 
@@ -51,7 +51,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
     plural: "<%= plural %>",
     singular: "<%= singular %>",
     kind: "<%= mod_name %>",
-    short_names: []
+    shortNames: []
   }
 
   # @rule {"", ["pods", "configmap"], ["*"]}

@@ -12,7 +12,7 @@ defmodule Bonny.ControllerTest do
           plural: "whizbangs",
           singular: "whizbang",
           kind: "Whizbang",
-          short_names: nil
+          shortNames: nil
         }
       }
 

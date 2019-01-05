@@ -72,7 +72,7 @@ defmodule Bonny.Controller do
           plural: "#{singular}s",
           singular: singular,
           kind: name,
-          short_names: nil
+          shortNames: nil
         }
       end
     end

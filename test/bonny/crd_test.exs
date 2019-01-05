@@ -17,7 +17,7 @@ defmodule Bonny.CRDTest do
         },
         spec: %Bonny.CRD{
           group: "example.com",
-          names: %{kind: "Widget", plural: "widgets", short_names: nil, singular: "widget"},
+          names: %{kind: "Widget", plural: "widgets", shortNames: nil, singular: "widget"},
           scope: "Namespaced",
           version: "v1"
         }
