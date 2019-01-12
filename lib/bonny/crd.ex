@@ -13,7 +13,7 @@ defmodule Bonny.CRD do
           kind: String.t(),
           singular: String.t(),
           plural: String.t(),
-          short_names: nil | list(String.t()),
+          shortNames: nil | list(String.t()),
           version: String.t()
         }
 

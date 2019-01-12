@@ -70,7 +70,7 @@ defmodule Bonny.OperatorTest do
           names: %{
             kind: "Widget",
             plural: "widgets",
-            short_names: nil,
+            shortNames: nil,
             singular: "widget"
           },
           scope: "Namespaced",
@@ -89,7 +89,7 @@ defmodule Bonny.OperatorTest do
           names: %{
             kind: "Cog",
             plural: "cogs",
-            short_names: nil,
+            shortNames: nil,
             singular: "cog"
           },
           scope: "Namespaced",
