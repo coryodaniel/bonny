@@ -48,7 +48,7 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
     manifest =
       opts
       |> resource_manifests
-      |> Enum.map(fn m -> ["---\n", Poison.encode!(m, pretty: true), "\n"] end)
+      |> Enum.map(fn m -> ["---\n", Jason.encode!(m, pretty: true), "\n"] end)
       |> List.flatten()
 
     out = opts[:out] || "manifest.yaml"

@@ -5,7 +5,7 @@ defmodule Bonny.MixProject do
     [
       app: :bonny,
       description: description(),
-      version: "0.2.2",
+      version: "0.2.3",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -36,8 +36,8 @@ defmodule Bonny.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:poison, "~> 4.0"},
-      {:httpoison, "~> 1.0"},
+      {:httpoison, "~> 1.5"},
+      {:jason, "~> 1.1"},
       {:k8s_conf, "~> 0.1"},
 
       # Dev deps

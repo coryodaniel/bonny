@@ -34,7 +34,7 @@ defmodule Bonny.Watcher.Impl do
 
     case request(path, state) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        doc = Poison.decode!(body)
+        doc = Jason.decode!(body)
         state = %{state | resource_version: doc["metadata"]["resourceVersion"]}
         {:ok, state}
 
@@ -118,7 +118,7 @@ defmodule Bonny.Watcher.Impl do
   def parse_chunk(line) do
     line
     |> String.trim()
-    |> Poison.decode!()
+    |> Jason.decode!()
     |> parse_metadata
   end
 

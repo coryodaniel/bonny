@@ -26,6 +26,7 @@ defmodule Bonny.CRD do
         }
 
   @enforce_keys [:scope, :group, :names]
+  @derive Jason.Encoder
   defstruct scope: :namespaced,
             group: nil,
             names: nil,
