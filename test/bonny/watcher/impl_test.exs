@@ -5,10 +5,10 @@ defmodule Bonny.Watcher.ImplTest do
 
   setup do
     bypass = Bypass.open()
-    k8s_config = K8s.Conf.from_file("test/support/kubeconfig.yaml")
-    k8s_config = %{k8s_config | url: "http://localhost:#{bypass.port}/"}
+    # k8s_config = K8s.Conf.from_file("test/support/kubeconfig.yaml")
+    # k8s_config = %{k8s_config | url: "http://localhost:#{bypass.port}/"}
 
-    {:ok, bypass: bypass, k8s_config: k8s_config}
+    {:ok, bypass: bypass}
   end
 
   defmodule Whizbang do
@@ -33,28 +33,12 @@ defmodule Bonny.Watcher.ImplTest do
 
   describe "new/1" do
     test "returns the default state" do
-      assert %Impl{mod: Widget, spec: %Bonny.CRD{}, config: %K8s.Conf{}} = Impl.new(Widget)
-    end
-  end
-
-  describe "get_resource_version/2" do
-    test "returns the kubernetes resource version", %{bypass: bypass, k8s_config: k8s_config} do
-      Bypass.expect_once(bypass, fn conn ->
-        assert conn.method == "GET"
-        assert conn.request_path == "/apis/example.com/v1/namespaces/default/widgets"
-        Plug.Conn.resp(conn, 200, ~s<{"metadata": {"resourceVersion": "1337"}}>)
-      end)
-
-      state = Impl.new(Widget)
-      state = %{state | config: k8s_config}
-      {:ok, %{resource_version: rv}} = Impl.get_resource_version(state)
-
-      assert rv == "1337"
+      assert %Impl{mod: Widget, spec: %Bonny.CRD{}, cluster_name: :test} = Impl.new(Widget)
     end
   end
 
   describe "watch_for_changes/2" do
-    test "returns changes to a CRD resource", %{bypass: bypass, k8s_config: k8s_config} do
+    test "returns changes to a CRD resource", %{bypass: bypass} do
       added = added_chunk()
       deleted = deleted_chunk()
 
@@ -70,7 +54,7 @@ defmodule Bonny.Watcher.ImplTest do
       end)
 
       state = Impl.new(Widget)
-      state = %{state | config: k8s_config}
+      state = %{state | cluster_name: :test}
       state = %{state | resource_version: "1337"}
 
       Impl.watch_for_changes(state, self())

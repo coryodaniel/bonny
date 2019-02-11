@@ -6,7 +6,14 @@ if Mix.env() == :test do
   config :bonny,
     controllers: [Widget, Cog],
     group: "example.com",
-    kubeconf_file: "./test/support/kubeconfig.yaml"
+    cluster_name: :test
+
+  config :k8s,
+    clusters: %{
+      test: %{
+        conf: "./test/support/kubeconfig.yaml"
+      }
+    }
 end
 
 if Mix.env() == :dev do

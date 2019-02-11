@@ -106,21 +106,9 @@ defmodule Bonny.Config do
   end
 
   @doc """
-  `K8s.Conf` configuration. This is used to sign HTTP requests to the Kubernetes API.
-
-  Bonny defaults to the service account of the pod if a cluster configuration is not provided.
+  `K8s.Cluster` name used for this operator. Defaults to `:default`
   """
-  def kubeconfig() do
-    config_path =
-      System.get_env("BONNY_CONFIG_FILE") || Application.get_env(:bonny, :kubeconf_file)
-
-    case config_path do
-      conf_path when is_binary(conf_path) ->
-        conf_opts = Application.get_env(:bonny, :kubeconf_opts, [])
-        K8s.Conf.from_file(conf_path, conf_opts)
-
-      _ ->
-        K8s.Conf.from_service_account()
-    end
+  def cluster_name() do
+    Application.get_env(:bonny, :cluster_name, :default)
   end
 end

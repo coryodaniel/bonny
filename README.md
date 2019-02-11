@@ -32,9 +32,19 @@ end
 
 ### Configuration
 
-The only configuration parameter required is `controllers`:
+Bonny uses the [k8s client](https://github.com/coryodaniel/k8s) under the hood.
+
+The only configuration parameters required are `:bonny` `controllers` and a `:k8s` cluster:
 
 ```elixir
+
+config :k8s,
+  clusters: %{
+    default: %{
+      conf: "~/.kube/config"
+    }
+  }
+
 config :bonny,
   # Add each CRD Controller module for this operator to load here
   # Defaults to none. This *must* be set.
@@ -43,6 +53,9 @@ config :bonny,
     MyApp.Controllers.V1.Database,
     MyApp.Controllers.V1.Memcached
   ],
+
+  # K8s.Cluster to use, defaults to :default
+  cluster_name: :default,
 
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
@@ -65,13 +78,7 @@ config :bonny,
   resources: %{
     limits: %{cpu: "200m", memory: "200Mi"},
     requests: %{cpu: "200m", memory: "200Mi"}
-  },
-
-  # Kubernetes YAML config, defaults to the service account of the pod
-  kubeconf_file: "",
-
-  # Defaults to "current-context" if a config file is provided, override user, cluster. or context here
-  kubeconf_opts: []
+  }
 ```
 
 ## Example Operators built with Bonny
@@ -218,8 +225,9 @@ kubectl apply -f ./test/support/crd.yaml
 
 **Start the session:**
 
+TODO
+
 ```elixir
-BONNY_CONFIG_FILE=~/.kube/config MIX_ENV=test iex -S mix
 ```
 
 The GenServers wait about 5 seconds to start watching.

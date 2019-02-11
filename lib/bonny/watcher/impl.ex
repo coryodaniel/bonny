@@ -7,45 +7,23 @@ defmodule Bonny.Watcher.Impl do
   alias K8s.Conf.RequestOptions
   require Logger
 
+  @timeout 5 * 60 * 1000
   @type t :: %__MODULE__{
           spec: Bonny.CRD.t(),
-          config: K8s.Conf.t(),
+          cluster_name: String.t(),
           mod: atom(),
           resource_version: String.t() | nil
         }
 
-  defstruct [:spec, :config, :mod, :resource_version]
+  defstruct [:spec, :cluster_name, :mod, :resource_version]
 
   def new(controller) do
     %__MODULE__{
-      config: Bonny.Config.kubeconfig(),
+      cluster_name: Bonny.Config.cluster_name(),
       mod: controller,
       spec: apply(controller, :crd_spec, []),
       resource_version: nil
     }
-  end
-
-  @doc """
-  Returns the current resource version
-  """
-  @spec get_resource_version(Impl.t()) :: {:ok, Impl.t()} | :error
-  def get_resource_version(state = %Impl{spec: crd}) do
-    path = Bonny.CRD.list_path(crd)
-
-    case request(path, state) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        doc = Jason.decode!(body)
-        state = %{state | resource_version: doc["metadata"]["resourceVersion"]}
-        {:ok, state}
-
-      {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
-        Logger.error("Error getting resource version; HTTP Error code: #{code} #{body}")
-        :error
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.error("Error getting resource version; #{reason}")
-        :error
-    end
   end
 
   @doc """
@@ -55,10 +33,17 @@ defmodule Bonny.Watcher.Impl do
   """
   @spec watch_for_changes(Impl.t(), pid()) :: nil
   def watch_for_changes(state = %Impl{}, watcher) do
-    path = Bonny.CRD.watch_path(state.spec, state.resource_version)
-    request(path, state, stream_to: watcher, recv_timeout: 5 * 60 * 1000)
+    group_version = Bonny.CRD.group_version(state.spec)
+    name = Bonny.CRD.plural(state.spec)
 
-    nil
+    # TODO: how to get new resource version from stream_to dispatch
+    # if state nil /3, else /4
+
+    # TODO: namespace to watch...?
+    namespace = :default
+
+    operation = K8s.Client.list(group_version, name, namespace: namespace)
+    K8s.Client.run(operation, state.cluster_name, stream_to: watcher, recv_timeout: @timeout)
   end
 
   @doc """
