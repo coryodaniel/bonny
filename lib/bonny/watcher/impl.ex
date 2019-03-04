@@ -81,10 +81,14 @@ defmodule Bonny.Watcher.Impl do
     case apply(controller, event, [object]) do
       :ok ->
         Logger.debug(fn -> "#{inspect(controller)}.#{event}/1 succeeded" end)
+
       :error ->
         Logger.error(fn -> "#{inspect(controller)}.#{event}/1 failed" end)
+
       invalid ->
-        Logger.error(fn -> "Unsupported response from #{inspect(controller)}.#{event}/1: #{inspect(invalid)}" end)
+        Logger.error(fn ->
+          "Unsupported response from #{inspect(controller)}.#{event}/1: #{inspect(invalid)}"
+        end)
     end
 
     nil
@@ -101,7 +105,6 @@ defmodule Bonny.Watcher.Impl do
          }
        )
        when is_binary(chunk) do
-
     put_in(
       payload,
       ["object", "metadata", "annotations", "kubectl.kubernetes.io/last-applied-configuration"],

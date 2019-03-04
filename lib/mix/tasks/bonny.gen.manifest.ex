@@ -56,7 +56,9 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
     Mix.Bonny.render(manifest, out)
   end
 
-  defp resource_manifests(opts) when is_list(opts), do: opts |> Enum.into(%{}) |> resource_manifests
+  defp resource_manifests(opts) when is_list(opts),
+    do: opts |> Enum.into(%{}) |> resource_manifests
+
   defp resource_manifests(%{image: image, namespace: namespace}) do
     deployment = Operator.deployment(image, namespace)
     manifests = resource_manifests(%{namespace: namespace})
@@ -65,10 +67,10 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
 
   defp resource_manifests(%{namespace: namespace}) do
     Operator.crds() ++
-    [
-      Operator.cluster_role(),
-      Operator.service_account(namespace),
-      Operator.cluster_role_binding(namespace)
-    ]
+      [
+        Operator.cluster_role(),
+        Operator.service_account(namespace),
+        Operator.cluster_role_binding(namespace)
+      ]
   end
 end
