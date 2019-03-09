@@ -25,14 +25,14 @@ by adding `bonny` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:bonny, "~> 0.2"}
+    {:bonny, "~> 0.3"}
   ]
 end
 ```
 
 ### Configuration
 
-The only configuration parameter required is `controllers`:
+The only configuration parameter required is `controllers`. If `k8s_conf` is not set, it will default to the service account of the pod (if running in a cluster).
 
 ```elixir
 config :bonny,
@@ -43,6 +43,12 @@ config :bonny,
     MyApp.Controllers.V1.Database,
     MyApp.Controllers.V1.Memcached
   ],
+
+  # Kubernetes YAML config, defaults to the service account of the pod
+  k8s_conf: "~/.kube/config",
+
+  # Defaults to "current-context" if a config file is provided, override user, cluster. or context here
+  k8s_conf_opts: [],
 
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
@@ -65,13 +71,7 @@ config :bonny,
   resources: %{
     limits: %{cpu: "200m", memory: "200Mi"},
     requests: %{cpu: "200m", memory: "200Mi"}
-  },
-
-  # Kubernetes YAML config, defaults to the service account of the pod
-  kubeconf_file: "",
-
-  # Defaults to "current-context" if a config file is provided, override user, cluster. or context here
-  kubeconf_opts: []
+  }
 ```
 
 ## Example Operators built with Bonny

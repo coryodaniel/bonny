@@ -112,11 +112,11 @@ defmodule Bonny.Config do
   """
   def kubeconfig() do
     config_path =
-      System.get_env("BONNY_CONFIG_FILE") || Application.get_env(:bonny, :kubeconf_file)
+      System.get_env("BONNY_CONFIG_FILE") || Application.get_env(:bonny, :k8s_conf)
 
     case config_path do
       conf_path when is_binary(conf_path) ->
-        conf_opts = Application.get_env(:bonny, :kubeconf_opts, [])
+        conf_opts = Application.get_env(:bonny, :k8s_conf_opts, [])
         K8s.Conf.from_file(conf_path, conf_opts)
 
       _ ->
