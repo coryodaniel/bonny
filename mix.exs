@@ -36,7 +36,6 @@ defmodule Bonny.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:httpoison, "~> 1.5"},
       {:jason, "~> 1.1"},
       {:k8s, "~> 0.2"},
 

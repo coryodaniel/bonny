@@ -4,7 +4,6 @@ defmodule Bonny.Watcher.Impl do
   """
 
   alias Bonny.Watcher.Impl
-  alias K8s.Conf.RequestOptions
   require Logger
 
   @timeout 5 * 60 * 1000
@@ -35,12 +34,7 @@ defmodule Bonny.Watcher.Impl do
   def watch_for_changes(state = %Impl{}, watcher) do
     group_version = Bonny.CRD.group_version(state.spec)
     name = Bonny.CRD.plural(state.spec)
-
-    # TODO: how to get new resource version from stream_to dispatch
-    # if state nil /3, else /4
-
-    # TODO: namespace to watch...?
-    namespace = :default
+    namespace = Bonny.Config.namespace()
 
     operation = K8s.Client.list(group_version, name, namespace: namespace)
     K8s.Client.run(operation, state.cluster_name, stream_to: watcher, recv_timeout: @timeout)
@@ -61,6 +55,8 @@ defmodule Bonny.Watcher.Impl do
 
   @spec do_dispatch(atom, atom, map) :: nil
   defp do_dispatch(controller, event, object) do
+    Logger.info("TODO: Update version; Object: #{inspect(object)}")
+
     Logger.debug(fn -> "Dispatching: #{inspect(controller)}.#{event}/1" end)
 
     case apply(controller, event, [object]) do
@@ -87,19 +83,5 @@ defmodule Bonny.Watcher.Impl do
     line
     |> String.trim()
     |> Jason.decode!()
-  end
-
-  @spec request(binary, Impl.t(), keyword() | nil) :: {:ok, struct} | {:error, struct}
-  defp request(path, state, opts \\ []) do
-    request_options = RequestOptions.generate(state.config)
-
-    headers =
-      request_options.headers ++
-        [{"Accept", "application/json"}, {"Content-Type", "application/json"}]
-
-    options = Keyword.merge([ssl: request_options.ssl_options], opts)
-
-    url = Path.join(state.config.url, path)
-    HTTPoison.get(url, headers, options)
   end
 end

@@ -5,9 +5,6 @@ defmodule Bonny.Watcher.ImplTest do
 
   setup do
     bypass = Bypass.open()
-    # k8s_config = K8s.Conf.from_file("test/support/kubeconfig.yaml")
-    # k8s_config = %{k8s_config | url: "http://localhost:#{bypass.port}/"}
-
     {:ok, bypass: bypass}
   end
 

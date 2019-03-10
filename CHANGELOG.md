@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `mix bonny.gen.manifest --local` for building manifests w/o a Deployment for
+  local testing
+
 ### Removed
 
 - Removed `Impl.parse_metadata/1`.

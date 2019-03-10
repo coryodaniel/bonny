@@ -14,6 +14,3 @@ analyze:
 
 docs:
 	mix docs
-
-i:
-	echo TODO
