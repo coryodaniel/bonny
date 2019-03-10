@@ -34,8 +34,8 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
   use Mix.Task
   alias Bonny.Operator
 
-  @default_opts [namespace: "default"]
-  @switches [out: :string, namespace: :string, image: :string]
+  @default_opts [namespace: "default", local: false]
+  @switches [out: :string, namespace: :string, image: :string, local: :boolean]
   @aliases [o: :out, n: :namespace, i: :image]
 
   @shortdoc "Generate Kubernetes YAML manifest for this operator"
@@ -59,7 +59,7 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
   defp resource_manifests(opts) when is_list(opts),
     do: opts |> Enum.into(%{}) |> resource_manifests
 
-  defp resource_manifests(%{image: image, namespace: namespace}) do
+  defp resource_manifests(%{local: false, image: image, namespace: namespace}) do
     deployment = Operator.deployment(image, namespace)
     manifests = resource_manifests(%{namespace: namespace})
     [deployment | manifests]
