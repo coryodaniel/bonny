@@ -2,6 +2,7 @@ defmodule Bonny.Watcher do
   @moduledoc """
   Dispatches lifecycle functions in response to events from the Kubernetes Watch API for a given controller.
   """
+
   use GenServer
   alias Bonny.Watcher.Impl
   require Logger

@@ -88,14 +88,6 @@ defmodule Bonny.Watcher.ImplTest do
       result = added_chunk() |> Impl.parse_chunk()
       assert %{"type" => "ADDED"} = result
     end
-
-    test "parses last applied configuration" do
-      result = added_chunk() |> Impl.parse_chunk()
-      %{"object" => object} = result
-      %{"metadata" => metadata} = object
-      %{"annotations" => annotations} = metadata
-      assert %{} = annotations["kubectl.kubernetes.io/last-applied-configuration"]
-    end
   end
 
   describe "dispatch/2" do

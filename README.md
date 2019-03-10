@@ -25,7 +25,7 @@ by adding `bonny` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:bonny, "~> 0.2"}
+    {:bonny, "~> 0.3"}
   ]
 end
 ```
@@ -108,7 +108,7 @@ Open up your controller and add functionality for your resoures lifecycle:
 * Modify
 * Delete
 
-Each controller can create multiple resources. 
+Each controller can create multiple resources.
 
 For example, a *todo app* controller could deploy a `Deployment` and a `Service`.
 
@@ -177,11 +177,11 @@ TODO: Need to support validation / OpenAPI.
 
 ## Terminology
 
-*[Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-resources)*: 
+*[Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-resources)*:
 
 > A custom resource is an extension of the Kubernetes API that is not necessarily available on every Kubernetes cluster. In other words, it represents a customization of a particular Kubernetes installation.
 
-*[CRD Custom Resource Definition](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)*: 
+*[CRD Custom Resource Definition](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)*:
 
 > The CustomResourceDefinition API resource allows you to define custom resources. Defining a CRD object creates a new custom resource with a name and schema that you specify. The Kubernetes API serves and handles the storage of your custom resource.
 

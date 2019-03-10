@@ -94,26 +94,6 @@ defmodule Bonny.Watcher.Impl do
     nil
   end
 
-  # Parse `kubectl.kubernetes.io/last-applied-configuration` from plaintext formatted JSON
-  defp parse_metadata(
-         payload = %{
-           "object" => %{
-             "metadata" => %{
-               "annotations" => %{"kubectl.kubernetes.io/last-applied-configuration" => chunk}
-             }
-           }
-         }
-       )
-       when is_binary(chunk) do
-    put_in(
-      payload,
-      ["object", "metadata", "annotations", "kubectl.kubernetes.io/last-applied-configuration"],
-      parse_chunk(chunk)
-    )
-  end
-
-  defp parse_metadata(payload), do: payload
-
   @doc """
   Receives a plaintext formatted JSON response line from `HTTPoison.AsyncChunk` and parses into a map
   """
@@ -122,7 +102,6 @@ defmodule Bonny.Watcher.Impl do
     line
     |> String.trim()
     |> Jason.decode!()
-    |> parse_metadata
   end
 
   @spec request(binary, Impl.t(), keyword() | nil) :: {:ok, struct} | {:error, struct}
