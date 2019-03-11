@@ -11,10 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `mix bonny.gen.manifest --local` for building manifests w/o a Deployment for
   local testing
+- `cluster_name: :default` config options. Now uses [k8s](https://github.com/coryodaniel/k8s) cluster registration configuration.
+
+### Changed
+
+- Replaced `HTTPoison` with [k8s](https://github.com/coryodaniel/k8s).
+- Removed `Bypass` from test suite
 
 ### Removed
 
 - Removed `Impl.parse_metadata/1`.
+- Removed `kubeconf_file` and `kubeconf_opts` config options
 
 ## [0.3.0] - 2019-03-04
 
@@ -32,4 +39,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mix task: controller generator
 - mix task: dockerfile generator
 - mix task: k8s manifest generator
-

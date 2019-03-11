@@ -39,7 +39,7 @@ The only configuration parameters required are `:bonny` `controllers` and a `:k8
 
 config :k8s,
   clusters: %{
-    default: %{
+    default: %{ # `default` here must match `cluster_name` below
       conf: "~/.kube/config"
     }
   }

@@ -46,7 +46,6 @@ defmodule Bonny.MixProject do
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
 
       # Test deps
-      {:bypass, "~> 1.0", only: :test},
       {:excoveralls, "~> 0.10", only: :test}
     ]
   end

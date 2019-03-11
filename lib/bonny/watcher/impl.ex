@@ -6,20 +6,19 @@ defmodule Bonny.Watcher.Impl do
   alias Bonny.Watcher.Impl
   require Logger
 
+  @client Application.get_env(:bonny, :k8s_client, K8s.Client)
   @timeout 5 * 60 * 1000
   @type t :: %__MODULE__{
           spec: Bonny.CRD.t(),
-          cluster_name: String.t(),
-          mod: atom(),
+          controller: atom(),
           resource_version: String.t() | nil
         }
 
-  defstruct [:spec, :cluster_name, :mod, :resource_version]
+  defstruct [:spec, :controller, :resource_version]
 
   def new(controller) do
     %__MODULE__{
-      cluster_name: Bonny.Config.cluster_name(),
-      mod: controller,
+      controller: controller,
       spec: apply(controller, :crd_spec, []),
       resource_version: nil
     }
@@ -32,13 +31,50 @@ defmodule Bonny.Watcher.Impl do
   """
   @spec watch_for_changes(Impl.t(), pid()) :: nil
   def watch_for_changes(state = %Impl{}, watcher) do
-    group_version = Bonny.CRD.group_version(state.spec)
-    name = Bonny.CRD.plural(state.spec)
-    namespace = Bonny.Config.namespace()
+    operation = list_operation(state)
 
-    operation = K8s.Client.list(group_version, name, namespace: namespace)
-    K8s.Client.run(operation, state.cluster_name, stream_to: watcher, recv_timeout: @timeout)
+    rv =
+      case state.resource_version do
+        nil ->
+          case current_resource_version(state) do
+            {:ok, rv} ->
+              rv
+
+            {:error, msg} ->
+              Logger.error(fn -> msg end)
+          end
+
+        rv ->
+          rv
+      end
+
+    # @here, tests will always fail because K8s client starts...
+    # no cluster to connect to.
+    # watch_for_changes test fails because using bypass, not mocking right bullshit.
+
+    @client.watch(operation, Bonny.Config.cluster_name(),
+      params: %{resourceVersion: rv},
+      stream_to: watcher,
+      recv_timeout: @timeout
+    )
   end
+
+  @doc """
+  Set the resource version
+  """
+  @spec set_resource_version(Impl.t(), map | pos_integer) :: Impl.t()
+  def set_resource_version(state = %Impl{}, event = %{}) do
+    rv = get_in(event, ["object", "metadata", "resourceVersion"])
+    rv_int = String.to_integer(rv)
+    set_resource_version(state, rv_int)
+  end
+
+  def set_resource_version(state = %Impl{resource_version: previous}, rv)
+      when is_nil(previous) or previous < rv do
+    Map.put(state, :resource_version, rv)
+  end
+
+  def set_resource_version(state = %Impl{}, _), do: state
 
   @doc """
   Dispatches an `ADDED`, `MODIFIED`, and `DELETED` events to an controller
@@ -55,8 +91,6 @@ defmodule Bonny.Watcher.Impl do
 
   @spec do_dispatch(atom, atom, map) :: nil
   defp do_dispatch(controller, event, object) do
-    Logger.info("TODO: Update version; Object: #{inspect(object)}")
-
     Logger.debug(fn -> "Dispatching: #{inspect(controller)}.#{event}/1" end)
 
     case apply(controller, event, [object]) do
@@ -73,6 +107,29 @@ defmodule Bonny.Watcher.Impl do
     end
 
     nil
+  end
+
+  @spec list_operation(Impl.t()) :: K8s.Operation.t()
+  defp list_operation(state = %Impl{}) do
+    group_version = Bonny.CRD.group_version(state.spec)
+    name = Bonny.CRD.plural(state.spec)
+    namespace = Bonny.Config.namespace()
+
+    @client.list(group_version, name, namespace: namespace)
+  end
+
+  @spec current_resource_version(Impl.t()) :: {:ok, binary} | {:error, binary}
+  defp current_resource_version(state = %Impl{}) do
+    operation = list_operation(state)
+    response = @client.run(operation, Bonny.Config.cluster_name(), params: %{limit: 1})
+
+    case response do
+      {:ok, %{"metadata" => %{"resourceVersion" => rv}}} ->
+        {:ok, rv}
+
+      _ ->
+        {:error, "No resource version found for operation: #{inspect(operation)}"}
+    end
   end
 
   @doc """
