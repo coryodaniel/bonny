@@ -48,10 +48,6 @@ defmodule Bonny.Watcher.Impl do
           rv
       end
 
-    # @here, tests will always fail because K8s client starts...
-    # no cluster to connect to.
-    # watch_for_changes test fails because using bypass, not mocking right bullshit.
-
     @client.watch(operation, Bonny.Config.cluster_name(),
       params: %{resourceVersion: rv},
       stream_to: watcher,
