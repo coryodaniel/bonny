@@ -4,48 +4,24 @@ defmodule Bonny.Watcher.Impl do
   """
 
   alias Bonny.Watcher.Impl
-  alias K8s.Conf.RequestOptions
   require Logger
 
+  @client Application.get_env(:bonny, :k8s_client, K8s.Client)
+  @timeout 5 * 60 * 1000
   @type t :: %__MODULE__{
           spec: Bonny.CRD.t(),
-          config: K8s.Conf.t(),
-          mod: atom(),
+          controller: atom(),
           resource_version: String.t() | nil
         }
 
-  defstruct [:spec, :config, :mod, :resource_version]
+  defstruct [:spec, :controller, :resource_version]
 
   def new(controller) do
     %__MODULE__{
-      config: Bonny.Config.kubeconfig(),
-      mod: controller,
+      controller: controller,
       spec: apply(controller, :crd_spec, []),
       resource_version: nil
     }
-  end
-
-  @doc """
-  Returns the current resource version
-  """
-  @spec get_resource_version(Impl.t()) :: {:ok, Impl.t()} | :error
-  def get_resource_version(state = %Impl{spec: crd}) do
-    path = Bonny.CRD.list_path(crd)
-
-    case request(path, state) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        doc = Jason.decode!(body)
-        state = %{state | resource_version: doc["metadata"]["resourceVersion"]}
-        {:ok, state}
-
-      {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
-        Logger.error("Error getting resource version; HTTP Error code: #{code} #{body}")
-        :error
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.error("Error getting resource version; #{reason}")
-        :error
-    end
   end
 
   @doc """
@@ -55,11 +31,50 @@ defmodule Bonny.Watcher.Impl do
   """
   @spec watch_for_changes(Impl.t(), pid()) :: nil
   def watch_for_changes(state = %Impl{}, watcher) do
-    path = Bonny.CRD.watch_path(state.spec, state.resource_version)
-    request(path, state, stream_to: watcher, recv_timeout: 5 * 60 * 1000)
+    operation = list_operation(state)
 
-    nil
+    rv =
+      case state.resource_version do
+        nil ->
+          case current_resource_version(state) do
+            {:ok, rv} ->
+              rv
+
+            {:error, msg} ->
+              Logger.error(fn -> msg end)
+          end
+
+        rv ->
+          rv
+      end
+
+    # @here, tests will always fail because K8s client starts...
+    # no cluster to connect to.
+    # watch_for_changes test fails because using bypass, not mocking right bullshit.
+
+    @client.watch(operation, Bonny.Config.cluster_name(),
+      params: %{resourceVersion: rv},
+      stream_to: watcher,
+      recv_timeout: @timeout
+    )
   end
+
+  @doc """
+  Set the resource version
+  """
+  @spec set_resource_version(Impl.t(), map | pos_integer) :: Impl.t()
+  def set_resource_version(state = %Impl{}, event = %{}) do
+    rv = get_in(event, ["object", "metadata", "resourceVersion"])
+    rv_int = String.to_integer(rv)
+    set_resource_version(state, rv_int)
+  end
+
+  def set_resource_version(state = %Impl{resource_version: previous}, rv)
+      when is_nil(previous) or previous < rv do
+    Map.put(state, :resource_version, rv)
+  end
+
+  def set_resource_version(state = %Impl{}, _), do: state
 
   @doc """
   Dispatches an `ADDED`, `MODIFIED`, and `DELETED` events to an controller
@@ -94,6 +109,29 @@ defmodule Bonny.Watcher.Impl do
     nil
   end
 
+  @spec list_operation(Impl.t()) :: K8s.Operation.t()
+  defp list_operation(state = %Impl{}) do
+    group_version = Bonny.CRD.group_version(state.spec)
+    name = Bonny.CRD.plural(state.spec)
+    namespace = Bonny.Config.namespace()
+
+    @client.list(group_version, name, namespace: namespace)
+  end
+
+  @spec current_resource_version(Impl.t()) :: {:ok, binary} | {:error, binary}
+  defp current_resource_version(state = %Impl{}) do
+    operation = list_operation(state)
+    response = @client.run(operation, Bonny.Config.cluster_name(), params: %{limit: 1})
+
+    case response do
+      {:ok, %{"metadata" => %{"resourceVersion" => rv}}} ->
+        {:ok, rv}
+
+      _ ->
+        {:error, "No resource version found for operation: #{inspect(operation)}"}
+    end
+  end
+
   @doc """
   Receives a plaintext formatted JSON response line from `HTTPoison.AsyncChunk` and parses into a map
   """
@@ -102,19 +140,5 @@ defmodule Bonny.Watcher.Impl do
     line
     |> String.trim()
     |> Jason.decode!()
-  end
-
-  @spec request(binary, Impl.t(), keyword() | nil) :: {:ok, struct} | {:error, struct}
-  defp request(path, state, opts \\ []) do
-    request_options = RequestOptions.generate(state.config)
-
-    headers =
-      request_options.headers ++
-        [{"Accept", "application/json"}, {"Content-Type", "application/json"}]
-
-    options = Keyword.merge([ssl: request_options.ssl_options], opts)
-
-    url = Path.join(state.config.url, path)
-    HTTPoison.get(url, headers, options)
   end
 end

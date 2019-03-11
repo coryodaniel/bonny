@@ -14,6 +14,3 @@ analyze:
 
 docs:
 	mix docs
-
-i:
-	BONNY_CONFIG_FILE=~/.kube/config MIX_ENV=test iex -S mix

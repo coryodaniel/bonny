@@ -114,10 +114,4 @@ defmodule Bonny.ConfigTest do
       Application.put_env(:bonny, :labels, original)
     end
   end
-
-  # describe "kubeconfig/0" do
-  #   test "can be set via environment variable"
-  #   test "can be set via config.exs"
-  #   test "defaults to a service account"
-  # end
 end

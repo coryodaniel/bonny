@@ -32,40 +32,29 @@ defmodule Bonny.CRD do
             names: nil,
             version: nil
 
-  @doc "Plural name of CRD"
+  @doc """
+  Plural name of CRD
+
+  ## Examples
+
+      iex> Bonny.CRD.plural(%Bonny.CRD{names: %{plural: "greetings"}, scope: :namespaced, group: "test", version: "v1"})
+      "greetings"
+
+  """
   @spec plural(Bonny.CRD.t()) :: binary
   def plural(%Bonny.CRD{names: %{plural: plural}}), do: plural
 
   @doc """
-  URL Path to list a CRD's resources
+  Gets group version from CRD spec
 
-  *Namespaced CRD URL Path*
-  /apis/bonny.example.om/v1/namespaces/default/widgets
+  ## Examples
 
-  *Cluster Resource URL Path & `--all-namespaces` path*
-  /apis/example.com/v1/widgets
+      iex> Bonny.CRD.group_version(%Bonny.CRD{group: "hello.example.com", version: "v1", scope: :namespaced, names: %{}})
+      "hello.example.com/v1"
+
   """
-  @spec list_path(Bonny.CRD.t()) :: binary
-  def list_path(crd = %CRD{}), do: base_path(crd)
-
-  @spec watch_path(Bonny.CRD.t(), String.t() | integer) :: binary
-  def watch_path(crd = %CRD{}, resource_version) do
-    "#{base_path(crd)}?resourceVersion=#{resource_version}&watch=true"
-  end
-
-  @doc """
-  URL path to read the specified CustomResourceDefinition
-
-  *Namespaced CRD Resource URL Path*
-  /apis/example.com/v1/namespaces/default/widgets/test-widget
-
-  *Cluster CRD Resource URL Path & `--all-namespaces` path*
-  /apis/example.com/v1/widgets/test-widget
-  """
-  @spec read_path(Bonny.CRD.t(), String.t()) :: binary
-  def read_path(crd = %CRD{}, name) do
-    "#{base_path(crd)}/#{name}"
-  end
+  @spec group_version(Bonny.CRD.t()) :: binary
+  def group_version(%Bonny.CRD{group: g, version: v}), do: "#{g}/#{v}"
 
   @doc """
   Generates the map equivalent of the Kubernetes CRD YAML manifest
@@ -99,18 +88,5 @@ defmodule Bonny.CRD do
       },
       spec: %{crd | scope: cased_scope}
     }
-  end
-
-  defp base_path(%CRD{
-         scope: :namespaced,
-         version: version,
-         group: group,
-         names: %{plural: plural}
-       }) do
-    "/apis/#{group}/#{version}/namespaces/#{Bonny.Config.namespace()}/#{plural}"
-  end
-
-  defp base_path(%CRD{scope: :cluster, version: version, group: group, names: %{plural: plural}}) do
-    "/apis/#{group}/#{version}/#{plural}"
   end
 end

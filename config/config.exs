@@ -4,9 +4,10 @@ if Mix.env() == :test do
   config :logger, level: :error
 
   config :bonny,
+    k8s_client: Bonny.K8sMockClient,
     controllers: [Widget, Cog],
     group: "example.com",
-    kubeconf_file: "./test/support/kubeconfig.yaml"
+    cluster_name: :test
 end
 
 if Mix.env() == :dev do

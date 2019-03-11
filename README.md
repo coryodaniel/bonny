@@ -1,6 +1,5 @@
 ![Bonny](./banner.png "Bonny")
 
-
 [![Build Status](https://travis-ci.org/coryodaniel/bonny.svg?branch=master)](https://travis-ci.org/coryodaniel/bonny)
 [![Coverage Status](https://coveralls.io/repos/github/coryodaniel/bonny/badge.svg?branch=master)](https://coveralls.io/github/coryodaniel/bonny?branch=master)
 [![Hex.pm](http://img.shields.io/hexpm/v/bonny.svg?style=flat)](https://hex.pm/packages/bonny)
@@ -12,10 +11,10 @@ Extend the Kubernetes API and implement CustomResourceDefinitions lifecycles in 
 
 If Kubernetes CRDs and controllers are new to you, read up on the [terminology](#terminology).
 
-*Tutorials and Examples:*
+_Tutorials and Examples:_
 
-* HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
-* HelloOperator [source code](https://gitub.com/coryodaniel/hello_operator)
+- HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
+- HelloOperator [source code](https://gitub.com/coryodaniel/hello_operator)
 
 ## Installation
 
@@ -32,9 +31,19 @@ end
 
 ### Configuration
 
-The only configuration parameter required is `controllers`:
+Bonny uses the [k8s client](https://github.com/coryodaniel/k8s) under the hood.
+
+The only configuration parameters required are `:bonny` `controllers` and a `:k8s` cluster:
 
 ```elixir
+
+config :k8s,
+  clusters: %{
+    default: %{ # `default` here must match `cluster_name` below
+      conf: "~/.kube/config"
+    }
+  }
+
 config :bonny,
   # Add each CRD Controller module for this operator to load here
   # Defaults to none. This *must* be set.
@@ -43,6 +52,9 @@ config :bonny,
     MyApp.Controllers.V1.Database,
     MyApp.Controllers.V1.Memcached
   ],
+
+  # K8s.Cluster to use, defaults to :default
+  cluster_name: :default,
 
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
@@ -65,18 +77,12 @@ config :bonny,
   resources: %{
     limits: %{cpu: "200m", memory: "200Mi"},
     requests: %{cpu: "200m", memory: "200Mi"}
-  },
-
-  # Kubernetes YAML config, defaults to the service account of the pod
-  kubeconf_file: "",
-
-  # Defaults to "current-context" if a config file is provided, override user, cluster. or context here
-  kubeconf_opts: []
+  }
 ```
 
 ## Example Operators built with Bonny
 
-* [Hello Operator](https://github.com/coryodaniel/hello_operator)
+- [Hello Operator](https://github.com/coryodaniel/hello_operator)
 
 ## Bonny Generators
 
@@ -100,32 +106,32 @@ You can specify the version flag to create a new version of a controller. Bonny 
 mix bonny.gen.controller Widget widgets --version v2alpha1
 ```
 
-*Note:* The one restriction with versions is that they will be camelized into a module name.
+_Note:_ The one restriction with versions is that they will be camelized into a module name.
 
 Open up your controller and add functionality for your resoures lifecycle:
 
-* Add
-* Modify
-* Delete
+- Add
+- Modify
+- Delete
 
 Each controller can create multiple resources.
 
-For example, a *todo app* controller could deploy a `Deployment` and a `Service`.
+For example, a _todo app_ controller could deploy a `Deployment` and a `Service`.
 
 Your operator can also have multiple controllers if you want to support multiple resources in your operator!
 
 Check out the two test controllers:
 
-* [Cog](./test/support/cog.ex)
-* [Widget](./test/support/widget.ex)
+- [Cog](./test/support/cog.ex)
+- [Widget](./test/support/widget.ex)
 
 ### Generating a dockerfile
 
-The following command will generate a dockerfile *for your operator*. This will need to be pushed to a docker repository that your kubernetes cluster can access.
+The following command will generate a dockerfile _for your operator_. This will need to be pushed to a docker repository that your kubernetes cluster can access.
 
 Again, this Dockerfile is for your operator, not for the pods your operator may deploy.
 
-You can skip this step when developing by running your operator *external* to the cluster.
+You can skip this step when developing by running your operator _external_ to the cluster.
 
 ```shell
 mix bonny.gen.dockerfile
@@ -139,10 +145,10 @@ docker push ${BONNY_IMAGE}:latest
 
 This will generate the entire manifest for this operator including:
 
-* CRD manifests
-* RBAC
-* Service Account
-* Operator Deployment
+- CRD manifests
+- RBAC
+- Service Account
+- Operator Deployment
 
 The operator manifest generator requires the `image` flag to be passed if you plan to deploy the operator in your cluster. This is the docker image URL of your operators docker image created by `mix bonny.gen.docker` above.
 
@@ -150,19 +156,19 @@ The operator manifest generator requires the `image` flag to be passed if you pl
 mix bonny.gen.manifest --image ${BONNY_IMAGE}
 ```
 
-You may *omit* the `--image` flag if you want to generate a manifest _without the deployment_ so that you can develop locally running the operator outside of the cluster.
+You may _omit_ the `--image` flag if you want to generate a manifest _without the deployment_ so that you can develop locally running the operator outside of the cluster.
 
 **Note:** YAML output is JSON formatted YAML. Sorry, elixirland isn't fond of YAML :D
 
 By default the manifest will generate the service account and deployment in the "default" namespace.
 
-*To set the namespace explicitly:*
+_To set the namespace explicitly:_
 
 ```shell
 mix bonny.gen.manifest --out - -n test
 ```
 
-*Alternatively you can apply it directly to kubectl*:
+_Alternatively you can apply it directly to kubectl_:
 
 ```shell
 mix bonny.gen.manifest --out - -n test | kubectl apply -f - -n test
@@ -172,24 +178,24 @@ mix bonny.gen.manifest --out - -n test | kubectl apply -f - -n test
 
 TODO: Need to support validation / OpenAPI.
 
-* https://github.com/coryodaniel/bonny/issues/9
-* https://github.com/coryodaniel/bonny/issues/10
+- https://github.com/coryodaniel/bonny/issues/9
+- https://github.com/coryodaniel/bonny/issues/10
 
 ## Terminology
 
-*[Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-resources)*:
+_[Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-resources)_:
 
 > A custom resource is an extension of the Kubernetes API that is not necessarily available on every Kubernetes cluster. In other words, it represents a customization of a particular Kubernetes installation.
 
-*[CRD Custom Resource Definition](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)*:
+_[CRD Custom Resource Definition](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)_:
 
 > The CustomResourceDefinition API resource allows you to define custom resources. Defining a CRD object creates a new custom resource with a name and schema that you specify. The Kubernetes API serves and handles the storage of your custom resource.
 
-*[Controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers)*:
+_[Controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers)_:
 
 > A custom controller is a controller that users can deploy and update on a running cluster, independently of the cluster’s own lifecycle. Custom controllers can work with any kind of resource, but they are especially effective when combined with custom resources. The Operator pattern is one example of such a combination. It allows developers to encode domain knowledge for specific applications into an extension of the Kubernetes API.
 
-*Operator*:
+_Operator_:
 
 A set of application specific controllers deployed on Kubernetes and managed via kubectl and the Kubernetes API.
 
@@ -199,40 +205,12 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/bonny](https://hexdocs.pm/bonny).
 
-
 ## Testing
 
 ```elixir
 mix test
 ```
 
-### Starting an interactive test session
-
-This will load two modules in the operator, `Widget` and `Cog`.
-
-**Create the CRDs:**
-
-```shell
-kubectl apply -f ./test/support/crd.yaml
-```
-
-**Start the session:**
-
-```elixir
-BONNY_CONFIG_FILE=~/.kube/config MIX_ENV=test iex -S mix
-```
-
-The GenServers wait about 5 seconds to start watching.
-
-**Trigger some events:**
-
-```shell
-kubectl apply -f ./test/support/widget.yaml
-```
-
-If log level is set to `debug` you will see the events get sent to the pod's logs.
-
-
 ## Operator Blog Posts
 
-* [Why Kubernetes Operators are a game changer](https://blog.couchbase.com/kubernetes-operators-game-changer/)
+- [Why Kubernetes Operators are a game changer](https://blog.couchbase.com/kubernetes-operators-game-changer/)

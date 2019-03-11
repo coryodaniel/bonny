@@ -24,10 +24,7 @@ defmodule Bonny.Watcher do
   end
 
   def handle_info(:watch, state) do
-    {:ok, state} = Impl.get_resource_version(state)
-    Logger.debug(fn -> "Starting watch from resource version: #{state.resource_version}" end)
     Impl.watch_for_changes(state, self())
-
     {:noreply, state}
   end
 
@@ -44,10 +41,10 @@ defmodule Bonny.Watcher do
 
   @impl GenServer
   def handle_info(%HTTPoison.AsyncChunk{chunk: chunk}, state = %Impl{}) do
-    chunk
-    |> Impl.parse_chunk()
-    |> Impl.dispatch(state.mod)
+    event = Impl.parse_chunk(chunk)
+    Impl.dispatch(event, state.controller)
 
+    state = Impl.set_resource_version(state, event)
     {:noreply, state}
   end
 
