@@ -3,16 +3,28 @@ defmodule Bonny.Watcher.ImplTest do
   use ExUnit.Case, async: true
   alias Bonny.Watcher.Impl
 
+  defp chunk(), do: "{\"type\":\"ADDED\",\"object\":{\"apiVersion\":\"example.com/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"example.com/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705460\",\"selfLink\":\"/apis/example.com/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
+
   defmodule Whizbang do
     @moduledoc false
-    def add(evt), do: emit(:added, evt)
-    def modify(evt), do: emit(:modified, evt)
-    def delete(evt), do: emit(:deleted, evt)
 
-    defp emit(type, evt) do
-      send(self(), {type, evt})
-      :ok
+    use Agent
+
+    def start_link() do
+      Agent.start_link(fn -> [] end, name: __MODULE__)
     end
+
+    def get() do
+      Agent.get(__MODULE__, fn(events) -> events end)
+    end
+
+    def put(event) do
+      Agent.update(__MODULE__, fn(events) -> [event|events] end)
+    end
+
+    def add(evt), do: put({:added, evt})
+    def modify(evt), do: put({:modified, evt})
+    def delete(evt), do: put({:deleted, evt})
   end
 
   describe "new/1" do
@@ -64,22 +76,23 @@ defmodule Bonny.Watcher.ImplTest do
 
   describe "parse_chunk/1" do
     test "strips whitespace and parses json" do
-      chunk =
-        "{\"type\":\"ADDED\",\"object\":{\"apiVersion\":\"example.com/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"example.com/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705460\",\"selfLink\":\"/apis/example.com/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
-
-      result = Impl.parse_chunk(chunk)
+      result = Impl.parse_chunk(chunk())
       assert %{"type" => "ADDED"} = result
     end
   end
 
   describe "dispatch/2" do
     test "dispatches a kubernetes API event to the given module" do
-      chunk =
-        "{\"type\":\"ADDED\",\"object\":{\"apiVersion\":\"example.com/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"example.com/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705460\",\"selfLink\":\"/apis/example.com/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
+      {:ok, _} = Whizbang.start_link()
 
-      added_chunk = Impl.parse_chunk(chunk)
-      Impl.dispatch(added_chunk, Whizbang)
-      assert_received({:added, added_event})
+      chunk()
+      |> Impl.parse_chunk
+      |> Impl.dispatch(Whizbang)
+
+      # Professional.
+      :timer.sleep(1000)
+      assert [{:added, event}] = Whizbang.get
+      assert %{"apiVersion" => "example.com/v1"} = event
     end
   end
 end
