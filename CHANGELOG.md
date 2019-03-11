@@ -15,11 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Async watcher event dispatch
 - Replaced `HTTPoison` with [k8s](https://github.com/coryodaniel/k8s).
-- Removed `Bypass` from test suite
 
 ### Removed
 
+- Removed `Bypass` from test suite
 - Removed `Impl.parse_metadata/1`.
 - Removed `kubeconf_file` and `kubeconf_opts` config options
 

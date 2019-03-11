@@ -75,7 +75,7 @@ defmodule Bonny.Watcher.Impl do
   @doc """
   Dispatches an `ADDED`, `MODIFIED`, and `DELETED` events to an controller
   """
-  @spec dispatch(map, atom) :: nil
+  @spec dispatch(map, atom) :: no_return
   def dispatch(%{"type" => "ADDED", "object" => object}, controller),
     do: do_dispatch(controller, :add, object)
 
@@ -87,22 +87,22 @@ defmodule Bonny.Watcher.Impl do
 
   @spec do_dispatch(atom, atom, map) :: nil
   defp do_dispatch(controller, event, object) do
-    Logger.debug(fn -> "Dispatching: #{inspect(controller)}.#{event}/1" end)
+    Task.start fn ->
+      Logger.debug(fn -> "Dispatching: #{inspect(controller)}.#{event}/1" end)
 
-    case apply(controller, event, [object]) do
-      :ok ->
-        Logger.debug(fn -> "#{inspect(controller)}.#{event}/1 succeeded" end)
+      case apply(controller, event, [object]) do
+        :ok ->
+          Logger.debug(fn -> "#{inspect(controller)}.#{event}/1 succeeded" end)
 
-      :error ->
-        Logger.error(fn -> "#{inspect(controller)}.#{event}/1 failed" end)
+        :error ->
+          Logger.error(fn -> "#{inspect(controller)}.#{event}/1 failed" end)
 
-      invalid ->
-        Logger.error(fn ->
-          "Unsupported response from #{inspect(controller)}.#{event}/1: #{inspect(invalid)}"
-        end)
+        invalid ->
+          Logger.error(fn ->
+            "Unsupported response from #{inspect(controller)}.#{event}/1: #{inspect(invalid)}"
+          end)
+      end
     end
-
-    nil
   end
 
   @spec list_operation(Impl.t()) :: K8s.Operation.t()
