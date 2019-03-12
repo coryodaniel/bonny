@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `{:error, binary}` as a return value of Controller lifecycle methods
 - Implemented `:telemetry` library
 - `Bonny.Telemetry.events/0` exposes list of telemetry events
 - `mix bonny.gen.manifest --local` for building manifests w/o a Deployment for
