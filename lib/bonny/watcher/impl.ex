@@ -16,9 +16,13 @@ defmodule Bonny.Watcher.Impl do
 
   defstruct [:spec, :controller, :resource_version]
 
+  @doc """
+  Initialize a `Bonny.Watcher` state
+  """
+  @spec new(module()) :: Impl.t()
   def new(controller) do
     spec = apply(controller, :crd_spec, [])
-    Bonny.Telemetry.emit([:watcher, :initialized], telemetry_metadata(spec))
+    Bonny.Telemetry.emit([:watcher, :initialized], %{}, telemetry_metadata(spec))
 
     %__MODULE__{
       controller: controller,
@@ -32,9 +36,9 @@ defmodule Bonny.Watcher.Impl do
 
   Streams HTTPoison response to `Bonny.Watcher`
   """
-  @spec watch_for_changes(Impl.t(), pid()) :: nil
+  @spec watch_for_changes(Impl.t(), pid()) :: no_return
   def watch_for_changes(state = %Impl{}, watcher) do
-    Bonny.Telemetry.emit([:watcher, :started], telemetry_metadata(state.spec))
+    Bonny.Telemetry.emit([:watcher, :started], %{}, telemetry_metadata(state.spec))
 
     operation = list_operation(state)
     rv = get_resource_version(state)
@@ -97,7 +101,7 @@ defmodule Bonny.Watcher.Impl do
   def dispatch(%{"type" => "DELETED", "object" => object}, controller),
     do: do_dispatch(controller, :delete, object)
 
-  @spec do_dispatch(atom, atom, map) :: nil
+  @spec do_dispatch(atom, atom, map) :: no_return
   defp do_dispatch(controller, event, object) do
     Task.start(fn ->
       {time, result} = Bonny.Telemetry.measure(fn -> apply(controller, event, [object]) end)
@@ -118,7 +122,7 @@ defmodule Bonny.Watcher.Impl do
       measurements = %{duration: time}
       metadata = telemetry_metadata(controller.crd_spec, %{event: event, success: was_successful})
 
-      Bonny.Telemetry.emit([:watcher, :dispatched], metadata, measurements)
+      Bonny.Telemetry.emit([:watcher, :dispatched], measurements, metadata)
     end)
   end
 
@@ -157,7 +161,7 @@ defmodule Bonny.Watcher.Impl do
 
   @doc false
   @spec telemetry_metadata(Bonny.CRD.t(), map | nil) :: map
-  def telemetry_metadata(spec = %Bonny.CRD{}, extra \\ %{}) do
+  defp telemetry_metadata(spec = %Bonny.CRD{}, extra \\ %{}) do
     base = %{
       api_version: Bonny.CRD.api_version(spec),
       kind: Bonny.CRD.kind(spec)

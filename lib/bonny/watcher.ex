@@ -14,12 +14,8 @@ defmodule Bonny.Watcher do
   @impl GenServer
   def init(controller) do
     state = Impl.new(controller)
-    schedule_watcher()
-    {:ok, state}
-  end
-
-  defp schedule_watcher() do
     Process.send_after(self(), :watch, 5000)
+    {:ok, state}
   end
 
   def handle_info(:watch, state) do
