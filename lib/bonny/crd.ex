@@ -33,28 +33,28 @@ defmodule Bonny.CRD do
             version: nil
 
   @doc """
-  Plural name of CRD
+  CRD Kind or plural name
 
   ## Examples
 
-      iex> Bonny.CRD.plural(%Bonny.CRD{names: %{plural: "greetings"}, scope: :namespaced, group: "test", version: "v1"})
+      iex> Bonny.CRD.kind(%Bonny.CRD{names: %{plural: "greetings"}, scope: :namespaced, group: "test", version: "v1"})
       "greetings"
 
   """
-  @spec plural(Bonny.CRD.t()) :: binary
-  def plural(%Bonny.CRD{names: %{plural: plural}}), do: plural
+  @spec kind(Bonny.CRD.t()) :: binary
+  def kind(%Bonny.CRD{names: %{plural: plural}}), do: plural
 
   @doc """
   Gets group version from CRD spec
 
   ## Examples
 
-      iex> Bonny.CRD.group_version(%Bonny.CRD{group: "hello.example.com", version: "v1", scope: :namespaced, names: %{}})
+      iex> Bonny.CRD.api_version(%Bonny.CRD{group: "hello.example.com", version: "v1", scope: :namespaced, names: %{}})
       "hello.example.com/v1"
 
   """
-  @spec group_version(Bonny.CRD.t()) :: binary
-  def group_version(%Bonny.CRD{group: g, version: v}), do: "#{g}/#{v}"
+  @spec api_version(Bonny.CRD.t()) :: binary
+  def api_version(%Bonny.CRD{group: g, version: v}), do: "#{g}/#{v}"
 
   @doc """
   Generates the map equivalent of the Kubernetes CRD YAML manifest

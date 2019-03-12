@@ -4,6 +4,8 @@ defmodule Bonny.Application do
   use Application
 
   def start(_type, _args) do
+    Bonny.Telemetry.attach()
+
     children =
       Bonny.Config.controllers()
       |> Enum.map(fn controller ->

@@ -2,12 +2,15 @@ defmodule Bonny.Watcher.ImplTest do
   @moduledoc false
   use ExUnit.Case, async: true
   alias Bonny.Watcher.Impl
+  doctest Bonny.Watcher.Impl
 
-  defp chunk(), do: "{\"type\":\"ADDED\",\"object\":{\"apiVersion\":\"example.com/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"example.com/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705460\",\"selfLink\":\"/apis/example.com/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
+  defp chunk(),
+    do:
+      "{\"type\":\"ADDED\",\"object\":{\"apiVersion\":\"example.com/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"example.com/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705460\",\"selfLink\":\"/apis/example.com/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
 
   defmodule Whizbang do
     @moduledoc false
-
+    use Bonny.Controller
     use Agent
 
     def start_link() do
@@ -15,11 +18,11 @@ defmodule Bonny.Watcher.ImplTest do
     end
 
     def get() do
-      Agent.get(__MODULE__, fn(events) -> events end)
+      Agent.get(__MODULE__, fn events -> events end)
     end
 
     def put(event) do
-      Agent.update(__MODULE__, fn(events) -> [event|events] end)
+      Agent.update(__MODULE__, fn events -> [event | events] end)
     end
 
     def add(evt), do: put({:added, evt})
@@ -86,12 +89,12 @@ defmodule Bonny.Watcher.ImplTest do
       {:ok, _} = Whizbang.start_link()
 
       chunk()
-      |> Impl.parse_chunk
+      |> Impl.parse_chunk()
       |> Impl.dispatch(Whizbang)
 
       # Professional.
       :timer.sleep(1000)
-      assert [{:added, event}] = Whizbang.get
+      assert [{:added, event}] = Whizbang.get()
       assert %{"apiVersion" => "example.com/v1"} = event
     end
   end

@@ -1,6 +1,6 @@
 defmodule Bonny.K8sMockClient do
-  def list(group_version, kind, path_params) do
-    K8s.Operation.build(:list, group_version, kind, path_params)
+  def list(api_version, kind, path_params) do
+    K8s.Operation.build(:list, api_version, kind, path_params)
   end
 
   def watch(_op, :test, opts) do
