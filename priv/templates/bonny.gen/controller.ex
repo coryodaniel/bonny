@@ -60,7 +60,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @doc """
   Handles an `ADDED` event
   """
-  @spec add(map()) :: :ok | :error
+  @spec add(map()) :: :ok | :error | {:error, binary}
   @impl Bonny.Controller
   def add(payload) do
     IO.inspect(payload)
@@ -70,7 +70,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @doc """
   Handles a `MODIFIED` event
   """
-  @spec modify(map()) :: :ok | :error
+  @spec modify(map()) :: :ok | :error | {:error, binary}
   @impl Bonny.Controller
   def modify(payload) do
     IO.inspect(payload)
@@ -80,7 +80,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @doc """
   Handles a `DELETED` event
   """
-  @spec delete(map()) :: :ok | :error
+  @spec delete(map()) :: :ok | :error | {:error, binary}
   @impl Bonny.Controller
   def delete(payload) do
     IO.inspect(payload)

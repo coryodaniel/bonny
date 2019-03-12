@@ -11,6 +11,8 @@ if Mix.env() == :test do
 end
 
 if Mix.env() == :dev do
+  config :logger, level: :debug
+
   config :mix_test_watch,
     tasks: [
       "test --cover",

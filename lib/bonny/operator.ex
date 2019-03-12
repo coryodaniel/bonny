@@ -19,7 +19,7 @@ defmodule Bonny.Operator do
 
   @doc "ClusterRole rules"
   def rules do
-    plural_names = Enum.map(Bonny.Config.controllers(), &Bonny.CRD.plural(&1.crd_spec()))
+    plural_names = Enum.map(Bonny.Config.controllers(), &Bonny.CRD.kind(&1.crd_spec()))
 
     base_rules = [
       %{

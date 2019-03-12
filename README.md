@@ -181,6 +181,16 @@ TODO: Need to support validation / OpenAPI.
 - https://github.com/coryodaniel/bonny/issues/9
 - https://github.com/coryodaniel/bonny/issues/10
 
+## Telemetry
+
+Bonny uses the `telemetry` library to emit event metrics.
+
+Emmited events:
+
+- [:bonny, :watcher, :initialized]
+- [:bonny, :watcher, :started]
+- [:bonny, :watcher, :dispatched]
+
 ## Terminology
 
 _[Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-resources)_:

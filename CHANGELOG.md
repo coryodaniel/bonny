@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Implemented `:telemetry` library
+- `Bonny.Telemetry.events/0` exposes list of telemetry events
 - `mix bonny.gen.manifest --local` for building manifests w/o a Deployment for
   local testing
 - `cluster_name: :default` config options. Now uses [k8s](https://github.com/coryodaniel/k8s) cluster registration configuration.
@@ -16,13 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Async watcher event dispatch
-- Replaced `HTTPoison` with [k8s](https://github.com/coryodaniel/k8s).
+- Replaced `HTTPoison` with [k8s](https://github.com/coryodaniel/k8s)
 
 ### Removed
 
-- Removed `Bypass` from test suite
-- Removed `Impl.parse_metadata/1`.
-- Removed `kubeconf_file` and `kubeconf_opts` config options
+- Renamed `group_version` -> `api_version`
+- Renamed `Bonny.CRD.plural/0` -> `Bonny.CRD.kind/0`
+- `Bypass` from test suite
+- `Impl.parse_metadata/1`
+- `kubeconf_file` and `kubeconf_opts` config options
 
 ## [0.3.0] - 2019-03-04
 

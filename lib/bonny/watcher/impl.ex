@@ -17,9 +17,12 @@ defmodule Bonny.Watcher.Impl do
   defstruct [:spec, :controller, :resource_version]
 
   def new(controller) do
+    spec = apply(controller, :crd_spec, [])
+    Bonny.Telemetry.emit([:watcher, :initialized], telemetry_metadata(spec))
+
     %__MODULE__{
       controller: controller,
-      spec: apply(controller, :crd_spec, []),
+      spec: spec,
       resource_version: nil
     }
   end
@@ -31,22 +34,10 @@ defmodule Bonny.Watcher.Impl do
   """
   @spec watch_for_changes(Impl.t(), pid()) :: nil
   def watch_for_changes(state = %Impl{}, watcher) do
+    Bonny.Telemetry.emit([:watcher, :started], telemetry_metadata(state.spec))
+
     operation = list_operation(state)
-
-    rv =
-      case state.resource_version do
-        nil ->
-          case current_resource_version(state) do
-            {:ok, rv} ->
-              rv
-
-            {:error, msg} ->
-              Logger.error(fn -> msg end)
-          end
-
-        rv ->
-          rv
-      end
+    rv = get_resource_version(state)
 
     @client.watch(operation, Bonny.Config.cluster_name(),
       params: %{resourceVersion: rv},
@@ -58,7 +49,7 @@ defmodule Bonny.Watcher.Impl do
   @doc """
   Set the resource version
   """
-  @spec set_resource_version(Impl.t(), map | pos_integer) :: Impl.t()
+  @spec set_resource_version(Impl.t(), map | integer) :: Impl.t()
   def set_resource_version(state = %Impl{}, event = %{}) do
     rv = get_in(event, ["object", "metadata", "resourceVersion"])
     rv_int = String.to_integer(rv)
@@ -71,6 +62,27 @@ defmodule Bonny.Watcher.Impl do
   end
 
   def set_resource_version(state = %Impl{}, _), do: state
+
+  @doc """
+  Gets the resource version from the state, or fetches it from kubernetes API if not present
+  """
+  @spec get_resource_version(Impl.t()) :: integer
+  def get_resource_version(state = %Impl{}) do
+    case state.resource_version do
+      nil ->
+        case fetch_resource_version(state) do
+          {:ok, rv} ->
+            rv
+
+          {:error, msg} ->
+            Logger.error(fn -> msg end)
+            0
+        end
+
+      rv ->
+        rv
+    end
+  end
 
   @doc """
   Dispatches an `ADDED`, `MODIFIED`, and `DELETED` events to an controller
@@ -87,35 +99,40 @@ defmodule Bonny.Watcher.Impl do
 
   @spec do_dispatch(atom, atom, map) :: nil
   defp do_dispatch(controller, event, object) do
-    Task.start fn ->
-      Logger.debug(fn -> "Dispatching: #{inspect(controller)}.#{event}/1" end)
+    Task.start(fn ->
+      {time, result} = Bonny.Telemetry.measure(fn -> apply(controller, event, [object]) end)
 
-      case apply(controller, event, [object]) do
-        :ok ->
-          Logger.debug(fn -> "#{inspect(controller)}.#{event}/1 succeeded" end)
+      was_successful =
+        case result do
+          :ok ->
+            true
 
-        :error ->
-          Logger.error(fn -> "#{inspect(controller)}.#{event}/1 failed" end)
+          :error ->
+            false
 
-        invalid ->
-          Logger.error(fn ->
-            "Unsupported response from #{inspect(controller)}.#{event}/1: #{inspect(invalid)}"
-          end)
-      end
-    end
+          {:error, msg} ->
+            Logger.error(fn -> msg end)
+            false
+        end
+
+      measurements = %{duration: time}
+      metadata = telemetry_metadata(controller.crd_spec, %{event: event, success: was_successful})
+
+      Bonny.Telemetry.emit([:watcher, :dispatched], metadata, measurements)
+    end)
   end
 
   @spec list_operation(Impl.t()) :: K8s.Operation.t()
   defp list_operation(state = %Impl{}) do
-    group_version = Bonny.CRD.group_version(state.spec)
-    name = Bonny.CRD.plural(state.spec)
+    api_version = Bonny.CRD.api_version(state.spec)
+    name = Bonny.CRD.kind(state.spec)
     namespace = Bonny.Config.namespace()
 
-    @client.list(group_version, name, namespace: namespace)
+    @client.list(api_version, name, namespace: namespace)
   end
 
-  @spec current_resource_version(Impl.t()) :: {:ok, binary} | {:error, binary}
-  defp current_resource_version(state = %Impl{}) do
+  @spec fetch_resource_version(Impl.t()) :: {:ok, binary} | {:error, binary}
+  defp fetch_resource_version(state = %Impl{}) do
     operation = list_operation(state)
     response = @client.run(operation, Bonny.Config.cluster_name(), params: %{limit: 1})
 
@@ -136,5 +153,16 @@ defmodule Bonny.Watcher.Impl do
     line
     |> String.trim()
     |> Jason.decode!()
+  end
+
+  @doc false
+  @spec telemetry_metadata(Bonny.CRD.t(), map | nil) :: map
+  def telemetry_metadata(spec = %Bonny.CRD{}, extra \\ %{}) do
+    base = %{
+      api_version: Bonny.CRD.api_version(spec),
+      kind: Bonny.CRD.kind(spec)
+    }
+
+    Map.merge(base, extra)
   end
 end

@@ -14,7 +14,6 @@ defmodule Bonny.Watcher do
   @impl GenServer
   def init(controller) do
     state = Impl.new(controller)
-    Logger.debug(fn -> "Starting new Bonny.Watcher #{inspect(state)}" end)
     schedule_watcher()
     {:ok, state}
   end
