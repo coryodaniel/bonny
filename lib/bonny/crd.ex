@@ -89,4 +89,15 @@ defmodule Bonny.CRD do
       spec: %{crd | scope: cased_scope}
     }
   end
+
+  @doc false
+  @spec telemetry_metadata(Bonny.CRD.t(), map | nil) :: map
+  def telemetry_metadata(spec = %Bonny.CRD{}, extra \\ %{}) do
+    base = %{
+      api_version: Bonny.CRD.api_version(spec),
+      kind: Bonny.CRD.kind(spec)
+    }
+
+    Map.merge(base, extra)
+  end
 end

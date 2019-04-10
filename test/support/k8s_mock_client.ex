@@ -8,13 +8,47 @@ defmodule Bonny.K8sMockClient do
   end
 
   def watch(_op, :test, opts) do
-    # [params: %{resourceVersion: 1337}, stream_to: pid, recv_timeout: 300000]
     watcher = opts[:stream_to]
     send_chunk(watcher, added_chunk())
     send_chunk(watcher, deleted_chunk())
   end
 
-  def run(_, _, _) do
+  # Mock for Reconciler.run/2
+  def run(%K8s.Operation{kind: "whizbangs", method: :get, verb: :list}, _,
+        params: %{continue: nil, limit: 50}
+      ) do
+    response = %{
+      "metadata" => %{"continue" => "foo"},
+      "items" => [%{"page" => 1}]
+    }
+
+    {:ok, response}
+  end
+
+  def run(%K8s.Operation{kind: "whizbangs", method: :get, verb: :list}, _,
+        params: %{continue: "foo", limit: 50}
+      ) do
+    response = %{
+      "metadata" => %{"continue" => ""},
+      "items" => [%{"page" => 2}]
+    }
+
+    {:ok, response}
+  end
+
+  # Mock response for Impl.get_resource_version/1
+  def run(%K8s.Operation{kind: "widgets", method: :get, verb: :list}, _, params: %{limit: 1}) do
+    response = %{"metadata" => %{"resourceVersion" => "1337"}}
+    {:ok, response}
+  end
+
+  # Mock response for Impl.watch_for_changes/2
+  def run(%K8s.Operation{kind: "cogs", method: :get, verb: :list}, _, _) do
+    response = %{"metadata" => %{"resourceVersion" => "1"}}
+    {:ok, response}
+  end
+
+  def run(c, _, _) do
     {:ok, %{"mock" => true}}
   end
 

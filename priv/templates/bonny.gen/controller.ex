@@ -86,4 +86,14 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
     IO.inspect(payload)
     :ok
   end
+
+  @doc """
+  Called periodically for each existing CustomResource to allow for reconciliation.
+  """
+  @spec reconcile(map()) :: :ok | :error | {:error, binary}
+  @impl Bonny.Controller
+  def reconcile(payload) do
+    IO.inspect(payload)
+    :ok
+  end
 end

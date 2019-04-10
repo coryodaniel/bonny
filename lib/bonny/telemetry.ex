@@ -8,7 +8,8 @@ defmodule Bonny.Telemetry do
     [
       [:bonny, :watcher, :initialized],
       [:bonny, :watcher, :started],
-      [:bonny, :watcher, :dispatched]
+      [:bonny, :watcher, :dispatched],
+      [:bonny, :reconciler, :reconciled]
     ]
   end
 
@@ -17,12 +18,7 @@ defmodule Bonny.Telemetry do
 
   Prepends `:bonnny` to all atom lists.
   """
-  @spec emit(list(atom)) :: :ok
-  @spec emit(list(atom), map) :: :ok
   @spec emit(list(atom), map, map) :: :ok
-  def emit(names), do: emit(names, %{}, %{})
-  def emit(names, measurements = %{}), do: emit(names, measurements, %{})
-
   def emit(names, measurements = %{}, metadata = %{}),
     do: :telemetry.execute([:bonny | names], measurements, metadata)
 
@@ -41,7 +37,6 @@ defmodule Bonny.Telemetry do
   def measure(function) do
     {elapsed, retval} = :timer.tc(function)
     seconds = elapsed / 1_000_000
-
     {seconds, retval}
   end
 end
