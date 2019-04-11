@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2019-04-11
+
 ### Added
 
 - Support for a reconcile/1 callback
@@ -30,6 +32,7 @@ when fetching batches of items to reconcile
 
 - Receiving :DOWN messages no longer crashes Watcher [#20](https://github.com/coryodaniel/bonny/issues/20)
 - Issue with partially received events [#43](https://github.com/coryodaniel/bonny/issues/43)
+- Fix invalid singular name generation from module names "MyMod" -> my_mod; "MyMod" -> mymod
 
 ### Removed
 
