@@ -4,12 +4,13 @@ defmodule Bonny.Controller do
 
   > A custom controller is a controller that users can deploy and update on a running cluster, independently of the cluster’s own lifecycle. Custom controllers can work with any kind of resource, but they are especially effective when combined with custom resources. The Operator pattern is one example of such a combination. It allows developers to encode domain knowledge for specific applications into an extension of the Kubernetes API.
 
-  Controllers allow for simple `add`, `modify`, and `delete` handling of custom resources in the Kubernetes API.
+  Controllers allow for simple `add`, `modify`, `delete`, and `reconcile` handling of custom resources in the Kubernetes API.
   """
 
   @callback add(map()) :: :ok | :error | {:error, binary}
   @callback modify(map()) :: :ok | :error | {:error, binary}
   @callback delete(map()) :: :ok | :error | {:error, binary}
+  @callback reconcile(map()) :: :ok | :error | {:error, binary}
 
   @doc false
   defmacro __using__(_opts) do

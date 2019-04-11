@@ -4,8 +4,9 @@ defmodule Bonny.Watcher do
   """
 
   use GenServer
-  alias Bonny.Watcher.Impl
+  alias Bonny.Watcher.{Impl, ResponseBuffer}
   require Logger
+  @initial_watch_delay 3000
 
   def start_link(controller) do
     GenServer.start_link(Bonny.Watcher, controller, name: controller)
@@ -14,11 +15,12 @@ defmodule Bonny.Watcher do
   @impl GenServer
   def init(controller) do
     state = Impl.new(controller)
-    Process.send_after(self(), :watch, 5000)
+    Process.send_after(self(), :watch, @initial_watch_delay)
     {:ok, state}
   end
 
-  def handle_info(:watch, state) do
+  def handle_info(:watch, state = %Impl{}) do
+    state = %Impl{state | buffer: ResponseBuffer.new()}
     Impl.watch_for_changes(state, self())
     {:noreply, state}
   end
@@ -36,30 +38,77 @@ defmodule Bonny.Watcher do
 
   @impl GenServer
   def handle_info(%HTTPoison.AsyncChunk{chunk: chunk}, state = %Impl{}) do
-    event = Impl.parse_chunk(chunk)
-    Impl.dispatch(event, state.controller)
+    {lines, buffer} =
+      state.buffer
+      |> ResponseBuffer.add_chunk(chunk)
+      |> ResponseBuffer.get_lines()
 
-    state = Impl.set_resource_version(state, event)
-    {:noreply, state}
+    case process_lines(state, lines) do
+      {:ok, new_rv} ->
+        {:noreply, %Impl{state | buffer: buffer, resource_version: new_rv}}
+
+      {:error, :gone} ->
+        {:stop, :normal, state}
+    end
   end
 
   @impl GenServer
   def handle_info(%HTTPoison.AsyncEnd{}, state = %Impl{}) do
-    Logger.debug(fn -> "Received async end: #{state.resource_version}" end)
+    Logger.debug(fn -> "Received async end: #{inspect(state)}" end)
     send(self(), :watch)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(%HTTPoison.Error{reason: {:closed, :timeout}}, state = %Impl{}) do
-    Logger.debug(fn -> "Received timeout: #{state.resource_version}" end)
+    Logger.debug(fn -> "Received timeout: #{inspect(state)}" end)
     send(self(), :watch)
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info({:DOWN, _ref, :process, pid, reason}, state = %Impl{}) do
+    Logger.warn(fn ->
+      "DOWN received (#{inspect(pid)}) reason: #{inspect(reason)}\n#{inspect(self())}"
+    end)
+
+    {:stop, :normal, state}
   end
 
   @impl GenServer
   def handle_info(other, state = %Impl{}) do
     Logger.warn(fn -> "Received unhandled info: #{inspect(other)}" end)
     {:noreply, state}
+  end
+
+  defp process_lines(state = %Impl{resource_version: rv}, lines) do
+    Enum.reduce(lines, {:ok, rv}, fn line, status ->
+      case status do
+        {:ok, current_rv} ->
+          process_line(line, current_rv, state)
+
+        {:error, :gone} ->
+          {:error, :gone}
+      end
+    end)
+  end
+
+  defp process_line(line, current_rv, state = %Impl{}) do
+    %{"type" => type, "object" => raw_object} = Jason.decode!(line)
+
+    case Impl.extract_rv(raw_object) do
+      {:gone, message} ->
+        Logger.debug(fn -> "Received 410: #{message}." end)
+        {:error, :gone}
+
+      ^current_rv ->
+        Logger.debug(fn -> "Duplicate message: #{type}, resourceVersion: #{current_rv}." end)
+        {:ok, current_rv}
+
+      new_rv ->
+        Logger.debug(fn -> "Received message: #{type}, resourceVersion: #{new_rv}" end)
+        Impl.dispatch(%{"type" => type, "object" => raw_object}, state.controller)
+        {:ok, new_rv}
+    end
   end
 end

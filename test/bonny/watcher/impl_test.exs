@@ -4,61 +4,22 @@ defmodule Bonny.Watcher.ImplTest do
   alias Bonny.Watcher.Impl
   doctest Bonny.Watcher.Impl
 
-  defp chunk(),
-    do:
-      "{\"type\":\"ADDED\",\"object\":{\"apiVersion\":\"example.com/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"example.com/v1\\\",\\\"kind\\\":\\\"Widget\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"test-widget\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"},\"clusterName\":\"\",\"creationTimestamp\":\"2018-12-17T06:26:41Z\",\"generation\":1,\"name\":\"test-widget\",\"namespace\":\"default\",\"resourceVersion\":\"705460\",\"selfLink\":\"/apis/example.com/v1/namespaces/default/widgets/test-widget\",\"uid\":\"b7464e30-01c4-11e9-9066-025000000001\"}}}\n"
-
-  defmodule Whizbang do
-    @moduledoc false
-    use Bonny.Controller
-    use Agent
-
-    def start_link() do
-      Agent.start_link(fn -> [] end, name: __MODULE__)
-    end
-
-    def get() do
-      Agent.get(__MODULE__, fn events -> events end)
-    end
-
-    def put(event) do
-      Agent.update(__MODULE__, fn events -> [event | events] end)
-    end
-
-    def add(evt), do: put({:added, evt})
-    def modify(evt), do: put({:modified, evt})
-    def delete(evt), do: put({:deleted, evt})
-  end
-
   describe "new/1" do
     test "returns the default state" do
       assert %Impl{controller: Widget, spec: %Bonny.CRD{}} = Impl.new(Widget)
     end
   end
 
-  describe "set_resource_version/2" do
-    test "sets the resource version from a watch event" do
-      event = %{
-        "object" => %{"metadata" => %{"resourceVersion" => "3"}}
-      }
-
-      state = Impl.new(Widget)
-      new_state = Impl.set_resource_version(state, event)
-      assert new_state.resource_version == 3
+  describe "get_resource_version/1" do
+    test "returns the resource version when present" do
+      rv = Impl.get_resource_version(%Impl{resource_version: "3"})
+      assert rv == "3"
     end
 
-    test "sets the resource version" do
+    test "fetches the resource version when not present" do
       state = Impl.new(Widget)
-      state = Map.put(state, :resource_version, 1)
-      new_state = Impl.set_resource_version(state, 3)
-      assert new_state.resource_version == 3
-    end
-
-    test "does not decrease the resource version" do
-      state = Impl.new(Widget)
-      state = Map.put(state, :resource_version, 200)
-      new_state = Impl.set_resource_version(state, 3)
-      assert new_state.resource_version == 200
+      rv = Impl.get_resource_version(state)
+      assert rv == "1337"
     end
   end
 
@@ -77,25 +38,50 @@ defmodule Bonny.Watcher.ImplTest do
     end
   end
 
-  describe "parse_chunk/1" do
-    test "strips whitespace and parses json" do
-      result = Impl.parse_chunk(chunk())
-      assert %{"type" => "ADDED"} = result
+  describe "dispatch/2" do
+    test "dispatches ADDED events to the given module's handler function" do
+      evt = event("ADDED")
+      Impl.dispatch(evt, Whizbang)
+
+      # Professional.
+      :timer.sleep(100)
+      assert [event] = Whizbang.get(:added)
+      assert %{"apiVersion" => "example.com/v1"} = event
+    end
+
+    test "dispatches MODIFIED events to the given module's handler function" do
+      evt = event("MODIFIED")
+      Impl.dispatch(evt, Whizbang)
+
+      # Professional.
+      :timer.sleep(100)
+      assert [event] = Whizbang.get(:modified)
+      assert %{"apiVersion" => "example.com/v1"} = event
+    end
+
+    test "dispatches DELETED events to the given module's handler function" do
+      evt = event("DELETED")
+      Impl.dispatch(evt, Whizbang)
+
+      # Professional.
+      :timer.sleep(100)
+      assert [event] = Whizbang.get(:deleted)
+      assert %{"apiVersion" => "example.com/v1"} = event
     end
   end
 
-  describe "dispatch/2" do
-    test "dispatches a kubernetes API event to the given module" do
-      {:ok, _} = Whizbang.start_link()
-
-      chunk()
-      |> Impl.parse_chunk()
-      |> Impl.dispatch(Whizbang)
-
-      # Professional.
-      :timer.sleep(1000)
-      assert [{:added, event}] = Whizbang.get()
-      assert %{"apiVersion" => "example.com/v1"} = event
-    end
+  defp event(type) do
+    %{
+      "object" => %{
+        "apiVersion" => "example.com/v1",
+        "kind" => "Widget",
+        "metadata" => %{
+          "name" => "test-widget",
+          "namespace" => "default",
+          "resourceVersion" => "705460"
+        }
+      },
+      "type" => type
+    }
   end
 end

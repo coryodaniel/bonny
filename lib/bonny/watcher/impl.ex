@@ -3,18 +3,19 @@ defmodule Bonny.Watcher.Impl do
   Implementation logic for `Bonny.Watcher`
   """
 
-  alias Bonny.Watcher.Impl
+  alias Bonny.Watcher.{Impl, ResponseBuffer}
   require Logger
 
   @client Application.get_env(:bonny, :k8s_client, K8s.Client)
-  @timeout 5 * 60 * 1000
+  @timeout Application.get_env(:bonny, :watch_timeout, 5 * 60 * 1000)
   @type t :: %__MODULE__{
           spec: Bonny.CRD.t(),
           controller: atom(),
-          resource_version: String.t() | nil
+          resource_version: String.t() | nil,
+          buffer: ResponseBuffer.t()
         }
 
-  defstruct [:spec, :controller, :resource_version]
+  defstruct [:spec, :controller, :resource_version, :buffer]
 
   @doc """
   Initialize a `Bonny.Watcher` state
@@ -22,12 +23,13 @@ defmodule Bonny.Watcher.Impl do
   @spec new(module()) :: Impl.t()
   def new(controller) do
     spec = apply(controller, :crd_spec, [])
-    Bonny.Telemetry.emit([:watcher, :initialized], %{}, telemetry_metadata(spec))
+    Bonny.Telemetry.emit([:watcher, :initialized], %{}, Bonny.CRD.telemetry_metadata(spec))
 
     %__MODULE__{
       controller: controller,
       spec: spec,
-      resource_version: nil
+      resource_version: nil,
+      buffer: ResponseBuffer.new()
     }
   end
 
@@ -38,7 +40,7 @@ defmodule Bonny.Watcher.Impl do
   """
   @spec watch_for_changes(Impl.t(), pid()) :: no_return
   def watch_for_changes(state = %Impl{}, watcher) do
-    Bonny.Telemetry.emit([:watcher, :started], %{}, telemetry_metadata(state.spec))
+    Bonny.Telemetry.emit([:watcher, :started], %{}, Bonny.CRD.telemetry_metadata(state.spec))
 
     operation = list_operation(state)
     rv = get_resource_version(state)
@@ -51,26 +53,9 @@ defmodule Bonny.Watcher.Impl do
   end
 
   @doc """
-  Set the resource version
+  Gets the resource version from the state, or fetches it from Kubernetes API if not present
   """
-  @spec set_resource_version(Impl.t(), map | integer) :: Impl.t()
-  def set_resource_version(state = %Impl{}, event = %{}) do
-    rv = get_in(event, ["object", "metadata", "resourceVersion"])
-    rv_int = String.to_integer(rv)
-    set_resource_version(state, rv_int)
-  end
-
-  def set_resource_version(state = %Impl{resource_version: previous}, rv)
-      when is_nil(previous) or previous < rv do
-    Map.put(state, :resource_version, rv)
-  end
-
-  def set_resource_version(state = %Impl{}, _), do: state
-
-  @doc """
-  Gets the resource version from the state, or fetches it from kubernetes API if not present
-  """
-  @spec get_resource_version(Impl.t()) :: integer
+  @spec get_resource_version(Impl.t()) :: binary
   def get_resource_version(state = %Impl{}) do
     case state.resource_version do
       nil ->
@@ -80,7 +65,7 @@ defmodule Bonny.Watcher.Impl do
 
           {:error, msg} ->
             Logger.error(fn -> msg end)
-            0
+            "0"
         end
 
       rv ->
@@ -120,7 +105,9 @@ defmodule Bonny.Watcher.Impl do
         end
 
       measurements = %{duration: time}
-      metadata = telemetry_metadata(controller.crd_spec, %{event: event, success: was_successful})
+
+      metadata =
+        Bonny.CRD.telemetry_metadata(controller.crd_spec, %{event: event, success: was_successful})
 
       Bonny.Telemetry.emit([:watcher, :dispatched], measurements, metadata)
     end)
@@ -141,32 +128,15 @@ defmodule Bonny.Watcher.Impl do
     response = @client.run(operation, Bonny.Config.cluster_name(), params: %{limit: 1})
 
     case response do
-      {:ok, %{"metadata" => %{"resourceVersion" => rv}}} ->
-        {:ok, rv}
+      {:ok, response} ->
+        {:ok, extract_rv(response)}
 
       _ ->
         {:error, "No resource version found for operation: #{inspect(operation)}"}
     end
   end
 
-  @doc """
-  Receives a plaintext formatted JSON response line from `HTTPoison.AsyncChunk` and parses into a map
-  """
-  @spec parse_chunk(binary) :: map
-  def parse_chunk(line) do
-    line
-    |> String.trim()
-    |> Jason.decode!()
-  end
-
-  @doc false
-  @spec telemetry_metadata(Bonny.CRD.t(), map | nil) :: map
-  defp telemetry_metadata(spec = %Bonny.CRD{}, extra \\ %{}) do
-    base = %{
-      api_version: Bonny.CRD.api_version(spec),
-      kind: Bonny.CRD.kind(spec)
-    }
-
-    Map.merge(base, extra)
-  end
+  @spec extract_rv(map | binary) :: binary | {:gone, binary()}
+  def extract_rv(%{"metadata" => %{"resourceVersion" => rv}}), do: rv
+  def extract_rv(%{"message" => message}), do: {:gone, message}
 end

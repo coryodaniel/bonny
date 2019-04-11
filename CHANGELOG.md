@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support for a reconcile/1 callback
+- `reconcile_every` config option to schedule how often to run
+reconciliation
+- `reconcile_batch_size` to set the size of the HTTP GET limit
+when fetching batches of items to reconcile
 - Added `{:error, binary}` as a return value of Controller lifecycle methods
 - Implemented `:telemetry` library
 - `Bonny.Telemetry.events/0` exposes list of telemetry events
@@ -20,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Async watcher event dispatch
 - Replaced `HTTPoison` with [k8s](https://github.com/coryodaniel/k8s)
+
+### Fixed
+
+- Receiving :DOWN messages no longer crashes Watcher [#20](https://github.com/coryodaniel/bonny/issues/20)
+- Issue with partially received events [#43](https://github.com/coryodaniel/bonny/issues/43)
 
 ### Removed
 
