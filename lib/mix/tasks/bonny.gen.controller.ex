@@ -40,7 +40,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
   def run(args) do
     Mix.Bonny.no_umbrella!()
 
-    {mod_name, singular, plural, version, opts} = build(args)
+    {mod_name, file_name, singular, plural, version, opts} = build(args)
 
     binding = [
       mod_name: mod_name,
@@ -50,8 +50,8 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
       app_name: Mix.Bonny.app_name()
     ]
 
-    controller_out = opts[:out] || controller_path(opts[:version], singular)
-    test_out = opts[:out] || test_path(opts[:version], singular)
+    controller_out = opts[:out] || controller_path(opts[:version], file_name)
+    test_out = opts[:out] || test_path(opts[:version], file_name)
 
     "controller.ex"
     |> Mix.Bonny.template()
@@ -64,12 +64,12 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     |> Mix.Bonny.render(test_out)
   end
 
-  defp controller_path(version, singular) do
-    Path.join(["lib", Mix.Bonny.app_dir_name(), "controllers", version, "#{singular}.ex"])
+  defp controller_path(version, file_name) do
+    Path.join(["lib", Mix.Bonny.app_dir_name(), "controllers", version, "#{file_name}.ex"])
   end
 
-  defp test_path(version, singular) do
-    Path.join(["test", Mix.Bonny.app_dir_name(), "controllers", version, "#{singular}_test.exs"])
+  defp test_path(version, file_name) do
+    Path.join(["test", Mix.Bonny.app_dir_name(), "controllers", version, "#{file_name}_test.exs"])
   end
 
   defp build(args) do
@@ -79,9 +79,10 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     [mod_name, plural | _] = validate_args!(parsed)
 
     version = Macro.camelize(opts[:version])
-    singular = Macro.underscore(mod_name)
+    file_name = Macro.underscore(mod_name)
+    singular = String.downcase(mod_name)
 
-    {mod_name, singular, plural, version, opts}
+    {mod_name, file_name, singular, plural, version, opts}
   end
 
   defp validate_args!(args = [mod_name, _plural | _]) do
