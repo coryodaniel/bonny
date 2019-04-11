@@ -37,7 +37,7 @@ when fetching batches of items to reconcile
 ### Removed
 
 - Renamed `group_version` -> `api_version`
-- Renamed `Bonny.CRD.plural/0` -> `Bonny.CRD.kind/0`
+- Renamed Bonny.CRD.plural/1 -> `Bonny.CRD.kind/1`
 - `Bypass` from test suite
 - `Impl.parse_metadata/1`
 - `kubeconf_file` and `kubeconf_opts` config options

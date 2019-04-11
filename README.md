@@ -117,11 +117,12 @@ mix bonny.gen.controller Widget widgets --version v2alpha1
 
 _Note:_ The one restriction with versions is that they will be camelized into a module name.
 
-Open up your controller and add functionality for your resoures lifecycle:
+Open up your controller and add functionality for your resource's lifecycles:
 
 - Add
 - Modify
 - Delete
+- Reconcile; periodically called with each every instance of a CRD's resources
 
 Each controller can create multiple resources.
 
