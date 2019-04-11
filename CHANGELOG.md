@@ -28,8 +28,8 @@ when fetching batches of items to reconcile
 
 ### Fixed
 
-- Receiving :DOWN messages no longer crashes Watcher #20
-- Issue with partially received events #43
+- Receiving :DOWN messages no longer crashes Watcher [#20](https://github.com/coryodaniel/bonny/issues/20)
+- Issue with partially received events [#43](https://github.com/coryodaniel/bonny/issues/43)
 
 ### Removed
 
