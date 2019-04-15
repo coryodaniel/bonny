@@ -60,7 +60,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @doc """
   Handles an `ADDED` event
   """
-  @spec add(map()) :: :ok | :error | {:error, binary}
+  @spec add(map()) :: :ok | :error
   @impl Bonny.Controller
   def add(payload) do
     IO.inspect(payload)
@@ -70,7 +70,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @doc """
   Handles a `MODIFIED` event
   """
-  @spec modify(map()) :: :ok | :error | {:error, binary}
+  @spec modify(map()) :: :ok | :error
   @impl Bonny.Controller
   def modify(payload) do
     IO.inspect(payload)
@@ -80,7 +80,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @doc """
   Handles a `DELETED` event
   """
-  @spec delete(map()) :: :ok | :error | {:error, binary}
+  @spec delete(map()) :: :ok | :error
   @impl Bonny.Controller
   def delete(payload) do
     IO.inspect(payload)
@@ -90,7 +90,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @doc """
   Called periodically for each existing CustomResource to allow for reconciliation.
   """
-  @spec reconcile(map()) :: :ok | :error | {:error, binary}
+  @spec reconcile(map()) :: :ok | :error
   @impl Bonny.Controller
   def reconcile(payload) do
     IO.inspect(payload)

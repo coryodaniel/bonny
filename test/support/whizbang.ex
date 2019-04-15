@@ -30,9 +30,10 @@ end
 defmodule V1.Whizbang do
   @moduledoc false
   use Bonny.Controller
-  def add(_), do: nil
-  def modify(_), do: nil
-  def delete(_), do: nil
+  def add(_), do: :ok
+  def modify(_), do: :ok
+  def delete(_), do: :ok
+  def reconcile(_), do: :ok
 end
 
 defmodule V2.Whizbang do
@@ -51,7 +52,8 @@ defmodule V2.Whizbang do
     kind: "Foo"
   }
 
-  def add(_), do: nil
-  def modify(_), do: nil
-  def delete(_), do: nil
+  def add(_), do: :ok
+  def modify(_), do: :ok
+  def delete(_), do: :ok
+  def reconcile(_), do: :ok
 end

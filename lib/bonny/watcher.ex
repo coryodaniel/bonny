@@ -4,9 +4,11 @@ defmodule Bonny.Watcher do
   """
 
   use GenServer
-  alias Bonny.Watcher.{Impl, ResponseBuffer}
   require Logger
-  @initial_watch_delay 3000
+  alias Bonny.Watcher.{Impl, ResponseBuffer}
+  alias Bonny.{CRD, Telemetry}
+
+  @initial_watch_delay 100
 
   def start_link(controller) do
     GenServer.start_link(Bonny.Watcher, controller, name: controller)
@@ -15,35 +17,46 @@ defmodule Bonny.Watcher do
   @impl GenServer
   def init(controller) do
     state = Impl.new(controller)
+    emit_telemetry_event(:genserver_initialized, state)
+
     Process.send_after(self(), :watch, @initial_watch_delay)
     {:ok, state}
   end
 
+  @impl GenServer
   def handle_info(:watch, state = %Impl{}) do
+    emit_telemetry_event(:started, state)
+
     state = %Impl{state | buffer: ResponseBuffer.new()}
     Impl.watch_for_changes(state, self())
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_info(%HTTPoison.AsyncStatus{code: 200}, state), do: {:noreply, state}
+  def handle_info(%HTTPoison.AsyncHeaders{}, state), do: {:noreply, state}
 
+  @impl GenServer
+  def handle_info(%HTTPoison.AsyncStatus{code: 200}, state) do
+    emit_telemetry_event(:http_request_succeeded, state)
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_info(%HTTPoison.AsyncStatus{code: code}, state) do
-    Logger.debug(fn -> "Received HTTP error from Kubernetes API: #{code}" end)
+    emit_telemetry_event(:http_request_failed, state, %{code: code})
     {:stop, :normal, state}
   end
 
   @impl GenServer
-  def handle_info(%HTTPoison.AsyncHeaders{}, state), do: {:noreply, state}
-
-  @impl GenServer
   def handle_info(%HTTPoison.AsyncChunk{chunk: chunk}, state = %Impl{}) do
+    emit_telemetry_event(:chunk_received, state)
+
     {lines, buffer} =
       state.buffer
       |> ResponseBuffer.add_chunk(chunk)
       |> ResponseBuffer.get_lines()
 
-    case process_lines(state, lines) do
+    case Impl.process_lines(state, lines) do
       {:ok, new_rv} ->
         {:noreply, %Impl{state | buffer: buffer, resource_version: new_rv}}
 
@@ -54,61 +67,35 @@ defmodule Bonny.Watcher do
 
   @impl GenServer
   def handle_info(%HTTPoison.AsyncEnd{}, state = %Impl{}) do
-    Logger.debug(fn -> "Received async end: #{inspect(state)}" end)
+    emit_telemetry_event(:finished, state)
     send(self(), :watch)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(%HTTPoison.Error{reason: {:closed, :timeout}}, state = %Impl{}) do
-    Logger.debug(fn -> "Received timeout: #{inspect(state)}" end)
+    emit_telemetry_event(:expired, state)
     send(self(), :watch)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info({:DOWN, _ref, :process, pid, reason}, state = %Impl{}) do
-    Logger.warn(fn ->
-      "DOWN received (#{inspect(pid)}) reason: #{inspect(reason)}\n#{inspect(self())}"
-    end)
+    emit_telemetry_event(:genserver_down, state, %{reason: reason})
+    Logger.warn("DOWN received (#{inspect(pid)}) reason: #{inspect(reason)} #{inspect(self())}")
 
     {:stop, :normal, state}
   end
 
   @impl GenServer
   def handle_info(other, state = %Impl{}) do
-    Logger.warn(fn -> "Received unhandled info: #{inspect(other)}" end)
+    Logger.warn("Received unhandled info: #{inspect(other)}")
     {:noreply, state}
   end
 
-  defp process_lines(state = %Impl{resource_version: rv}, lines) do
-    Enum.reduce(lines, {:ok, rv}, fn line, status ->
-      case status do
-        {:ok, current_rv} ->
-          process_line(line, current_rv, state)
-
-        {:error, :gone} ->
-          {:error, :gone}
-      end
-    end)
-  end
-
-  defp process_line(line, current_rv, state = %Impl{}) do
-    %{"type" => type, "object" => raw_object} = Jason.decode!(line)
-
-    case Impl.extract_rv(raw_object) do
-      {:gone, message} ->
-        Logger.debug(fn -> "Received 410: #{message}." end)
-        {:error, :gone}
-
-      ^current_rv ->
-        Logger.debug(fn -> "Duplicate message: #{type}, resourceVersion: #{current_rv}." end)
-        {:ok, current_rv}
-
-      new_rv ->
-        Logger.debug(fn -> "Received message: #{type}, resourceVersion: #{new_rv}" end)
-        Impl.dispatch(%{"type" => type, "object" => raw_object}, state.controller)
-        {:ok, new_rv}
-    end
+  @spec emit_telemetry_event(atom, Impl.t(), map) :: :ok
+  defp emit_telemetry_event(name, state, extra \\ %{}) do
+    metadata = CRD.telemetry_metadata(state.spec, extra)
+    Telemetry.emit([:watcher, name], %{}, metadata)
   end
 end

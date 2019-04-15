@@ -3,14 +3,35 @@ defmodule Bonny.Telemetry do
   List of telemetry events.
   """
 
+  @reconciler_events [
+    :genserver_initialized,
+    :started,
+    :scheduled,
+    :get_items_succeeded,
+    :get_items_failed,
+    :item_succeeded,
+    :item_failed
+  ]
+
+  @watcher_events [
+    :genserver_initialized,
+    :genserver_down,
+    :started,
+    :chunk_received,
+    :expired,
+    :finished,
+    :http_request_failed,
+    :http_request_succeeded,
+    :dispatch_succeeded,
+    :dispatch_failed
+  ]
+
   @spec events() :: list(list(atom))
   def events() do
-    [
-      [:bonny, :watcher, :initialized],
-      [:bonny, :watcher, :started],
-      [:bonny, :watcher, :dispatched],
-      [:bonny, :reconciler, :reconciled]
-    ]
+    reconciler_events = Enum.map(@reconciler_events, fn event -> [:bonny, :reconciler, event] end)
+    watcher_events = Enum.map(@watcher_events, fn event -> [:bonny, :watcher, event] end)
+
+    reconciler_events ++ watcher_events
   end
 
   @doc """
@@ -18,6 +39,9 @@ defmodule Bonny.Telemetry do
 
   Prepends `:bonnny` to all atom lists.
   """
+  @spec emit(list(atom)) :: :ok
+  def emit(names), do: emit(names, %{}, %{})
+
   @spec emit(list(atom), map, map) :: :ok
   def emit(names, measurements = %{}, metadata = %{}),
     do: :telemetry.execute([:bonny | names], measurements, metadata)

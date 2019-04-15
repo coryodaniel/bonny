@@ -63,7 +63,7 @@ config :bonny,
   # Batch size of HTTP request; maps to the Kubernetes `limit` API parameter.
   # If `continue` is returned additional HTTP requests will be made to fetch all batches of items
   # Default: 50
-  reconcile_batch_size: 100
+  reconcile_batch_size: 100,
 
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
@@ -197,9 +197,25 @@ Bonny uses the `telemetry` library to emit event metrics.
 
 Emmited events:
 
-- [:bonny, :watcher, :initialized]
-- [:bonny, :watcher, :started]
-- [:bonny, :watcher, :dispatched]
+```elixir
+  [:bonny, :reconciler, :genserver_initialized],
+  [:bonny, :reconciler, :started],
+  [:bonny, :reconciler, :scheduled],
+  [:bonny, :reconciler, :get_items_succeeded],
+  [:bonny, :reconciler, :get_items_failed],
+  [:bonny, :reconciler, :item_succeeded],
+  [:bonny, :reconciler, :item_failed],
+  [:bonny, :watcher, :genserver_initialized],
+  [:bonny, :watcher, :genserver_down],
+  [:bonny, :watcher, :started],
+  [:bonny, :watcher, :chunk_received],
+  [:bonny, :watcher, :expired],
+  [:bonny, :watcher, :finished],
+  [:bonny, :watcher, :http_request_failed],
+  [:bonny, :watcher, :http_request_succeeded],
+  [:bonny, :watcher, :dispatch_succeeded],
+  [:bonny, :watcher, :dispatch_failed]
+```
 
 ## Terminology
 

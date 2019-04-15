@@ -7,10 +7,10 @@ defmodule Bonny.Controller do
   Controllers allow for simple `add`, `modify`, `delete`, and `reconcile` handling of custom resources in the Kubernetes API.
   """
 
-  @callback add(map()) :: :ok | :error | {:error, binary}
-  @callback modify(map()) :: :ok | :error | {:error, binary}
-  @callback delete(map()) :: :ok | :error | {:error, binary}
-  @callback reconcile(map()) :: :ok | :error | {:error, binary}
+  @callback add(map()) :: :ok | :error
+  @callback modify(map()) :: :ok | :error
+  @callback delete(map()) :: :ok | :error
+  @callback reconcile(map()) :: :ok | :error
 
   @doc false
   defmacro __using__(_opts) do

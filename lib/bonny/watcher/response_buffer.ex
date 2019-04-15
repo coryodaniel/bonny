@@ -37,7 +37,7 @@ defmodule Bonny.Watcher.ResponseBuffer do
   Lines are in NDJSON format; each line is a JSON object.
   """
   @spec get_lines(__MODULE__.t()) :: {list(binary), __MODULE__.t()}
-  def get_lines(%ResponseBuffer{lines: lines} = buffer) do
+  def get_lines(buffer = %ResponseBuffer{lines: lines}) do
     {lines, %ResponseBuffer{buffer | lines: []}}
   end
 end
