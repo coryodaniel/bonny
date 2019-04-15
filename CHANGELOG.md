@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2019-04-15
+
+### Added
+
+- Bonny.Watcher and Bonny.Reconciler telemetry events
+
 ## [0.3.1] - 2019-04-11
 
 ### Added
