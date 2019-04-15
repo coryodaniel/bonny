@@ -107,7 +107,10 @@ defmodule Bonny.Watcher.Impl do
     name = CRD.kind(state.spec)
     namespace = Config.namespace()
 
-    @client.list(api_version, name, namespace: namespace)
+    case state.spec.scope do
+      :namespaced -> @client.list(api_version, name, namespace: namespace)
+      _ -> @client.list(api_version, name)
+    end
   end
 
   @spec fetch_resource_version(Impl.t()) :: {:ok, binary} | {:error, binary}
