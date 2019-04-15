@@ -48,7 +48,7 @@ defmodule Bonny.K8sMockClient do
     {:ok, response}
   end
 
-  def run(c, _, _) do
+  def run(_, _, _) do
     {:ok, %{"mock" => true}}
   end
 
