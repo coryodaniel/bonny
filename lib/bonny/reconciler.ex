@@ -78,11 +78,7 @@ defmodule Bonny.Reconciler do
   @spec list_items(module, integer, nil | binary) ::
           {:ok, map() | reference()} | {:error, atom()} | {:error, binary()}
   defp list_items(controller, limit, continue) do
-    crd_spec = controller.crd_spec
-    api_version = CRD.api_version(crd_spec)
-    name = CRD.kind(crd_spec)
-
-    operation = @client.list(api_version, name, namespace: Config.namespace())
+    operation = list_operation(controller)
     params = %{limit: limit, continue: continue}
 
     @client.run(operation, Config.cluster_name(), params: params)
@@ -119,5 +115,20 @@ defmodule Bonny.Reconciler do
   @spec emit_telemetry_measurement(atom, map, map) :: :ok
   defp emit_telemetry_measurement(name, measurement, metadata) do
     Telemetry.emit([:reconciler, name], measurement, metadata)
+  end
+
+  @spec list_operation(module) :: K8s.Operation.t()
+  defp list_operation(controller) do
+    crd_spec = controller.crd_spec
+    api_version = CRD.api_version(crd_spec)
+    name = CRD.kind(crd_spec)
+
+    case crd_spec.scope do
+      :namespaced ->
+        @client.list(api_version, name, namespace: Config.namespace())
+
+      _ ->
+        @client.list(api_version, name)
+    end
   end
 end

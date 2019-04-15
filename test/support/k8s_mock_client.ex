@@ -3,6 +3,8 @@ defmodule Bonny.K8sMockClient do
   Mock `K8s.Client`
   """
 
+  def list(api_version, kind), do: list(api_version, kind, [])
+
   def list(api_version, kind, path_params) do
     K8s.Operation.build(:list, api_version, kind, path_params)
   end
