@@ -89,9 +89,20 @@ config :bonny,
   }
 ```
 
+When configuring bonny to run *in your cluster* the `mix bonny.gen.manifest` command will generate a service account for you. To use that service account configure the `k8s` library like the following:
+
+```elixir
+config :k8s,
+  clusters: %{
+    default: %{}
+  }
+```
+
+This will add a cluster named `default`. When no configuration information is provided, the `k8s` library will use the service account of the pod.
+
 ## Example Operators built with Bonny
 
-- [Hello Operator](https://github.com/coryodaniel/hello_operator)
+- [Hello Operator](https://github.com/coryodaniel/hello_operator) - this was built with bonny v 0.2, there have been significant changes since.
 
 ## Bonny Generators
 

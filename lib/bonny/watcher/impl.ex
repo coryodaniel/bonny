@@ -88,14 +88,15 @@ defmodule Bonny.Watcher.Impl do
   defp do_dispatch(controller, event, object) do
     Task.start(fn ->
       {time, result} = Telemetry.measure(fn -> apply(controller, event, [object]) end)
+      metadata = %{event: event}
       measurements = %{duration: time}
 
       case result do
         :ok ->
-          emit_telemetry_measurement(:dispatch_succeeded, measurements, controller)
+          emit_telemetry_measurement(:dispatch_succeeded, measurements, controller, metadata)
 
         {:error, msg} ->
-          emit_telemetry_measurement(:dispatch_failed, measurements, controller)
+          emit_telemetry_measurement(:dispatch_failed, measurements, controller, metadata)
           Logger.error("Error dispatching watch event: #{msg}")
       end
     end)
@@ -116,9 +117,9 @@ defmodule Bonny.Watcher.Impl do
   @spec fetch_resource_version(Impl.t()) :: {:ok, binary} | {:error, binary}
   defp fetch_resource_version(state = %Impl{}) do
     operation = list_operation(state)
-    response = @client.run(operation, Config.cluster_name(), params: %{limit: 1})
+    result = @client.run(operation, Config.cluster_name(), params: %{limit: 1})
 
-    case response do
+    case result do
       {:ok, response} ->
         {:ok, extract_rv(response)}
 
@@ -160,7 +161,7 @@ defmodule Bonny.Watcher.Impl do
   def extract_rv(%{"message" => message}), do: {:gone, message}
 
   @spec emit_telemetry_measurement(atom, map, module, map | nil) :: :ok
-  defp emit_telemetry_measurement(name, measurement, controller, extra \\ %{}) do
+  defp emit_telemetry_measurement(name, measurement, controller, extra) do
     metadata = CRD.telemetry_metadata(controller.crd_spec, extra)
     Telemetry.emit([:watcher, name], measurement, metadata)
   end

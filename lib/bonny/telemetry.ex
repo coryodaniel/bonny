@@ -73,7 +73,7 @@ defmodule Bonny.Telemetry.DebugLogger do
 
   def handle_event(event, measurements, metadata, _config) do
     Logger.debug(fn ->
-      event_name = Enum.join(event, ":")
+      event_name = Enum.join(event, "_")
       "[#{event_name}] #{inspect(measurements)} #{inspect(metadata)}"
     end)
   end
