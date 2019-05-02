@@ -40,6 +40,26 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   @rule {"", ["pods", "secrets"], ["*"]}
   @rule {"apiextensions.k8s.io", ["foo"], ["*"]}
   ```
+
+  ## Add additional printer columns
+
+  Kubectl uses server-side printing. Columns can be declared using `@additional_printer_columns` and generated using `mix bonny.manifest`
+
+  [Additional Printer Columns docs](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#additional-printer-columns)
+
+  ### Examples
+  
+  ```
+  @additional_printer_columns [
+    %{
+      name: "test",
+      type: "string",
+      description: "test",
+      JSONPath: ".spec.test"
+    }
+  ]
+  ```
+  
   """
   use Bonny.Controller
 

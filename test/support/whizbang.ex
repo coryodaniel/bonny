@@ -57,3 +57,30 @@ defmodule V2.Whizbang do
   def delete(_), do: :ok
   def reconcile(_), do: :ok
 end
+
+defmodule V3.Whizbang do
+  @moduledoc false
+  use Bonny.Controller
+
+  @version "v2alpha1"
+  @group "kewl.example.io"
+  @scope :cluster
+  @names %{
+    plural: "foos",
+    singular: "foo",
+    kind: "Foo"
+  }
+  @additional_printer_columns [
+    %{
+      name: "test",
+      type: "string",
+      description: "test",
+      JSONPath: ".spec.test"
+    }
+  ]
+
+  def add(_), do: :ok
+  def modify(_), do: :ok
+  def delete(_), do: :ok
+  def reconcile(_), do: :ok
+end

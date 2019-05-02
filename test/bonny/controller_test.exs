@@ -33,6 +33,30 @@ defmodule Bonny.ControllerTest do
 
       assert crd_spec == V2.Whizbang.crd_spec()
     end
+
+    test "with custom columns" do
+      crd_spec = %Bonny.CRD{
+        group: "kewl.example.io",
+        scope: :cluster,
+        version: "v2alpha1",
+        names: %{
+          plural: "foos",
+          singular: "foo",
+          kind: "Foo"
+        },
+        additionalPrinterColumns:
+          [
+            %{
+              name: "test",
+              type: "string",
+              description: "test",
+              JSONPath: ".spec.test"
+            }
+          ] ++ V3.Whizbang.default_columns()
+      }
+
+      assert crd_spec == V3.Whizbang.crd_spec()
+    end
   end
 
   describe "rules/0" do
