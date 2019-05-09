@@ -9,13 +9,13 @@ defmodule Bonny.CRD do
   @api_version "apiextensions.k8s.io/v1beta1"
   @kind "CustomResourceDefinition"
 
-  @type names_t :: %{
-          kind: String.t(),
-          singular: String.t(),
-          plural: String.t(),
-          shortNames: nil | list(String.t()),
-          version: String.t()
-        }
+  @typep names_t :: %{
+           kind: String.t(),
+           singular: String.t(),
+           plural: String.t(),
+           shortNames: nil | list(String.t()),
+           version: String.t()
+         }
 
   @typep columns_t :: %{
            name: String.t(),

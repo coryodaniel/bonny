@@ -30,6 +30,8 @@ end
 defmodule V1.Whizbang do
   @moduledoc false
   use Bonny.Controller
+  @names %{kind: "Whizzo"}
+
   def add(_), do: :ok
   def modify(_), do: :ok
   def delete(_), do: :ok
@@ -47,9 +49,10 @@ defmodule V2.Whizbang do
   @group "kewl.example.io"
   @scope :cluster
   @names %{
-    plural: "foos",
-    singular: "foo",
-    kind: "Foo"
+    plural: "bars",
+    singular: "qux",
+    kind: "Foo",
+    shortNames: ["f", "b", "q"]
   }
 
   def add(_), do: :ok

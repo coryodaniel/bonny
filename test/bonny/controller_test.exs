@@ -3,7 +3,7 @@ defmodule Bonny.ControllerTest do
   use ExUnit.Case, async: true
 
   describe "crd_spec/0" do
-    test "without attributes" do
+    test "uses the module as the kind when not set" do
       crd_spec = %Bonny.CRD{
         group: "example.com",
         scope: :namespaced,
@@ -16,19 +16,31 @@ defmodule Bonny.ControllerTest do
         }
       }
 
+      assert crd_spec == Whizbang.crd_spec()
+    end
+
+    test "uses defaults when names attribute is not set" do
+      crd_spec = %Bonny.CRD{
+        group: "example.com",
+        scope: :namespaced,
+        version: "v1",
+        names: %{
+          plural: "whizzos",
+          singular: "whizzo",
+          kind: "Whizzo",
+          shortNames: nil
+        }
+      }
+
       assert crd_spec == V1.Whizbang.crd_spec()
     end
 
-    test "with attributes" do
+    test "uses names attribute when set" do
       crd_spec = %Bonny.CRD{
         group: "kewl.example.io",
         scope: :cluster,
         version: "v2alpha1",
-        names: %{
-          plural: "foos",
-          singular: "foo",
-          kind: "Foo"
-        }
+        names: %{kind: "Foo", plural: "bars", shortNames: ["f", "b", "q"], singular: "qux"}
       }
 
       assert crd_spec == V2.Whizbang.crd_spec()

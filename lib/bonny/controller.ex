@@ -41,15 +41,15 @@ defmodule Bonny.Controller do
           |> String.split(".")
           |> Enum.reverse()
 
-        name = Enum.at(module_components, 0)
+        kind = Enum.at(module_components, 0)
         version = module_components |> Enum.at(1, "v1") |> String.downcase()
 
         %Bonny.CRD{
           group: @group || Bonny.Config.group(),
           scope: @scope || :namespaced,
           version: @version || version,
-          names: @names || crd_spec_names(name),
-          additionalPrinterColumns: additional_printer_columns()
+          additionalPrinterColumns: additional_printer_columns(),
+          names: crd_spec_names(@names, kind)
         }
       end
 
@@ -95,15 +95,21 @@ defmodule Bonny.Controller do
         end
       end
 
-      defp crd_spec_names(name) do
-        singular = Macro.underscore(name)
+      @spec crd_spec_names(nil | map, String.t()) :: map
+      defp crd_spec_names(nil, kind), do: crd_spec_names(%{}, kind)
 
-        %{
+      defp crd_spec_names(%{} = names, default_kind) do
+        kind = names[:kind] || default_kind
+        singular = Macro.underscore(kind)
+
+        defaults = %{
           plural: "#{singular}s",
           singular: singular,
-          kind: name,
+          kind: kind,
           shortNames: nil
         }
+
+        Map.merge(defaults, names)
       end
     end
   end
