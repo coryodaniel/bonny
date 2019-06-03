@@ -17,12 +17,20 @@ defmodule Bonny.CRD do
           version: String.t()
         }
 
+  @typep columns_t :: %{
+           name: String.t(),
+           type: String.t(),
+           description: String.t(),
+           JSONPath: String.t()
+         }
+
   @typedoc "CRD Spec"
   @type t :: %__MODULE__{
           scope: :namespaced | :cluster,
           group: String.t(),
           names: names_t,
-          version: String.t()
+          version: String.t(),
+          additionalPrinterColumns: list(columns_t)
         }
 
   @enforce_keys [:scope, :group, :names]
@@ -30,7 +38,8 @@ defmodule Bonny.CRD do
   defstruct scope: :namespaced,
             group: nil,
             names: nil,
-            version: nil
+            version: nil,
+            additionalPrinterColumns: nil
 
   @doc """
   CRD Kind or plural name

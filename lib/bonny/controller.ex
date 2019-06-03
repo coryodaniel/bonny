@@ -22,6 +22,7 @@ defmodule Bonny.Controller do
       @version nil
       @scope nil
       @names nil
+      @additional_printer_columns nil
       @before_compile Bonny.Controller
     end
   end
@@ -47,8 +48,26 @@ defmodule Bonny.Controller do
           group: @group || Bonny.Config.group(),
           scope: @scope || :namespaced,
           version: @version || version,
-          names: @names || crd_spec_names(name)
+          names: @names || crd_spec_names(name),
+          additionalPrinterColumns: additional_printer_columns()
         }
+      end
+
+      @doc """
+      Columns default
+      """
+      def default_columns() do
+        [
+          %{
+            name: "Age",
+            type: "date",
+            description:
+              "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+
+      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+            JSONPath: ".metadata.creationTimestamp"
+          }
+        ]
       end
 
       @doc """
@@ -64,6 +83,16 @@ defmodule Bonny.Controller do
 
           [rule | acc]
         end)
+      end
+
+      defp additional_printer_columns() do
+        case @additional_printer_columns do
+          nil ->
+            nil
+
+          some ->
+            some ++ default_columns()
+        end
       end
 
       defp crd_spec_names(name) do
