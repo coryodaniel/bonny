@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Whizbang do
   @moduledoc false
   use Bonny.Controller

@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Bonny.K8sMockClient do
   @moduledoc """
   Mock `K8s.Client`

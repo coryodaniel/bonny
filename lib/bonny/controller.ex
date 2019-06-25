@@ -35,14 +35,8 @@ defmodule Bonny.Controller do
       """
       @spec crd_spec() :: Bonny.CRD.t()
       def crd_spec do
-        module_components =
-          __MODULE__
-          |> Macro.to_string()
-          |> String.split(".")
-          |> Enum.reverse()
-
-        kind = Enum.at(module_components, 0)
-        version = module_components |> Enum.at(1, "v1") |> String.downcase()
+        kind = Bonny.Naming.module_to_kind(__MODULE__)
+        version = Bonny.Naming.module_version(__MODULE__)
 
         %Bonny.CRD{
           group: @group || Bonny.Config.group(),

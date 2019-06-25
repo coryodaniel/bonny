@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
 - Add additional printer columns
+- Bonny.Naming module
+- .credo.exs
 
 ## [0.3.2] - 2019-04-15
 
