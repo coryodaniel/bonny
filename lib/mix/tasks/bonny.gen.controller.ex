@@ -85,7 +85,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     {mod_name, file_name, singular, plural, version, opts}
   end
 
-  defp validate_args!(args = [mod_name, _plural | _]) do
+  defp validate_args!([mod_name, _plural | _] = args) do
     if mod_name =~ ~r/^[A-Z]\w*(\.[A-Z]\w*)*$/ do
       args
     else

@@ -43,7 +43,7 @@ defmodule Bonny.Telemetry do
   def emit(names), do: emit(names, %{}, %{})
 
   @spec emit(list(atom), map, map) :: :ok
-  def emit(names, measurements = %{}, metadata = %{}),
+  def emit(names, %{} = measurements, %{} = metadata),
     do: :telemetry.execute([:bonny | names], measurements, metadata)
 
   @doc """

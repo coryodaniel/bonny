@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Basic integration w/ [Notion](https://github.com/coryodaniel/notion) for telemetry
+- Bonny.Server.Reconciler
+
 ## [0.3.3] - 2019-06-25
 
 ### Added

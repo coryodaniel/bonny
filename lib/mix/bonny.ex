@@ -4,6 +4,9 @@ defmodule Mix.Bonny do
   """
 
   @doc "Parse CLI input"
+  @spec parse_args([binary()], Keyword.t(), Keyword.t()) ::
+          {Keyword.t(), [binary()], [{binary(), nil | binary()}]}
+
   def parse_args(args, defaults, cli_opts \\ []) do
     {opts, parsed, invalid} = OptionParser.parse(args, cli_opts)
     merged_opts = Keyword.merge(defaults, opts)

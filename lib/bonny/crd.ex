@@ -85,7 +85,7 @@ defmodule Bonny.CRD do
   ```
   """
   @spec to_manifest(Bonny.CRD.t()) :: map
-  def to_manifest(crd = %CRD{scope: scope}) do
+  def to_manifest(%CRD{scope: scope} = crd) do
     cased_scope = String.capitalize("#{scope}")
 
     %{
@@ -101,7 +101,7 @@ defmodule Bonny.CRD do
 
   @doc false
   @spec telemetry_metadata(Bonny.CRD.t(), map | nil) :: map
-  def telemetry_metadata(spec = %Bonny.CRD{}, extra \\ %{}) do
+  def telemetry_metadata(%Bonny.CRD{} = spec, extra \\ %{}) do
     base = %{
       api_version: Bonny.CRD.api_version(spec),
       kind: Bonny.CRD.kind(spec)

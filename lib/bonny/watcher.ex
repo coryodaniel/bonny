@@ -24,7 +24,7 @@ defmodule Bonny.Watcher do
   end
 
   @impl GenServer
-  def handle_info(:watch, state = %Impl{}) do
+  def handle_info(:watch, %Impl{} = state) do
     emit_telemetry_event(:started, state)
 
     state = %Impl{state | buffer: ResponseBuffer.new()}
@@ -48,7 +48,7 @@ defmodule Bonny.Watcher do
   end
 
   @impl GenServer
-  def handle_info(%HTTPoison.AsyncChunk{chunk: chunk}, state = %Impl{}) do
+  def handle_info(%HTTPoison.AsyncChunk{chunk: chunk}, %Impl{} = state) do
     emit_telemetry_event(:chunk_received, state)
 
     {lines, buffer} =
@@ -66,21 +66,21 @@ defmodule Bonny.Watcher do
   end
 
   @impl GenServer
-  def handle_info(%HTTPoison.AsyncEnd{}, state = %Impl{}) do
+  def handle_info(%HTTPoison.AsyncEnd{}, %Impl{} = state) do
     emit_telemetry_event(:finished, state)
     send(self(), :watch)
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_info(%HTTPoison.Error{reason: {:closed, :timeout}}, state = %Impl{}) do
+  def handle_info(%HTTPoison.Error{reason: {:closed, :timeout}}, %Impl{} = state) do
     emit_telemetry_event(:expired, state)
     send(self(), :watch)
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_info({:DOWN, _ref, :process, pid, reason}, state = %Impl{}) do
+  def handle_info({:DOWN, _ref, :process, pid, reason}, %Impl{} = state) do
     emit_telemetry_event(:genserver_down, state, %{reason: reason})
     Logger.warn("DOWN received (#{inspect(pid)}) reason: #{inspect(reason)} #{inspect(self())}")
 
@@ -88,7 +88,7 @@ defmodule Bonny.Watcher do
   end
 
   @impl GenServer
-  def handle_info(other, state = %Impl{}) do
+  def handle_info(other, %Impl{} = state) do
     Logger.warn("Received unhandled info: #{inspect(other)}")
     {:noreply, state}
   end
