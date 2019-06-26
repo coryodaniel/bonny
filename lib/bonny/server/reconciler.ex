@@ -92,6 +92,7 @@ defmodule Bonny.Server.Reconciler do
 
       @impl GenServer
       def init(state) do
+        Bonny.Sys.Event.reconciler_initialized(%{}, %{module: __MODULE__})
         Bonny.Server.Reconciler.schedule(self(), 500)
         {:ok, state}
       end
@@ -118,18 +119,22 @@ defmodule Bonny.Server.Reconciler do
   """
   @spec run(module) :: no_return
   def run(module) do
+    metadata = %{module: module}
+
+    Bonny.Sys.Event.reconciler_run_started(%{}, metadata)
     {duration, result} = :timer.tc(module, :resources, [])
+
     measurements = %{duration: duration}
-    metadata = %{reconciler: module}
+    metadata = %{module: module}
 
     case result do
       {:ok, resources} ->
-        Bonny.Sys.Event.reconciler_resources_succeeded(measurements, metadata)
+        Bonny.Sys.Event.reconciler_fetch_succeeded(measurements, metadata)
         Enum.each(resources, &reconcile_async(&1, module))
 
       {:error, error} ->
         metadata = Map.put(metadata, :error, error)
-        Bonny.Sys.Event.reconciler_resources_failed(measurements, metadata)
+        Bonny.Sys.Event.reconciler_fetch_failed(measurements, metadata)
     end
 
     nil
@@ -140,7 +145,14 @@ defmodule Bonny.Server.Reconciler do
     Task.start(fn ->
       {duration, result} = :timer.tc(module, :reconcile, [resource])
       measurements = %{duration: duration}
-      metadata = %{reconciler: module}
+
+      metadata = %{
+        module: module,
+        name: K8s.Resource.name(resource),
+        namespace: K8s.Resource.namespace(resource),
+        kind: K8s.Resource.kind(resource),
+        api_version: resource["apiVersion"]
+      }
 
       case result do
         :ok ->

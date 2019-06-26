@@ -39,7 +39,7 @@ defmodule Bonny.Watcher.Impl do
   Streams HTTPoison response to `Bonny.Watcher`
   """
   @spec watch_for_changes(Impl.t(), pid()) :: no_return
-  def watch_for_changes(state = %Impl{}, watcher) do
+  def watch_for_changes(%Impl{} = state, watcher) do
     operation = list_operation(state)
     rv = get_resource_version(state)
 
@@ -54,7 +54,7 @@ defmodule Bonny.Watcher.Impl do
   Gets the resource version from the state, or fetches it from Kubernetes API if not present
   """
   @spec get_resource_version(Impl.t()) :: binary
-  def get_resource_version(state = %Impl{}) do
+  def get_resource_version(%Impl{} = state) do
     case state.resource_version do
       nil ->
         case fetch_resource_version(state) do
@@ -103,7 +103,7 @@ defmodule Bonny.Watcher.Impl do
   end
 
   @spec list_operation(Impl.t()) :: K8s.Operation.t()
-  defp list_operation(state = %Impl{}) do
+  defp list_operation(%Impl{} = state) do
     api_version = CRD.api_version(state.spec)
     name = CRD.kind(state.spec)
     namespace = Config.namespace()
@@ -115,7 +115,7 @@ defmodule Bonny.Watcher.Impl do
   end
 
   @spec fetch_resource_version(Impl.t()) :: {:ok, binary} | {:error, binary}
-  defp fetch_resource_version(state = %Impl{}) do
+  defp fetch_resource_version(%Impl{} = state) do
     operation = list_operation(state)
     result = @client.run(operation, Config.cluster_name(), params: %{limit: 1})
 
@@ -128,7 +128,7 @@ defmodule Bonny.Watcher.Impl do
     end
   end
 
-  def process_lines(state = %Impl{resource_version: rv}, lines) do
+  def process_lines(%Impl{resource_version: rv} = state, lines) do
     Enum.reduce(lines, {:ok, rv}, fn line, status ->
       case status do
         {:ok, current_rv} ->
@@ -140,7 +140,7 @@ defmodule Bonny.Watcher.Impl do
     end)
   end
 
-  def process_line(line, current_rv, state = %Impl{}) do
+  def process_line(line, current_rv, %Impl{} = state) do
     %{"type" => type, "object" => raw_object} = Jason.decode!(line)
 
     case extract_rv(raw_object) do
