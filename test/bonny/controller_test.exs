@@ -54,7 +54,8 @@ defmodule Bonny.ControllerTest do
         names: %{
           plural: "foos",
           singular: "foo",
-          kind: "Foo"
+          kind: "Foo",
+          shortNames: nil
         },
         additionalPrinterColumns:
           [
