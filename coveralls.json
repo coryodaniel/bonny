@@ -2,7 +2,8 @@
   "skip_files": [
     "test/support/",
     "lib/mix/bonny.ex",
-    "lib/bonny/telemetry.ex"
+    "lib/bonny/telemetry.ex",
+    "lib/bonny/sys/logger.ex"
   ],
   "default_stop_words": [
     "Logger",
