@@ -7,6 +7,7 @@
   "default_stop_words": [
     "Logger",
     "defmodule",
+    "defevent",
     "defrecord",
     "defstruct",
     "defimpl",
