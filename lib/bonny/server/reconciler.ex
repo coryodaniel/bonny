@@ -5,26 +5,25 @@ defmodule Bonny.Server.Reconciler do
   `reconcile/1` will be execute asynchronously with each result returned from `resources/0`.
 
   ## Examples
-    Reconcile a CRD's resources every 15 seconds
+    Print every pod. Not very useful, but a simple copy-paste example.
 
-      defmodule MyCustomResourceReconciler do
+      defmodule PodPrinterReconciler do
         use Bonny.Server.Reconciler, frequency: 15
 
         @impl true
-        def reconcile(resource) do
-          IO.inspect(resource)
+        def reconcile(pod) do
+          IO.inspect(pod)
           :ok
         end
 
         @impl true
         def resources() do
-          operation = K8s.Client.list("example.com/v1", "MyCustomResourceDefName", namespace: :all)
+          operation = K8s.Client.list("v1", :pods, namespace: "default")
           K8s.Client.stream(operation, :default)
         end
       end
 
-      MyCustomResourceReconciler.start_link()
-
+      PodPrinterReconciler.start_link()
 
     A quick and dirty chaos monkey for pods. 20% chance of eviction every 15 seconds.
 
@@ -51,25 +50,25 @@ defmodule Bonny.Server.Reconciler do
 
       ChaosMonkeyReconciler.start_link()
 
-    Print every pod. Not very useful, but a simple copy-paste example.
+    Reconcile a CRD's resources every 15 seconds
 
-      defmodule PodPrinterReconciler do
+      defmodule MyCustomResourceReconciler do
         use Bonny.Server.Reconciler, frequency: 15
 
         @impl true
-        def reconcile(pod) do
-          IO.inspect(pod)
+        def reconcile(resource) do
+          IO.inspect(resource)
           :ok
         end
 
         @impl true
         def resources() do
-          operation = K8s.Client.list("v1", :pods, namespace: "default")
+          operation = K8s.Client.list("example.com/v1", "MyCustomResourceDefName", namespace: :all)
           K8s.Client.stream(operation, :default)
         end
       end
 
-      PodPrinterReconciler.start_link()
+      MyCustomResourceReconciler.start_link()
   """
 
   @doc """
