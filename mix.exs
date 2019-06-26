@@ -38,6 +38,7 @@ defmodule Bonny.MixProject do
     [
       {:jason, "~> 1.1"},
       {:k8s, "~> 0.2"},
+      {:notion, "~> 0.2"},
       {:telemetry, ">=  0.4.0"},
 
       # Dev deps
