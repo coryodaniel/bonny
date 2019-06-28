@@ -38,6 +38,7 @@ defmodule Bonny.MixProject do
     [
       {:jason, "~> 1.1"},
       {:k8s, "~> 0.2"},
+      # {:k8s, path: "/Users/odanielc/Workspace/coryodaniel/k8s"},
       {:notion, "~> 0.2"},
       {:telemetry, ">=  0.4.0"},
 
