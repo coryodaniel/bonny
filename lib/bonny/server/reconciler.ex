@@ -74,7 +74,7 @@ defmodule Bonny.Server.Reconciler do
   @doc """
   Reconciles a resource.
   """
-  @callback reconcile(map()) :: :ok | {:error, any()}
+  @callback reconcile(map()) :: :ok | {:ok, any()} | {:error, any()}
 
   @doc """
   Gets a list of resources to reconcile.
@@ -120,12 +120,9 @@ defmodule Bonny.Server.Reconciler do
   @spec run(module) :: no_return
   def run(module) do
     metadata = %{module: module}
-
     Bonny.Sys.Event.reconciler_run_started(%{}, metadata)
-    {duration, result} = :timer.tc(module, :resources, [])
 
-    measurements = %{duration: duration}
-    metadata = %{module: module}
+    {measurements, result} = Bonny.Sys.Event.measure(module, :resources, [])
 
     case result do
       {:ok, resources} ->
@@ -143,8 +140,7 @@ defmodule Bonny.Server.Reconciler do
   @spec reconcile_async(map, module) :: no_return
   defp reconcile_async(resource, module) do
     Task.start(fn ->
-      {duration, result} = :timer.tc(module, :reconcile, [resource])
-      measurements = %{duration: duration}
+      {measurements, result} = Bonny.Sys.Event.measure(module, :reconcile, [resource])
 
       metadata = %{
         module: module,
@@ -156,6 +152,9 @@ defmodule Bonny.Server.Reconciler do
 
       case result do
         :ok ->
+          Bonny.Sys.Event.reconciler_run_succeeded(measurements, metadata)
+
+        {:ok, _} ->
           Bonny.Sys.Event.reconciler_run_succeeded(measurements, metadata)
 
         {:error, error} ->

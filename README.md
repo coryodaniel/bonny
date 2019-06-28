@@ -5,21 +5,26 @@
 [![Hex.pm](http://img.shields.io/hexpm/v/bonny.svg?style=flat)](https://hex.pm/packages/bonny)
 ![Hex.pm](https://img.shields.io/hexpm/l/bonny.svg?style=flat)
 
-# Bonny: Kubernetes Operator Framework
+# Bonny: Kubernetes Development Framework
 
-Extend the Kubernetes API and implement CustomResourceDefinitions lifecycles in Elixir.
+Extend the Kubernetes API with Elixir.
+
+Bonny make it easy to create Kubernetes Operators, Controllers, and Custom [Schedulers](./lib/bonny/server/scheduler.ex).
 
 If Kubernetes CRDs and controllers are new to you, read up on the [terminology](#terminology).
 
 _Tutorials and Examples:_
+
+*Important!* These tutorials are for an older version of Bonny, but the `add/1`, `modify/1`, and `delete/1` APIs are the same, as well as a new `reconcile/1` function. Additionally a [k8s](https://github.com/coryodaniel/k8s) has been added!
+
+Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you need any help!
 
 - HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
 - HelloOperator [source code](https://gitub.com/coryodaniel/hello_operator)
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `bonny` to your list of dependencies in `mix.exs`:
+Bonny can be installed by adding `bonny` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
