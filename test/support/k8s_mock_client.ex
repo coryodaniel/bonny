@@ -4,6 +4,15 @@ defmodule Bonny.K8sMockClient do
   Mock `K8s.Client`
   """
 
+  def stream(%K8s.Operation{api_version: "reconciler.test/v1"} = _op, _cluster) do
+    fake_stream = [
+      %{"name" => "foo"},
+      %{"name" => "bar"}
+    ]
+
+    {:ok, fake_stream}
+  end
+
   def list(api_version, name_or_kind), do: list(api_version, name_or_kind, [])
 
   def list(api_version, name_or_kind, path_params) do

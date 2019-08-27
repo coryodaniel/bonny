@@ -120,6 +120,11 @@ defmodule Bonny.Server.Scheduler do
       def nodes(), do: Bonny.Server.Scheduler.nodes()
 
       @impl Bonny.Server.Reconciler
+      def reconcile_operation() do
+        K8s.Client.list("v1", :pods, namespace: :all)
+      end
+
+      @impl Bonny.Server.Reconciler
       defdelegate reconcile_resources(), to: __MODULE__, as: :pods
 
       defoverridable pods: 0, nodes: 0, field_selector: 0, reconcile_resources: 0
@@ -151,11 +156,11 @@ defmodule Bonny.Server.Scheduler do
     |> Bonny.Server.Scheduler.Binding.create(cluster)
   end
 
-  @doc "Returns a stream of pods for the given `field_selector`."
-  @spec pods(module()) :: Enumerable.t()
+  @doc "Returns a list of pods for the given `field_selector`."
+  @spec pods(module()) :: {:ok, list(map())} | {:error, any()}
   def pods(module) do
     cluster = Bonny.Config.cluster_name()
-    op = K8s.Client.list("v1", :pods, namespace: :all)
+    op = module.reconcile_operation()
 
     response = K8s.Client.stream(op, cluster, params: %{fieldSelector: module.field_selector()})
     metadata = %{module: module, name: module.name()}
@@ -163,7 +168,8 @@ defmodule Bonny.Server.Scheduler do
     case response do
       {:ok, stream} ->
         Bonny.Sys.Event.scheduler_pods_fetch_succeeded(%{}, metadata)
-        {:ok, stream}
+        pods = Enum.into(stream, [])
+        {:ok, pods}
 
       {:error, error} ->
         Bonny.Sys.Event.scheduler_pods_fetch_failed(%{}, metadata)
@@ -171,8 +177,8 @@ defmodule Bonny.Server.Scheduler do
     end
   end
 
-  @doc "Returns a stream of all nodes in the cluster."
-  @spec nodes() :: Enumerable.t()
+  @doc "Returns a list of all nodes in the cluster."
+  @spec nodes() :: {:ok, list(map())} | {:error, any()}
   def nodes() do
     cluster = Bonny.Config.cluster_name()
     op = K8s.Client.list("v1", :nodes)
@@ -184,7 +190,8 @@ defmodule Bonny.Server.Scheduler do
     case response do
       {:ok, stream} ->
         Bonny.Sys.Event.scheduler_nodes_fetch_succeeded(measurements, metadata)
-        {:ok, stream}
+        nodes = Enum.into(stream, [])
+        {:ok, nodes}
 
       {:error, error} ->
         Bonny.Sys.Event.scheduler_nodes_fetch_failed(measurements, metadata)

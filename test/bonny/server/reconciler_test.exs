@@ -13,12 +13,8 @@ defmodule Bonny.Server.ReconcilerTest do
     end
 
     @impl true
-    def reconcile_resources() do
-      {:ok,
-       [
-         %{"name" => "foo"},
-         %{"name" => "bar"}
-       ]}
+    def reconcile_operation() do
+      K8s.Client.list("reconciler.test/v1", :foos)
     end
   end
 

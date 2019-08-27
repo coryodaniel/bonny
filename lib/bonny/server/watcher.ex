@@ -3,18 +3,26 @@ defmodule K8s.Server.Watcher do
   Continuously watch a list `Operation` for `add`, `modify`, and `delete` events.
   """
 
-  # watch_operation()
+  @doc """
+  `K8s.Operation` to be watched (K8s.Client.watch)
+
+  ## Examples
+  ```elixir
+    def watch_operation() do
+      K8s.Client.list("v1", :pods, namespace: :all)
+    end
+  ```
+  """
+  @callback watch_operation() :: K8s.Operation.t()
+  @callback add(map()) :: :ok | :error
+  @callback modify(map()) :: :ok | :error
+  @callback delete(map()) :: :ok | :error
+
   # watch_cluster() # Bonny.Config.cluster_name()
   # watch_resources() # default impl, name?
 
-  # Reconciler has resources() callback... can that be used?
-  # Add a Bonny.Operation behavior? to encapsulate it for both?
-
   # @doc "Defines the list `Operation` to watch"
   # @callback operation() :: K8s.Operation.t()
-
-  # @doc "Returns the name of the cluster to watch registerd with `K8s.Conn`"
-  # @callback cluster() :: atom()
 
   # defmacro __using__(opts) do
   #   @behaviour Bonny.Server.Reconciler
