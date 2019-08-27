@@ -15,9 +15,13 @@ defmodule Mix.Tasks.Bonny.Gen.Dockerfile do
     {opts, _, _} =
       Mix.Bonny.parse_args(args, @default_opts, switches: @switches, aliases: @aliases)
 
+    binding = [
+      app_name: Mix.Bonny.app_dir_name()
+    ]
+
     "Dockerfile"
     |> Mix.Bonny.template()
-    |> EEx.eval_file([])
+    |> EEx.eval_file(binding)
     |> Mix.Bonny.render(opts[:out])
   end
 end
