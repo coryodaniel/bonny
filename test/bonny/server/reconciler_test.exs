@@ -13,7 +13,7 @@ defmodule Bonny.Server.ReconcilerTest do
     end
 
     @impl true
-    def resources() do
+    def reconcile_resources() do
       {:ok,
        [
          %{"name" => "foo"},

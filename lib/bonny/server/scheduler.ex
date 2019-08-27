@@ -72,14 +72,14 @@ defmodule Bonny.Server.Scheduler do
 
   Default implementation is all unscheduled pods specifying this scheduler in `spec.schedulerName`.
   """
-  @callback pods() :: {:ok, Enumerable.t()} | {:error | atom}
+  @callback pods() :: {:ok, Enumerable.t()} | {:error, any()}
 
   @doc """
   List of nodes available to this scheduler.
 
   Default implementation is all nodes in cluster.
   """
-  @callback nodes() :: {:ok, Enumerable.t()} | {:error | atom}
+  @callback nodes() :: {:ok, Enumerable.t()} | {:error, any()}
 
   @doc """
   Field selector for selecting unscheduled pods waiting to be scheduled by this scheduler.
@@ -120,9 +120,9 @@ defmodule Bonny.Server.Scheduler do
       def nodes(), do: Bonny.Server.Scheduler.nodes()
 
       @impl Bonny.Server.Reconciler
-      defdelegate resources, to: __MODULE__, as: :pods
+      defdelegate reconcile_resources(), to: __MODULE__, as: :pods
 
-      defoverridable pods: 0, nodes: 0, field_selector: 0, resources: 0
+      defoverridable pods: 0, nodes: 0, field_selector: 0, reconcile_resources: 0
 
       @impl Bonny.Server.Reconciler
       def reconcile(pod) do

@@ -1,8 +1,8 @@
 defmodule Bonny.Server.Reconciler do
   @moduledoc """
-  Continuously reconciles the results of a `K8s.Client.list/3` `K8s.Operation`.
+  Continuously reconciles a set of kubernetes resources.
 
-  `reconcile/1` will be execute asynchronously with each result returned from `resources/0`.
+  `reconcile/1` will be execute asynchronously with each result returned from `reconcile_resources/0`.
 
   ## Examples
     Print every pod. Not very useful, but a simple copy-paste example.
@@ -17,9 +17,14 @@ defmodule Bonny.Server.Reconciler do
         end
 
         @impl true
-        def resources() do
+        def reconcile_resources() do
           operation = K8s.Client.list("v1", :pods, namespace: "default")
-          K8s.Client.stream(operation, :default)
+          cluster = Bonny.Config.cluster_name()
+
+          with {:ok, stream} <- K8s.Client.stream(operation, cluster) do
+            records = Enum.into(stream, [])
+            {:ok, records}
+          end
         end
       end
 
@@ -42,9 +47,14 @@ defmodule Bonny.Server.Reconciler do
         end
 
         @impl true
-        def resources() do
+        def reconcile_resources() do
           operation = K8s.Client.list("v1", :pods, namespace: :all)
-          K8s.Client.stream(operation, :default)
+          cluster = Bonny.Config.cluster_name()
+
+          with {:ok, stream} <- K8s.Client.stream(operation, cluster) do
+            records = Enum.into(stream, [])
+            {:ok, records}
+          end
         end
       end
 
@@ -57,14 +67,16 @@ defmodule Bonny.Server.Reconciler do
 
         @impl true
         def reconcile(resource) do
+          # You should do something much cooler than inspect here...
           IO.inspect(resource)
           :ok
         end
 
         @impl true
-        def resources() do
-          operation = K8s.Client.list("example.com/v1", "MyCustomResourceDefName", namespace: :all)
-          K8s.Client.stream(operation, :default)
+        def reconcile_resources() do
+          operation = K8s.Client.list("example.com/v1", "MyCRDName", namespace: :all)
+          cluster = Bonny.Config.cluster_name()
+          Bonny.Server.Reconciler.stream_resources(operation, cluster)
         end
       end
 
@@ -73,13 +85,31 @@ defmodule Bonny.Server.Reconciler do
 
   @doc """
   Reconciles a resource.
+
+  ## Examples
+  ```elixir
+    def reconcile(resource) do
+      # You should do something much cooler than inspect here...
+      IO.inspect(resource)
+      :ok
+    end
+  ```
   """
   @callback reconcile(map()) :: :ok | {:ok, any()} | {:error, any()}
 
   @doc """
-  Gets a list of resources to reconcile.
+  List of resources to be reconciled.
+
+  ## Examples
+  ```elixir
+    def reconcile_resources() do
+      operation = K8s.Client.list("v1", :pods, namespace: :all)
+      cluster = Bonny.Config.cluster_name()
+      Bonny.Server.Reconciler.stream_resources(operation, cluster)
+    end
+  ```
   """
-  @callback resources() :: {:ok, Enumerable.t()} | {:error, any()}
+  @callback reconcile_resources() :: {:ok, list(map())} | {:error, any()}
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
@@ -115,14 +145,14 @@ defmodule Bonny.Server.Reconciler do
   end
 
   @doc """
-  Runs a `Reconcilers` `reconcile/1` for each resource return by `resources/0`
+  Runs a `Reconcilers` `reconcile/1` for each resource return by `reconcile_resources/0`
   """
   @spec run(module) :: no_return
   def run(module) do
     metadata = %{module: module}
     Bonny.Sys.Event.reconciler_run_started(%{}, metadata)
 
-    {measurements, result} = Bonny.Sys.Event.measure(module, :resources, [])
+    {measurements, result} = Bonny.Sys.Event.measure(module, :reconcile_resources, [])
 
     case result do
       {:ok, resources} ->
@@ -135,6 +165,15 @@ defmodule Bonny.Server.Reconciler do
     end
 
     nil
+  end
+
+  @doc "Stream a `K8s.Operation` into an `Enum`."
+  @spec stream_resources(K8s.Operation.t(), atom()) :: {:ok, list(map())} | {:error, any()}
+  def stream_resources(operation, cluster) do
+    with {:ok, stream} <- K8s.Client.stream(operation, cluster) do
+      records = Enum.into(stream, [])
+      {:ok, records}
+    end
   end
 
   @spec reconcile_async(map, module) :: no_return
