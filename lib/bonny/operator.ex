@@ -109,13 +109,13 @@ defmodule Bonny.Operator do
                 resources: resources(),
                 securityContext: %{
                   allowPrivilegeEscalation: false,
-                  readOnlyRootFilesystem: true
+                  readOnlyRootFilesystem: true,
+                  securityContext: %{runAsNonRoot: true, runAsUser: 65_534},
+                  serviceAccountName: Bonny.Config.service_account()
                 },
                 env: env_vars()
               }
-            ],
-            securityContext: %{runAsNonRoot: true, runAsUser: 65_534},
-            serviceAccountName: Bonny.Config.service_account()
+            ]
           }
         }
       }
