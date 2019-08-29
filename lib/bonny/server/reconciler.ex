@@ -140,6 +140,17 @@ defmodule Bonny.Server.Reconciler do
         {:noreply, state}
       end
 
+      @impl GenServer
+      def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
+        Bonny.Sys.Event.reconciler_genserver_down(%{}, %{module: __MODULE__})
+        {:stop, :normal, state}
+      end
+
+      @impl GenServer
+      def handle_info(_other, state) do
+        {:noreply, state}
+      end
+
       @impl Bonny.Server.Reconciler
       def reconcilable_resources() do
         operation = reconcile_operation()
@@ -197,14 +208,14 @@ defmodule Bonny.Server.Reconciler do
 
       case result do
         :ok ->
-          Bonny.Sys.Event.reconciler_run_succeeded(measurements, metadata)
+          Bonny.Sys.Event.reconciler_reconcile_succeeded(measurements, metadata)
 
         {:ok, _} ->
-          Bonny.Sys.Event.reconciler_run_succeeded(measurements, metadata)
+          Bonny.Sys.Event.reconciler_reconcile_succeeded(measurements, metadata)
 
         {:error, error} ->
           metadata = Map.put(metadata, :error, error)
-          Bonny.Sys.Event.reconciler_run_failed(measurements, metadata)
+          Bonny.Sys.Event.reconciler_reconcile_failed(measurements, metadata)
       end
     end)
   end

@@ -54,8 +54,7 @@ defmodule Bonny.Server.Watcher do
                 {:ok, rv} ->
                   rv
 
-                {:error, msg} ->
-                  Logger.warn("Error fetching resource version: #{msg}")
+                {:error, _} ->
                   "0"
               end
 
@@ -63,6 +62,7 @@ defmodule Bonny.Server.Watcher do
               rv
           end
 
+        Bonny.Sys.Event.watcher_watch_started(%{}, %{module: __MODULE__})
         Bonny.Server.Watcher.watch(__MODULE__, rv, self())
         {:noreply, state}
       end
@@ -72,19 +72,19 @@ defmodule Bonny.Server.Watcher do
 
       @impl GenServer
       def handle_info(%HTTPoison.AsyncStatus{code: 200}, state) do
-        # TODO: emit watch succeeded, expect stream
+        Bonny.Sys.Event.watcher_watch_succeeded(%{}, %{module: __MODULE__})
         {:noreply, state}
       end
 
       @impl GenServer
       def handle_info(%HTTPoison.AsyncStatus{code: code}, state) do
-        # TODO: emit watch failed
+        Bonny.Sys.Event.watcher_watch_failed(%{}, %{module: __MODULE__, code: code})
         {:stop, :normal, state}
       end
 
       @impl GenServer
       def handle_info(%HTTPoison.AsyncChunk{chunk: chunk}, %State{resource_version: rv} = state) do
-        # # TODO: emit chunk recv'd
+        Bonny.Sys.Event.watcher_chunk_received(%{}, %{module: __MODULE__, rv: rv})
 
         {lines, buffer} =
           state.buffer
@@ -102,31 +102,27 @@ defmodule Bonny.Server.Watcher do
 
       @impl GenServer
       def handle_info(%HTTPoison.AsyncEnd{}, %State{} = state) do
-        # watch finished
+        Bonny.Sys.Event.watcher_watch_finished(%{}, %{module: __MODULE__})
         send(self(), :watch)
         {:noreply, state}
       end
 
       @impl GenServer
       def handle_info(%HTTPoison.Error{reason: {:closed, :timeout}}, %State{} = state) do
-        # watch expired / timedout
+        Bonny.Sys.Event.watcher_watch_timedout(%{}, %{module: __MODULE__})
         send(self(), :watch)
         {:noreply, state}
       end
 
       @impl GenServer
       def handle_info({:DOWN, _ref, :process, pid, reason}, %State{} = state) do
-        # GenServer down
-        Logger.warn(
-          "DOWN received (#{inspect(pid)}) reason: #{inspect(reason)} #{inspect(self())}"
-        )
+        Bonny.Sys.Event.watcher_genserver_down(%{}, %{module: __MODULE__})
 
         {:stop, :normal, state}
       end
 
       @impl GenServer
-      def handle_info(other, %State{} = state) do
-        Logger.warn("Received unhandled info: #{inspect(other)}")
+      def handle_info(_other, %State{} = state) do
         {:noreply, state}
       end
     end
@@ -141,9 +137,6 @@ defmodule Bonny.Server.Watcher do
     cluster = Bonny.Config.cluster_name()
     timeout = 5 * 60 * 1000
     client = module.client()
-
-    metadata = %{module: module}
-    Bonny.Sys.Event.watcher_watch_started(%{}, metadata)
 
     client.watch(operation, cluster,
       params: %{resourceVersion: rv},

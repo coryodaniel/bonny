@@ -27,4 +27,7 @@ if Mix.env() == :dev do
         conn_opts: [context: "docker-for-desktop"]
       }
     }
+
+  config :bonny,
+    cluster_name: :dev
 end

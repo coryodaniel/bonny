@@ -1,5 +1,5 @@
 defmodule Bonny.Server.Watcher.State do
-  @moduledoc "State of the Watcher server"
+  @moduledoc "State of the Watcher"
 
   alias Bonny.Server.Watcher.ResponseBuffer
 
