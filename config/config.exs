@@ -19,4 +19,12 @@ if Mix.env() == :dev do
       "format",
       "credo"
     ]
+
+  config :k8s,
+    clusters: %{
+      dev: %{
+        conn: "~/.kube/config",
+        conn_opts: [context: "docker-for-desktop"]
+      }
+    }
 end

@@ -37,7 +37,7 @@ defmodule Bonny.MixProject do
   defp deps do
     [
       {:jason, "~> 1.1"},
-      {:k8s, "~> 0.3"},
+      {:k8s, "~> 0.4"},
       {:notion, "~> 0.2"},
       {:telemetry, ">=  0.4.0"},
 
