@@ -125,9 +125,9 @@ defmodule Bonny.Server.Scheduler do
       end
 
       @impl Bonny.Server.Reconciler
-      defdelegate reconcile_resources(), to: __MODULE__, as: :pods
+      defdelegate reconcilable_resources(), to: __MODULE__, as: :pods
 
-      defoverridable pods: 0, nodes: 0, field_selector: 0, reconcile_resources: 0
+      defoverridable pods: 0, nodes: 0, field_selector: 0, reconcilable_resources: 0
 
       @impl Bonny.Server.Reconciler
       def reconcile(pod) do

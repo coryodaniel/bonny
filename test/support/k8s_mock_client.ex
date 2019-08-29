@@ -48,8 +48,13 @@ defmodule Bonny.K8sMockClient do
     {:ok, response}
   end
 
-  # Mock response for Impl.get_resource_version/1
+  # TODO: remove; Pre 0.4: Mock response for Impl.get_resource_version/1
   def run(%K8s.Operation{name: "widgets", method: :get, verb: :list}, _, params: %{limit: 1}) do
+    response = %{"metadata" => %{"resourceVersion" => "1337"}}
+    {:ok, response}
+  end
+
+  def run(%K8s.Operation{api_version: "resourceVersion.test/v1"}, _, params: %{limit: 1}) do
     response = %{"metadata" => %{"resourceVersion" => "1337"}}
     {:ok, response}
   end

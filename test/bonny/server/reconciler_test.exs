@@ -4,7 +4,7 @@ defmodule Bonny.Server.ReconcilerTest do
   alias Bonny.Server.Reconciler
 
   defmodule TestReconciler do
-    use Bonny.Server.Reconciler, frequency: 15
+    use Bonny.Server.Reconciler, frequency: 15, client: Bonny.K8sMockClient
 
     @impl true
     def reconcile(pod) do
@@ -18,12 +18,12 @@ defmodule Bonny.Server.ReconcilerTest do
     end
   end
 
-  test "schedule/2 sends `:run` after N seconds" do
+  test "schedule/2 sends `:run` after delay" do
     Reconciler.schedule(self(), 1)
     assert_receive :run, 2_000
   end
 
-  describe "run/1" do
+  test "run/1" do
     Agent.start_link(fn -> [] end, name: TestReconcilerCache)
     Reconciler.run(TestReconciler)
     Process.sleep(500)

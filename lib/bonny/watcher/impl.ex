@@ -3,8 +3,9 @@ defmodule Bonny.Watcher.Impl do
   Implementation logic for `Bonny.Watcher`
   """
 
-  alias Bonny.Watcher.{Impl, ResponseBuffer}
-  alias Bonny.{Config, CRD, Telemetry}
+  alias Bonny.Watcher.{Impl}
+  alias Bonny.Server.Watcher.ResponseBuffer
+  alias Bonny.{Config, CRD}
   require Logger
 
   @client Application.get_env(:bonny, :k8s_client, K8s.Client)
@@ -57,7 +58,9 @@ defmodule Bonny.Watcher.Impl do
   def get_resource_version(%Impl{} = state) do
     case state.resource_version do
       nil ->
-        case fetch_resource_version(state) do
+        resp = Bonny.Server.Watcher.ResourceVersion.get(list_operation(state))
+
+        case resp do
           {:ok, rv} ->
             rv
 
@@ -71,37 +74,6 @@ defmodule Bonny.Watcher.Impl do
     end
   end
 
-  @doc """
-  Dispatches an `ADDED`, `MODIFIED`, and `DELETED` events to an controller
-  """
-  @spec dispatch(map, atom) :: no_return
-  def dispatch(%{"type" => "ADDED", "object" => object}, controller),
-    do: do_dispatch(controller, :add, object)
-
-  def dispatch(%{"type" => "MODIFIED", "object" => object}, controller),
-    do: do_dispatch(controller, :modify, object)
-
-  def dispatch(%{"type" => "DELETED", "object" => object}, controller),
-    do: do_dispatch(controller, :delete, object)
-
-  @spec do_dispatch(atom, atom, map) :: no_return
-  defp do_dispatch(controller, event, object) do
-    Task.start(fn ->
-      {time, result} = Telemetry.measure(fn -> apply(controller, event, [object]) end)
-      metadata = %{event: event}
-      measurements = %{duration: time}
-
-      case result do
-        :ok ->
-          emit_telemetry_measurement(:dispatch_succeeded, measurements, controller, metadata)
-
-        {:error, msg} ->
-          emit_telemetry_measurement(:dispatch_failed, measurements, controller, metadata)
-          Logger.error("Error dispatching watch event: #{msg}")
-      end
-    end)
-  end
-
   @spec list_operation(Impl.t()) :: K8s.Operation.t()
   defp list_operation(%Impl{} = state) do
     api_version = CRD.api_version(state.spec)
@@ -112,57 +84,5 @@ defmodule Bonny.Watcher.Impl do
       :namespaced -> @client.list(api_version, name, namespace: namespace)
       _ -> @client.list(api_version, name)
     end
-  end
-
-  @spec fetch_resource_version(Impl.t()) :: {:ok, binary} | {:error, binary}
-  defp fetch_resource_version(%Impl{} = state) do
-    operation = list_operation(state)
-    result = @client.run(operation, Config.cluster_name(), params: %{limit: 1})
-
-    case result do
-      {:ok, response} ->
-        {:ok, extract_rv(response)}
-
-      _ ->
-        {:error, "No resource version found for operation: #{inspect(operation)}"}
-    end
-  end
-
-  def process_lines(%Impl{resource_version: rv} = state, lines) do
-    Enum.reduce(lines, {:ok, rv}, fn line, status ->
-      case status do
-        {:ok, current_rv} ->
-          process_line(line, current_rv, state)
-
-        {:error, :gone} ->
-          {:error, :gone}
-      end
-    end)
-  end
-
-  def process_line(line, current_rv, %Impl{} = state) do
-    %{"type" => type, "object" => raw_object} = Jason.decode!(line)
-
-    case extract_rv(raw_object) do
-      {:gone, _message} ->
-        {:error, :gone}
-
-      ^current_rv ->
-        {:ok, current_rv}
-
-      new_rv ->
-        dispatch(%{"type" => type, "object" => raw_object}, state.controller)
-        {:ok, new_rv}
-    end
-  end
-
-  @spec extract_rv(map | binary) :: binary | {:gone, binary()}
-  def extract_rv(%{"metadata" => %{"resourceVersion" => rv}}), do: rv
-  def extract_rv(%{"message" => message}), do: {:gone, message}
-
-  @spec emit_telemetry_measurement(atom, map, module, map | nil) :: :ok
-  defp emit_telemetry_measurement(name, measurement, controller, extra) do
-    metadata = CRD.telemetry_metadata(controller.crd_spec, extra)
-    Telemetry.emit([:watcher, name], measurement, metadata)
   end
 end

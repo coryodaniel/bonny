@@ -1,4 +1,4 @@
-defmodule Bonny.Watcher.ResponseBuffer do
+defmodule Bonny.Server.Watcher.ResponseBuffer do
   @moduledoc """
   Buffers streaming responses from HTTPoison and returns kubernetes watch events as JSON
 

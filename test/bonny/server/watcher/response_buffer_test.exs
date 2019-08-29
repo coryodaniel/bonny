@@ -1,6 +1,6 @@
-defmodule Bonny.Watcher.ResponseBufferTest do
+defmodule Bonny.Server.Watcher.ResponseBufferTest do
   use ExUnit.Case
-  alias Bonny.Watcher.ResponseBuffer
+  alias Bonny.Server.Watcher.ResponseBuffer
 
   test "get_lines with nothing" do
     {events, _buffer} =

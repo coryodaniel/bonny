@@ -2,6 +2,11 @@ defmodule Bonny.Sys.Event do
   @moduledoc false
   use Notion, name: :bonny, metadata: %{}
 
+  defevent([:watcher, :initialized])
+  defevent([:watcher, :watch, :started])
+  defevent([:watcher, :watch, :succeeded])
+  defevent([:watcher, :watch, :failed])
+
   defevent([:reconciler, :initialized])
   defevent([:reconciler, :run, :started])
   defevent([:reconciler, :run, :succeeded])
