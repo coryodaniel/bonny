@@ -37,7 +37,7 @@ reconciliation
 when fetching batches of items to reconcile
 - Added `{:error, binary}` as a return value of Controller lifecycle methods
 - Implemented `:telemetry` library
-- `Bonny.Telemetry.events/0` exposes list of telemetry events
+- `Bonny.Sys.Event.events/0` exposes list of telemetry events
 - `mix bonny.gen.manifest --local` for building manifests w/o a Deployment for
   local testing
 - `cluster_name: :default` config options. Now uses [k8s](https://github.com/coryodaniel/k8s) cluster registration configuration.

@@ -7,7 +7,6 @@ defmodule Bonny.Watcher do
   require Logger
   alias Bonny.Watcher.{Impl}
   alias Bonny.Server.Watcher.ResponseBuffer
-  alias Bonny.{CRD, Telemetry}
 
   @initial_watch_delay 100
 
@@ -25,7 +24,6 @@ defmodule Bonny.Watcher do
 
   @impl GenServer
   def handle_info(:watch, %Impl{} = state) do
-    # @@
     state = %Impl{state | buffer: ResponseBuffer.new()}
     Impl.watch_for_changes(state, self())
     {:noreply, state}

@@ -9,7 +9,7 @@ defmodule Bonny.Reconciler do
 
   use GenServer
   require Logger
-  alias Bonny.{Config, CRD, Reconciler, Telemetry}
+  alias Bonny.{Config, CRD, Reconciler}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{})
@@ -47,20 +47,20 @@ defmodule Bonny.Reconciler do
   defp get_items(_controller, _limit, :halt), do: nil
 
   defp get_items(controller, limit, continue) do
-    request = fn -> list_items(controller, limit, continue) end
-    {time, response} = Telemetry.measure(request)
+    response = list_items(controller, limit, continue)
+
     metadata = CRD.telemetry_metadata(controller.crd_spec)
 
     case response do
       {:ok, body} ->
-        measurements = %{item_count: length(body["items"]), duration: time}
+        measurements = %{item_count: length(body["items"]), duration: 0}
         emit_telemetry_measurement(:get_items_succeeded, measurements, metadata)
 
         reconcile_async(body["items"], controller)
         get_items(controller, limit, do_continue(body))
 
       {:error, reason} ->
-        emit_telemetry_measurement(:get_items_failed, %{duration: time}, metadata)
+        emit_telemetry_measurement(:get_items_failed, %{duration: 0}, metadata)
         Logger.error("Failed reconciling controller: #{controller}, reason: #{reason}")
         {:error, reason}
     end
@@ -86,10 +86,10 @@ defmodule Bonny.Reconciler do
 
   @spec do_reconcile(module, map) :: :ok | :error
   defp do_reconcile(controller, item) do
-    {time, result} = Telemetry.measure(fn -> controller.reconcile(item) end)
+    result = controller.reconcile(item)
 
     metadata = CRD.telemetry_metadata(controller.crd_spec)
-    measurements = %{duration: time}
+    measurements = %{duration: 0}
 
     case result do
       :ok ->
@@ -109,12 +109,12 @@ defmodule Bonny.Reconciler do
 
   @spec emit_telemetry_event(atom, map | nil) :: :ok
   defp emit_telemetry_event(name, metadata \\ %{}) do
-    Telemetry.emit([:reconciler, name], %{}, metadata)
+    :ok
   end
 
   @spec emit_telemetry_measurement(atom, map, map) :: :ok
   defp emit_telemetry_measurement(name, measurement, metadata) do
-    Telemetry.emit([:reconciler, name], measurement, metadata)
+    :ok
   end
 
   @spec list_operation(module) :: K8s.Operation.t()

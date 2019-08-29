@@ -209,28 +209,34 @@ TODO: Need to support validation / OpenAPI.
 
 ## Telemetry
 
-Bonny uses the `telemetry` library to emit event metrics.
+Bonny uses the `telemetry` and `notion` library to emit event metrics.
 
-Emmited events:
+Events: `Bonny.Sys.Event.events()`
 
 ```elixir
-  [:bonny, :reconciler, :genserver_initialized],
-  [:bonny, :reconciler, :started],
-  [:bonny, :reconciler, :scheduled],
-  [:bonny, :reconciler, :get_items_succeeded],
-  [:bonny, :reconciler, :get_items_failed],
-  [:bonny, :reconciler, :item_succeeded],
-  [:bonny, :reconciler, :item_failed],
-  [:bonny, :watcher, :genserver_initialized],
-  [:bonny, :watcher, :genserver_down],
-  [:bonny, :watcher, :started],
-  [:bonny, :watcher, :chunk_received],
-  [:bonny, :watcher, :expired],
-  [:bonny, :watcher, :finished],
-  [:bonny, :watcher, :http_request_failed],
-  [:bonny, :watcher, :http_request_succeeded],
-  [:bonny, :watcher, :dispatch_succeeded],
-  [:bonny, :watcher, :dispatch_failed]
+[
+  [:bonny, :scheduler, :binding, :failed],
+  [:bonny, :scheduler, :binding, :succeeded],
+  [:bonny, :scheduler, :nodes, :fetch, :failed],
+  [:bonny, :scheduler, :nodes, :fetch, :succeeded],
+  [:bonny, :scheduler, :pods, :fetch, :failed],
+  [:bonny, :scheduler, :pods, :fetch, :succeeded],
+  [:bonny, :reconciler, :genserver, :down],
+  [:bonny, :reconciler, :reconcile, :failed],
+  [:bonny, :reconciler, :reconcile, :succeeded],
+  [:bonny, :reconciler, :run, :started],
+  [:bonny, :reconciler, :fetch, :failed],
+  [:bonny, :reconciler, :fetch, :succeeded],
+  [:bonny, :reconciler, :initialized],
+  [:bonny, :watcher, :genserver, :down],
+  [:bonny, :watcher, :chunk, :received],
+  [:bonny, :watcher, :watch, :timedout],
+  [:bonny, :watcher, :watch, :failed],
+  [:bonny, :watcher, :watch, :finished],
+  [:bonny, :watcher, :watch, :succeeded],
+  [:bonny, :watcher, :watch, :started],
+  [:bonny, :watcher, :initialized]
+]
 ```
 
 ## Terminology
