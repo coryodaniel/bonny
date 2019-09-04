@@ -61,18 +61,20 @@ defmodule Bonny.OperatorTest do
       %{
         apiVersion: "apiextensions.k8s.io/v1beta1",
         kind: "CustomResourceDefinition",
-        metadata: %{
-          labels: %{"k8s-app" => "bonny"},
-          name: "widgets.example.com"
-        },
-        spec: %Bonny.CRD{
+        metadata: %{labels: %{"k8s-app" => "bonny"}, name: "widgets.example.com"},
+        spec: %{
+          additionalPrinterColumns: [
+            %{JSONPath: ".spec.test", description: "test", name: "test", type: "string"},
+            %{
+              JSONPath: ".metadata.creationTimestamp",
+              description:
+                "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\n\n      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+              name: "Age",
+              type: "date"
+            }
+          ],
           group: "example.com",
-          names: %{
-            kind: "Widget",
-            plural: "widgets",
-            shortNames: nil,
-            singular: "widget"
-          },
+          names: %{kind: "Widget", plural: "widgets", shortNames: nil, singular: "widget"},
           scope: "Namespaced",
           version: "v1"
         }
@@ -80,18 +82,11 @@ defmodule Bonny.OperatorTest do
       %{
         apiVersion: "apiextensions.k8s.io/v1beta1",
         kind: "CustomResourceDefinition",
-        metadata: %{
-          labels: %{"k8s-app" => "bonny"},
-          name: "cogs.example.com"
-        },
-        spec: %Bonny.CRD{
+        metadata: %{labels: %{"k8s-app" => "bonny"}, name: "cogs.example.com"},
+        spec: %{
+          additionalPrinterColumns: nil,
           group: "example.com",
-          names: %{
-            kind: "Cog",
-            plural: "cogs",
-            shortNames: nil,
-            singular: "cog"
-          },
+          names: %{kind: "Cog", plural: "cogs", shortNames: nil, singular: "cog"},
           scope: "Namespaced",
           version: "v1"
         }

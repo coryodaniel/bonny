@@ -7,6 +7,15 @@ defmodule Widget do
   @rule {"apps", ["deployments", "services"], ["*"]}
   @rule {"", ["configmaps"], ["create", "read"]}
 
+  @additional_printer_columns [
+    %{
+      name: "test",
+      type: "string",
+      description: "test",
+      JSONPath: ".spec.test"
+    }
+  ]
+
   @spec add(map()) :: :ok | :error
   def add(obj), do: Logger.info("add: #{inspect(obj)}")
 

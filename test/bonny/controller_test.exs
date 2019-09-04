@@ -2,84 +2,109 @@ defmodule Bonny.ControllerTest do
   @moduledoc false
   use ExUnit.Case, async: true
 
-  describe "crd_spec/0" do
-    test "uses the module as the kind when not set" do
-      crd_spec = %Bonny.CRD{
-        group: "example.com",
-        scope: :namespaced,
-        version: "v1",
-        names: %{
-          plural: "whizbangs",
-          singular: "whizbang",
-          kind: "Whizbang",
-          shortNames: nil
-        }
-      }
-
-      assert crd_spec == Whizbang.crd_spec()
+  describe "__using__" do
+    test "crd/0 returns the CRD definition" do
+      assert Whizbang.crd() == %Bonny.CRD{
+               additional_printer_columns: nil,
+               group: "example.com",
+               names: %{
+                 kind: "Whizbang",
+                 plural: "whizbangs",
+                 shortNames: nil,
+                 singular: "whizbang"
+               },
+               scope: :namespaced,
+               version: "v1"
+             }
     end
 
-    test "uses defaults when names attribute is not set" do
-      crd_spec = %Bonny.CRD{
-        group: "example.com",
-        scope: :namespaced,
-        version: "v1",
-        names: %{
-          plural: "whizzos",
-          singular: "whizzo",
-          kind: "Whizzo",
-          shortNames: nil
-        }
-      }
-
-      assert crd_spec == V1.Whizbang.crd_spec()
+    test "sets a default group" do
+      crd = Whizbang.crd()
+      assert crd.group == "example.com"
     end
 
-    test "uses names attribute when set" do
-      crd_spec = %Bonny.CRD{
-        group: "kewl.example.io",
-        scope: :cluster,
-        version: "v2alpha1",
-        names: %{kind: "Foo", plural: "bars", shortNames: ["f", "b", "q"], singular: "qux"}
-      }
-
-      assert crd_spec == V2.Whizbang.crd_spec()
+    test "allows overriding a group" do
+      crd = V3.Whizbang.crd()
+      assert crd.group == "kewl.example.io"
     end
 
-    test "with custom columns" do
-      crd_spec = %Bonny.CRD{
-        group: "kewl.example.io",
-        scope: :cluster,
-        version: "v3alpha1",
-        names: %{
-          plural: "foos",
-          singular: "foo",
-          kind: "Foo",
-          shortNames: nil
-        },
-        additionalPrinterColumns:
-          [
-            %{
-              name: "test",
-              type: "string",
-              description: "test",
-              JSONPath: ".spec.test"
-            }
-          ] ++ Bonny.Controller.default_columns()
-      }
+    test "defaults the scope to `:namespaced`" do
+      assert Whizbang.crd().scope == :namespaced
+    end
 
-      assert crd_spec == V3.Whizbang.crd_spec()
+    test "allows overriding a scope" do
+      assert V3.Whizbang.crd().scope == :cluster
+    end
+
+    test "derives the kind from the module name" do
+      crd = Whizbang.crd()
+      kind = crd.names[:kind]
+      assert kind == "Whizbang"
+    end
+
+    test "allows overriding a kind" do
+      crd = V1.Whizbang.crd()
+      kind = crd.names[:kind]
+      assert kind == "Whizzo"
+    end
+
+    test "sets a default version" do
+      assert Whizbang.crd().version == "v1"
+    end
+
+    test "derives the version from the module name" do
+      assert V2.Whizbang.crd().version == "v2"
+    end
+
+    test "allows overriding a version" do
+      assert V3.Whizbang.crd().version == "v3alpha1"
+    end
+
+    test "derives the CRD names from the module" do
+      assert Whizbang.crd().names == %{
+               plural: "whizbangs",
+               singular: "whizbang",
+               kind: "Whizbang",
+               shortNames: nil
+             }
+    end
+
+    test "allows overriding the names" do
+      assert V2.Whizbang.crd().names == %{
+               plural: "bars",
+               singular: "qux",
+               kind: "Foo",
+               shortNames: ["f", "b", "q"]
+             }
+    end
+
+    test "defaults additional printer columns to nil" do
+      assert Whizbang.crd().additional_printer_columns == nil
+    end
+
+    test "allows additional printer columns to be overridden" do
+      assert V3.Whizbang.crd().additional_printer_columns == [
+               %{
+                 JSONPath: ".spec.test",
+                 description: "test",
+                 name: "test",
+                 type: "string"
+               },
+               %{
+                 JSONPath: ".metadata.creationTimestamp",
+                 description:
+                   "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\n\n      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+                 name: "Age",
+                 type: "date"
+               }
+             ]
     end
   end
 
-  describe "rules/0" do
-    test "defines RBAC rules" do
-      rules = V2.Whizbang.rules()
-
-      assert rules == [
-               %{apiGroups: ["apiextensions.k8s.io"], resources: ["bar"], verbs: ["*"]},
-               %{apiGroups: ["apiextensions.k8s.io"], resources: ["foo"], verbs: ["*"]}
-             ]
-    end
+  test "builds RBAC rules when set" do
+    assert V2.Whizbang.rules() == [
+             %{apiGroups: ["apiextensions.k8s.io"], resources: ["bar"], verbs: ["*"]},
+             %{apiGroups: ["apiextensions.k8s.io"], resources: ["foo"], verbs: ["*"]}
+           ]
   end
 end

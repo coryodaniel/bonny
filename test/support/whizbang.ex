@@ -31,6 +31,7 @@ end
 defmodule V1.Whizbang do
   @moduledoc false
   use Bonny.Controller
+  @kind "Whizzo"
   @names %{kind: "Whizzo"}
 
   def add(_), do: :ok
@@ -46,7 +47,6 @@ defmodule V2.Whizbang do
   @rule {"apiextensions.k8s.io", ["bar"], ["*"]}
   @rule {"apiextensions.k8s.io", ["foo"], ["*"]}
 
-  @version "v2alpha1"
   @group "kewl.example.io"
   @scope :cluster
   @names %{

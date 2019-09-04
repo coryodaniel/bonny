@@ -15,13 +15,20 @@ defmodule Bonny.Controller do
   @doc false
   defmacro __using__(_opts) do
     quote do
-      import Bonny.Controller
       Module.register_attribute(__MODULE__, :rule, accumulate: true)
       @behaviour Bonny.Controller
-      @group nil
-      @version nil
-      @scope nil
-      @names nil
+
+      # CRD defaults
+      @group Bonny.Config.group()
+      @kind Bonny.Naming.module_to_kind(__MODULE__)
+      @scope :namespaced
+      @version Bonny.Naming.module_version(__MODULE__)
+
+      @singular Macro.underscore(Bonny.Naming.module_to_kind(__MODULE__))
+      @plural "#{@singular}s"
+
+      @names %{}
+
       @additional_printer_columns nil
       @before_compile Bonny.Controller
     end
@@ -31,25 +38,25 @@ defmodule Bonny.Controller do
   defmacro __before_compile__(_env) do
     quote do
       @doc """
-      Kubernetes CRD manifest spec
+      Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
       """
-      @spec crd_spec() :: Bonny.CRD.t()
-      def crd_spec do
-        kind = Bonny.Naming.module_to_kind(__MODULE__)
-        version = Bonny.Naming.module_version(__MODULE__)
-
+      @spec crd() :: Bonny.CRD.t()
+      def crd() do
         %Bonny.CRD{
-          group: @group || Bonny.Config.group(),
-          scope: @scope || :namespaced,
-          version: @version || version,
-          additionalPrinterColumns: additional_printer_columns(),
-          names: crd_spec_names(@names, kind)
+          group: @group,
+          scope: @scope,
+          version: @version,
+          names: Map.merge(default_names(), @names),
+          additional_printer_columns: additional_printer_columns()
         }
       end
 
       @doc """
-      Kubernetes RBAC rules
+      A list of RBAC rules that this controller needs to operate.
+
+      This list will be serialized into the operator manifest when using `mix bonny.gen.manifest`.
       """
+      @spec rules() :: list(map())
       def rules() do
         Enum.reduce(@rule, [], fn {api, resources, verbs}, acc ->
           rule = %{
@@ -62,49 +69,26 @@ defmodule Bonny.Controller do
         end)
       end
 
+      @spec default_names() :: map()
+      defp default_names() do
+        %{
+          plural: @plural,
+          singular: @singular,
+          kind: @kind,
+          shortNames: nil
+        }
+      end
+
+      @spec additional_printer_columns() :: list(map()) | nil
       defp additional_printer_columns() do
         case @additional_printer_columns do
           nil ->
             nil
 
           some ->
-            some ++ Bonny.Controller.default_columns()
+            some ++ Bonny.CRD.default_columns()
         end
       end
-
-      @spec crd_spec_names(nil | map, String.t()) :: map
-      defp crd_spec_names(nil, kind), do: crd_spec_names(%{}, kind)
-
-      defp crd_spec_names(%{} = names, default_kind) do
-        kind = names[:kind] || default_kind
-        singular = Macro.underscore(kind)
-
-        defaults = %{
-          plural: "#{singular}s",
-          singular: singular,
-          kind: kind,
-          shortNames: nil
-        }
-
-        Map.merge(defaults, names)
-      end
     end
-  end
-
-  @doc """
-  Columns default
-  """
-  def default_columns() do
-    [
-      %{
-        name: "Age",
-        type: "date",
-        description:
-          "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-
-      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
-        JSONPath: ".metadata.creationTimestamp"
-      }
-    ]
   end
 end

@@ -6,7 +6,7 @@ defmodule Bonny.CRDTest do
 
   describe "to_manifest/1" do
     test "generates a kubernetes manifest" do
-      spec = Widget.crd_spec()
+      spec = Widget.crd()
       manifest = CRD.to_manifest(spec)
 
       expected = %{
@@ -16,11 +16,21 @@ defmodule Bonny.CRDTest do
           name: "widgets.example.com",
           labels: %{"k8s-app" => "bonny"}
         },
-        spec: %Bonny.CRD{
+        spec: %{
           group: "example.com",
           names: %{kind: "Widget", plural: "widgets", shortNames: nil, singular: "widget"},
           scope: "Namespaced",
-          version: "v1"
+          version: "v1",
+          additionalPrinterColumns: [
+            %{JSONPath: ".spec.test", description: "test", name: "test", type: "string"},
+            %{
+              JSONPath: ".metadata.creationTimestamp",
+              description:
+                "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\n\n      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+              name: "Age",
+              type: "date"
+            }
+          ]
         }
       }
 
