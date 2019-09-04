@@ -4,7 +4,7 @@ defmodule Bonny.Server.Watcher.ResourceVersion do
   @client Application.get_env(:bonny, :k8s_client, K8s.Client)
 
   @spec get(K8s.Operation.t()) :: {:ok, binary} | {:error, atom}
-  def get(operation) do
+  def get(%K8s.Operation{} = operation) do
     cluster = Bonny.Config.cluster_name()
 
     case @client.run(operation, cluster, params: %{limit: 1}) do

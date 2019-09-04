@@ -29,7 +29,6 @@ defmodule Mix.Tasks.Bonny.Gen.ManifestTest do
           Manifest.run(["-i", "quay.io/foo/bar", "--out", "-"])
         end)
 
-      IO.puts(output)
       assert output =~ "ServiceAccount"
       assert output =~ "ClusterRoleBinding"
       assert output =~ "ClusterRole"

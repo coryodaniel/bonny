@@ -66,7 +66,7 @@ defmodule Bonny.K8sMockClient do
   end
 
   def run(_, _, _) do
-    {:ok, %{"mock" => true}}
+    {:error, :mock_client}
   end
 
   def added_chunk() do

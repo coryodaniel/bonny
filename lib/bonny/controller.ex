@@ -29,7 +29,7 @@ defmodule Bonny.Controller do
 
       @names %{}
 
-      @additional_printer_columns nil
+      @additional_printer_columns []
       @before_compile Bonny.Controller
     end
   end
@@ -40,7 +40,7 @@ defmodule Bonny.Controller do
       @doc """
       Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
       """
-      @spec crd() :: Bonny.CRD.t()
+      @spec crd() :: %Bonny.CRD{}
       def crd() do
         %Bonny.CRD{
           group: @group,
@@ -79,15 +79,9 @@ defmodule Bonny.Controller do
         }
       end
 
-      @spec additional_printer_columns() :: list(map()) | nil
+      @spec additional_printer_columns() :: list(map())
       defp additional_printer_columns() do
-        case @additional_printer_columns do
-          nil ->
-            nil
-
-          some ->
-            some ++ Bonny.CRD.default_columns()
-        end
+        @additional_printer_columns ++ Bonny.CRD.default_columns()
       end
     end
   end
