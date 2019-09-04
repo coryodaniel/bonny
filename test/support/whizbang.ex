@@ -66,7 +66,7 @@ defmodule V3.Whizbang do
   @moduledoc false
   use Bonny.Controller
 
-  @version "v2alpha1"
+  @version "v3alpha1"
   @group "kewl.example.io"
   @scope :cluster
   @names %{

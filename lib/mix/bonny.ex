@@ -26,27 +26,32 @@ defmodule Mix.Bonny do
   end
 
   @doc "Get the OTP app name"
+  @spec app_name() :: binary
   def app_name() do
     otp_app()
     |> Atom.to_string()
     |> Macro.camelize()
   end
 
+  @spec app_dir_name() :: binary
   def app_dir_name() do
     Macro.underscore(app_name())
   end
 
+  @spec template(binary) :: binary
   def template(name) do
     template_dir = Application.app_dir(:bonny, ["priv", "templates", "bonny.gen"])
     Path.join(template_dir, name)
   end
 
+  @spec no_umbrella! :: any
   def no_umbrella! do
     if Mix.Project.umbrella?() do
       Mix.raise("mix bonny.gen.* can only be run inside an application directory")
     end
   end
 
+  @spec otp_app :: atom
   defp otp_app() do
     Mix.Project.config() |> Keyword.fetch!(:app)
   end

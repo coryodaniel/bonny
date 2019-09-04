@@ -27,6 +27,7 @@ defmodule Bonny.Server.WatcherTest do
       track_event(:delete, resource)
     end
 
+    @spec track_event(atom, map) :: :ok
     def track_event(type, resource) do
       event = {type, resource}
       Agent.update(TestWatcherCache, fn events -> [event | events] end)

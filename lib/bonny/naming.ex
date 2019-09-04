@@ -35,6 +35,7 @@ defmodule Bonny.Naming do
       iex> Bonny.Naming.module_version(Controllers.V1Alpha1.Pod)
       "v1alpha1"
   """
+  @spec module_version(atom) :: String.t()
   def module_version(mod) do
     mod
     |> Macro.to_string()

@@ -124,6 +124,9 @@ defmodule Bonny.Server.Reconciler do
 
       def start_link(), do: start_link(%{})
       def start_link(state), do: GenServer.start_link(__MODULE__, state)
+
+      @doc false
+      @spec client() :: any()
       def client(), do: @client
 
       @impl GenServer

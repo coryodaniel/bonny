@@ -48,23 +48,6 @@ defmodule Bonny.Controller do
       end
 
       @doc """
-      Columns default
-      """
-      def default_columns() do
-        [
-          %{
-            name: "Age",
-            type: "date",
-            description:
-              "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-
-      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
-            JSONPath: ".metadata.creationTimestamp"
-          }
-        ]
-      end
-
-      @doc """
       Kubernetes RBAC rules
       """
       def rules() do
@@ -85,7 +68,7 @@ defmodule Bonny.Controller do
             nil
 
           some ->
-            some ++ default_columns()
+            some ++ Bonny.Controller.default_columns()
         end
       end
 
@@ -106,5 +89,22 @@ defmodule Bonny.Controller do
         Map.merge(defaults, names)
       end
     end
+  end
+
+  @doc """
+  Columns default
+  """
+  def default_columns() do
+    [
+      %{
+        name: "Age",
+        type: "date",
+        description:
+          "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+
+      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+        JSONPath: ".metadata.creationTimestamp"
+      }
+    ]
   end
 end

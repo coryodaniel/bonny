@@ -34,6 +34,9 @@ defmodule Bonny.Server.Watcher do
 
       def start_link(), do: start_link(%{})
       def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
+
+      @doc false
+      @spec client() :: any()
       def client(), do: @client
 
       @impl GenServer
@@ -128,9 +131,6 @@ defmodule Bonny.Server.Watcher do
     end
   end
 
-  @doc """
-
-  """
   @spec watch(module(), binary(), pid()) :: no_return
   def watch(module, rv, pid) do
     operation = module.watch_operation()
@@ -144,23 +144,10 @@ defmodule Bonny.Server.Watcher do
       recv_timeout: timeout
     )
 
-    # {measurements, result} = Bonny.Sys.Event.measure(module, :watch_resources, [])
-
-    # case result do
-    #   {:ok, resources} ->
-    #     nil
-
-    #   # Bonny.Sys.Event.reconciler_fetch_succeeded(measurements, metadata)
-    #   # Enum.each(resources, &reconcile_async(&1, module))
-
-    #   {:error, error} ->
-    #     metadata = Map.put(metadata, :error, error)
-    #     # Bonny.Sys.Event.reconciler_fetch_failed(measurements, metadata)
-    # end
-
     nil
   end
 
+  @spec process_lines(list(binary()), binary(), module()) :: {:ok, binary} | {:error, :gone}
   def process_lines(lines, rv, module) do
     Enum.reduce(lines, {:ok, rv}, fn line, status ->
       case status do
@@ -173,6 +160,7 @@ defmodule Bonny.Server.Watcher do
     end)
   end
 
+  @spec process_line(binary(), binary(), module()) :: {:ok, binary} | {:error, :gone}
   def process_line(line, current_rv, module) do
     %{"type" => type, "object" => raw_object} = Jason.decode!(line)
 

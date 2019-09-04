@@ -50,7 +50,7 @@ defmodule Bonny.ControllerTest do
       crd_spec = %Bonny.CRD{
         group: "kewl.example.io",
         scope: :cluster,
-        version: "v2alpha1",
+        version: "v3alpha1",
         names: %{
           plural: "foos",
           singular: "foo",
@@ -65,7 +65,7 @@ defmodule Bonny.ControllerTest do
               description: "test",
               JSONPath: ".spec.test"
             }
-          ] ++ V3.Whizbang.default_columns()
+          ] ++ Bonny.Controller.default_columns()
       }
 
       assert crd_spec == V3.Whizbang.crd_spec()
