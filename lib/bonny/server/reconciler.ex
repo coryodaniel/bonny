@@ -122,18 +122,18 @@ defmodule Bonny.Server.Reconciler do
       @initial_delay opts[:initial_delay] || 500
       @client opts[:client] || K8s.Client
 
-      def start_link(), do: start_link(%{})
-      def start_link(state), do: GenServer.start_link(__MODULE__, state)
+      def start_link(), do: start_link([])
+      def start_link(opts), do: GenServer.start_link(__MODULE__, :ok, opts)
 
       @doc false
       @spec client() :: any()
       def client(), do: @client
 
       @impl GenServer
-      def init(state) do
+      def init(:ok) do
         Bonny.Sys.Event.reconciler_initialized(%{}, %{module: __MODULE__})
         Bonny.Server.Reconciler.schedule(self(), @initial_delay)
-        {:ok, state}
+        {:ok, %{}}
       end
 
       @impl GenServer

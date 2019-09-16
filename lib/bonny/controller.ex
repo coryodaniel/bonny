@@ -39,8 +39,8 @@ defmodule Bonny.Controller do
       @impl true
       def init(_init_arg) do
         children = [
-          {__MODULE__.WatchServer, []},
-          {__MODULE__.ReconcileServer, []}
+          {__MODULE__.WatchServer, name: __MODULE__.WatchServer},
+          {__MODULE__.ReconcileServer, name: __MODULE__.ReconcileServer}
         ]
 
         Supervisor.init(children, strategy: :one_for_one)

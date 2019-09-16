@@ -59,15 +59,17 @@ defmodule Bonny.Server.Watcher do
 
       alias Bonny.Server.Watcher.State
 
-      def start_link(), do: start_link(%{})
-      def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
+      def start_link(), do: start_link([])
+      def start_link(opts) do
+        GenServer.start_link(__MODULE__, :ok, opts)
+      end
 
       @doc false
       @spec client() :: any()
       def client(), do: @client
 
       @impl GenServer
-      def init(_) do
+      def init(:ok) do
         Bonny.Sys.Event.watcher_initialized(%{}, %{module: __MODULE__})
         Process.send_after(self(), :watch, @initial_delay)
         {:ok, State.new()}
