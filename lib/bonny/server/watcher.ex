@@ -12,11 +12,39 @@ defmodule Bonny.Server.Watcher do
   [`K8s.Operation`](https://hexdocs.pm/k8s/K8s.Operation.html) to watch.
 
   ## Examples
-  ```elixir
-    def watch_operation() do
-      K8s.Client.list("v1", :pods, namespace: :all)
-    end
-  ```
+    Log all pod lifecycle events
+    ```elixir
+      defmodule PodLifecycleLogger do
+        use Bonny.Server.Watcher
+
+        @impl true
+        def watch_operation() do
+          K8s.Client.list("v1", :pods, namespace: :all)
+        end
+
+        @impl true
+        def add(pod) do
+          log_event(:add, pod)
+        end
+
+        @impl true
+        def modify(pod) do
+          log_event(:modify, pod)
+        end
+
+        @impl true
+        def delete(pod) do
+          log_event(:delete, pod)
+        end
+
+        @spec log_event(atom, map) :: :ok
+        def log_event(type, pod) do
+          name = get_in(pod, ["metadata", "name"])
+          namespace = get_in(pod, ["metadata", "namepace"]) || "default"
+          # log type,name,namespace here
+        end
+      end
+    ```
   """
   @callback watch_operation() :: K8s.Operation.t()
 
@@ -29,7 +57,6 @@ defmodule Bonny.Server.Watcher do
       @initial_delay opts[:initial_delay] || 500
       @client opts[:client] || K8s.Client
 
-      require Logger
       alias Bonny.Server.Watcher.State
 
       def start_link(), do: start_link(%{})

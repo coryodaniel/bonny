@@ -26,17 +26,54 @@ defmodule Bonny.Controller do
 
       @singular Macro.underscore(Bonny.Naming.module_to_kind(__MODULE__))
       @plural "#{@singular}s"
-
       @names %{}
 
       @additional_printer_columns []
       @before_compile Bonny.Controller
+      
+      use Supervisor
+      def start_link(_) do
+        Supervisor.start_link(__MODULE__, %{}, name: __MODULE__)
+      end
+
+      @impl true
+      def init(_init_arg) do
+        children = [
+          {__MODULE__.WatchServer, []},
+          {__MODULE__.ReconcileServer, []}
+        ]
+
+        Supervisor.init(children, strategy: :one_for_one)
+      end         
     end
   end
 
   @doc false
-  defmacro __before_compile__(_env) do
-    quote do
+  defmacro __before_compile__(env) do
+    controller = env.module
+    
+    quote bind_quoted: [controller: controller] do   
+      defmodule WatchServer do
+        use Bonny.Server.Watcher
+        
+        defdelegate add(resource), to: controller
+        defdelegate modify(resource), to: controller
+        defdelegate delete(resource), to: controller
+        
+        def watch_operation() do
+          K8s.Client.list("v1", :pods)
+        end
+      end
+
+      defmodule ReconcileServer do
+        use Bonny.Server.Reconciler, frequency: 15
+        defdelegate reconcile(resource), to: controller
+        
+        def reconcile_operation() do
+          K8s.Client.list("v1", :pods)
+        end
+      end      
+      
       @doc """
       Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
       """
@@ -81,6 +118,8 @@ defmodule Bonny.Controller do
 
       @spec additional_printer_columns() :: list(map())
       defp additional_printer_columns() do
+        # this is how the default is getting included... could pass printer cols to CRD
+        # and let CRD handle ([]) and that should solve dializer issue w/ @ being unused
         @additional_printer_columns ++ Bonny.CRD.default_columns()
       end
     end

@@ -19,6 +19,7 @@ defmodule Mix.Bonny do
 
   Special handling for the path "-" will render to STDOUT
   """
+  @spec render(binary, binary) :: binary
   def render(source, "-"), do: IO.puts(source)
 
   def render(source, target) do
