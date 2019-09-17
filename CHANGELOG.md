@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bonny.Server.Reconciler continually process a list operation
 - Bonny.Server.Scheduler write custom kubernetes schedulers
 - Dockerfile gen uses OTP releases
+- Removed `reconcile_batch_size`
 
 ## [0.3.3] - 2019-06-25
 

@@ -65,11 +65,6 @@ config :bonny,
   # Default: 300000ms (5 minutes)
   reconcile_every: 10 * 60 * 1000,
 
-  # Batch size of HTTP request; maps to the Kubernetes `limit` API parameter.
-  # If `continue` is returned additional HTTP requests will be made to fetch all batches of items
-  # Default: 50
-  reconcile_batch_size: 100,
-
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
   group: "your-operator.example.com",

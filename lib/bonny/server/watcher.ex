@@ -48,7 +48,7 @@ defmodule Bonny.Server.Watcher do
   """
   @callback watch_operation() :: K8s.Operation.t()
 
-  alias Bonny.Server.Watcher.{State, ResourceVersion, ResponseBuffer}
+  alias Bonny.Server.Watcher.{State, ResourceVersion}
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
