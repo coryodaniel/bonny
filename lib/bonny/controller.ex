@@ -30,8 +30,10 @@ defmodule Bonny.Controller do
 
       @additional_printer_columns []
       @before_compile Bonny.Controller
-      
+
       use Supervisor
+
+      @impl true
       def start_link(_) do
         Supervisor.start_link(__MODULE__, %{}, name: __MODULE__)
       end
@@ -44,36 +46,32 @@ defmodule Bonny.Controller do
         ]
 
         Supervisor.init(children, strategy: :one_for_one)
-      end         
+      end
     end
   end
 
   @doc false
   defmacro __before_compile__(env) do
     controller = env.module
-    
-    quote bind_quoted: [controller: controller] do   
+
+    quote bind_quoted: [controller: controller] do
       defmodule WatchServer do
+        @moduledoc "Controller watcher implementation"
         use Bonny.Server.Watcher
-        
+
         defdelegate add(resource), to: controller
         defdelegate modify(resource), to: controller
         defdelegate delete(resource), to: controller
-        
-        def watch_operation() do
-          K8s.Client.list("v1", :pods)
-        end
+        defdelegate watch_operation(), to: controller, as: :list_operation
       end
 
       defmodule ReconcileServer do
+        @moduledoc "Controller reconciler implementation"
         use Bonny.Server.Reconciler, frequency: 15
         defdelegate reconcile(resource), to: controller
-        
-        def reconcile_operation() do
-          K8s.Client.list("v1", :pods)
-        end
-      end      
-      
+        defdelegate reconcile_operation(), to: controller, as: :list_operation
+      end
+
       @doc """
       Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
       """
@@ -86,6 +84,22 @@ defmodule Bonny.Controller do
           names: Map.merge(default_names(), @names),
           additional_printer_columns: additional_printer_columns()
         }
+      end
+
+      @spec list_operation() :: K8s.Operation.t()
+      def list_operation() do
+        crd = __MODULE__.crd()
+        api_version = Bonny.CRD.api_version(crd)
+        kind = Bonny.CRD.kind(crd)
+
+        case crd.scope do
+          :namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
+          _ -> K8s.Client.list(api_version, kind)
+        end
+
+        ## @@here, handle namespaces, 
+        # then the tests/dev will fail because the clusters dont have the support/ controllers
+        K8s.Client.list("v1", :pods)
       end
 
       @doc """

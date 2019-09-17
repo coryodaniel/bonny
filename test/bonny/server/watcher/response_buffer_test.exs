@@ -49,12 +49,12 @@ defmodule Bonny.Server.Watcher.ResponseBufferTest do
 
     assert ["c1", "c2", "c3"] == events
 
-    {events, _buffer} =
+    {next_events, _buffer} =
       buffer
       |> ResponseBuffer.add_chunk("4\nc5\n")
       |> ResponseBuffer.get_lines()
 
-    assert ["c4", "c5"] == events
+    assert ["c4", "c5"] == next_events
   end
 
   test "Add empty chunk" do

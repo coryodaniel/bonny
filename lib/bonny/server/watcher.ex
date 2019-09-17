@@ -60,6 +60,7 @@ defmodule Bonny.Server.Watcher do
       alias Bonny.Server.Watcher.State
 
       def start_link(), do: start_link([])
+
       def start_link(opts) do
         GenServer.start_link(__MODULE__, :ok, opts)
       end

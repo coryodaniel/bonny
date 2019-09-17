@@ -97,6 +97,28 @@ defmodule Bonny.CRD do
     }
   end
 
+  @doc """
+  Default CLI printer columns.
+
+  These are added to the CRDs columns _when_ columns are set.
+
+  The kubernetes API returns these by default when they _are not_ set.
+  """
+  @spec default_columns() :: list(map())
+  def default_columns() do
+    [
+      %{
+        name: "Age",
+        type: "date",
+        description:
+          "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+
+      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+        JSONPath: ".metadata.creationTimestamp"
+      }
+    ]
+  end
+
   @spec format_spec(Bonny.CRD.t()) :: map
   defp format_spec(%CRD{scope: scope} = crd) do
     cased_scope = String.capitalize("#{scope}")
@@ -123,26 +145,5 @@ defmodule Bonny.CRD do
     %{
       additional_printer_columns: :additionalPrinterColumns
     }
-  end
-
-  @doc """
-  Default CLI printer columns.
-
-  These are added to the CRDs columns _when_ columns are set.
-
-  The kubernetes API returns these by default when they _are not_ set.
-  """
-  def default_columns() do
-    [
-      %{
-        name: "Age",
-        type: "date",
-        description:
-          "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-
-      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
-        JSONPath: ".metadata.creationTimestamp"
-      }
-    ]
   end
 end

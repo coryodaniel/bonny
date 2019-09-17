@@ -2,7 +2,7 @@ defmodule Bonny.Server.Watcher.ResponseBuffer do
   @moduledoc """
   Buffers streaming responses from HTTPoison and returns kubernetes watch events as JSON
 
-  `ResponseBuffer` implementation borrowed from [Kazan](https://github.com/obmarg/kazan)'s LineBuffer.
+  `ResponseBuffer` implementation from [Kazan](https://github.com/obmarg/kazan)'s LineBuffer.
   """
 
   alias __MODULE__
