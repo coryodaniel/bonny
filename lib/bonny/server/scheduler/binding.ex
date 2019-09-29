@@ -56,8 +56,8 @@ defmodule Bonny.Server.Scheduler.Binding do
     operation = K8s.Operation.build(:get, "v1", :pod, namespace: pod_namespace, name: pod_name)
 
     with {:ok, base_url} <- K8s.Cluster.url_for(operation, cluster),
-         {:ok, cluster_connection_config} <- K8s.Cluster.conf(cluster),
-         {:ok, request_options} <- K8s.Conf.RequestOptions.generate(cluster_connection_config),
+         {:ok, cluster_connection_config} <- K8s.Cluster.conn(cluster),
+         {:ok, request_options} <- K8s.Conn.RequestOptions.generate(cluster_connection_config),
          {:ok, body} <- Jason.encode(binding),
          headers <- request_options.headers ++ @json_headers,
          options <- [ssl: request_options.ssl_options] do

@@ -1,47 +1,55 @@
-defmodule Bonny.Watcher.ImplTest do
+defmodule Bonny.Server.WatcherTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Bonny.Watcher.Impl
-  doctest Bonny.Watcher.Impl
+  alias Bonny.Server.Watcher
+  doctest Bonny.Server.Watcher
 
-  describe "new/1" do
-    test "returns the default state" do
-      assert %Impl{controller: Widget, spec: %Bonny.CRD{}} = Impl.new(Widget)
+  defmodule TestWatcher do
+    use Bonny.Server.Watcher, client: Bonny.K8sMockClient
+
+    @impl true
+    def watch_operation() do
+      K8s.Client.list("watcher.test/v1", :foos)
+    end
+
+    @impl true
+    def add(resource) do
+      track_event(:add, resource)
+    end
+
+    @impl true
+    def modify(resource) do
+      track_event(:modify, resource)
+    end
+
+    @impl true
+    def delete(resource) do
+      track_event(:delete, resource)
+    end
+
+    @spec track_event(atom, map) :: :ok
+    def track_event(type, resource) do
+      event = {type, resource}
+      Agent.update(TestWatcherCache, fn events -> [event | events] end)
     end
   end
 
-  describe "get_resource_version/1" do
-    test "returns the resource version when present" do
-      rv = Impl.get_resource_version(%Impl{resource_version: "3"})
-      assert rv == "3"
-    end
+  test "watch/3" do
+    Agent.start_link(fn -> [] end, name: TestWatcherCache)
+    {:ok, pid} = TestWatcher.start_link()
+    rv = "3"
 
-    test "fetches the resource version when not present" do
-      state = Impl.new(Widget)
-      rv = Impl.get_resource_version(state)
-      assert rv == "1337"
-    end
-  end
+    Watcher.watch(TestWatcher, rv, pid)
+    Process.sleep(500)
 
-  describe "watch_for_changes/2" do
-    test "returns changes to a CRD resource" do
-      added = Bonny.K8sMockClient.added_chunk()
-      deleted = Bonny.K8sMockClient.deleted_chunk()
-
-      state = Impl.new(Widget)
-      state = %{state | resource_version: 1337}
-
-      Impl.watch_for_changes(state, self())
-
-      assert_receive %HTTPoison.AsyncChunk{chunk: ^added}, 1_000
-      assert_receive %HTTPoison.AsyncChunk{chunk: ^deleted}, 1_000
-    end
+    events = Agent.get(TestWatcherCache, fn events -> events end)
+    refute events == []
   end
 
   describe "dispatch/2" do
     test "dispatches ADDED events to the given module's handler function" do
       evt = event("ADDED")
-      Impl.dispatch(evt, Whizbang)
+      Watcher.dispatch(evt, Whizbang)
 
       # Professional.
       :timer.sleep(100)
@@ -51,7 +59,7 @@ defmodule Bonny.Watcher.ImplTest do
 
     test "dispatches MODIFIED events to the given module's handler function" do
       evt = event("MODIFIED")
-      Impl.dispatch(evt, Whizbang)
+      Watcher.dispatch(evt, Whizbang)
 
       # Professional.
       :timer.sleep(100)
@@ -61,7 +69,7 @@ defmodule Bonny.Watcher.ImplTest do
 
     test "dispatches DELETED events to the given module's handler function" do
       evt = event("DELETED")
-      Impl.dispatch(evt, Whizbang)
+      Watcher.dispatch(evt, Whizbang)
 
       # Professional.
       :timer.sleep(100)

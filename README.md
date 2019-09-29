@@ -15,7 +15,7 @@ If Kubernetes CRDs and controllers are new to you, read up on the [terminology](
 
 _Tutorials and Examples:_
 
-*Important!* These tutorials are for an older version of Bonny, but the `add/1`, `modify/1`, and `delete/1` APIs are the same, as well as a new `reconcile/1` function. Additionally a [k8s](https://github.com/coryodaniel/k8s) has been added!
+_Important!_ These tutorials are for an older version of Bonny, but the `add/1`, `modify/1`, and `delete/1` APIs are the same, as well as a new `reconcile/1` function. Additionally a [k8s](https://github.com/coryodaniel/k8s) has been added!
 
 Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you need any help!
 
@@ -29,7 +29,7 @@ Bonny can be installed by adding `bonny` to your list of dependencies in `mix.ex
 ```elixir
 def deps do
   [
-    {:bonny, "~> 0.3"}
+    {:bonny, "~> 0.4"}
   ]
 end
 ```
@@ -61,15 +61,6 @@ config :bonny,
   # K8s.Cluster to use, defaults to :default
   cluster_name: :default,
 
-  # How often to run the reconciler for all controllers in milliseconds.
-  # Default: 300000ms (5 minutes)
-  reconcile_every: 10 * 60 * 1000,
-
-  # Batch size of HTTP request; maps to the Kubernetes `limit` API parameter.
-  # If `continue` is returned additional HTTP requests will be made to fetch all batches of items
-  # Default: 50
-  reconcile_batch_size: 100,
-
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
   group: "your-operator.example.com",
@@ -94,7 +85,7 @@ config :bonny,
   }
 ```
 
-When configuring bonny to run *in your cluster* the `mix bonny.gen.manifest` command will generate a service account for you. To use that service account configure the `k8s` library like the following:
+When configuring bonny to run _in your cluster_ the `mix bonny.gen.manifest` command will generate a service account for you. To use that service account configure the `k8s` library like the following:
 
 ```elixir
 config :k8s,
@@ -209,28 +200,34 @@ TODO: Need to support validation / OpenAPI.
 
 ## Telemetry
 
-Bonny uses the `telemetry` library to emit event metrics.
+Bonny uses the `telemetry` and `notion` library to emit event metrics.
 
-Emmited events:
+Events: `Bonny.Sys.Event.events()`
 
 ```elixir
-  [:bonny, :reconciler, :genserver_initialized],
-  [:bonny, :reconciler, :started],
-  [:bonny, :reconciler, :scheduled],
-  [:bonny, :reconciler, :get_items_succeeded],
-  [:bonny, :reconciler, :get_items_failed],
-  [:bonny, :reconciler, :item_succeeded],
-  [:bonny, :reconciler, :item_failed],
-  [:bonny, :watcher, :genserver_initialized],
-  [:bonny, :watcher, :genserver_down],
-  [:bonny, :watcher, :started],
-  [:bonny, :watcher, :chunk_received],
-  [:bonny, :watcher, :expired],
-  [:bonny, :watcher, :finished],
-  [:bonny, :watcher, :http_request_failed],
-  [:bonny, :watcher, :http_request_succeeded],
-  [:bonny, :watcher, :dispatch_succeeded],
-  [:bonny, :watcher, :dispatch_failed]
+[
+  [:bonny, :scheduler, :binding, :failed],
+  [:bonny, :scheduler, :binding, :succeeded],
+  [:bonny, :scheduler, :nodes, :fetch, :failed],
+  [:bonny, :scheduler, :nodes, :fetch, :succeeded],
+  [:bonny, :scheduler, :pods, :fetch, :failed],
+  [:bonny, :scheduler, :pods, :fetch, :succeeded],
+  [:bonny, :reconciler, :genserver, :down],
+  [:bonny, :reconciler, :reconcile, :failed],
+  [:bonny, :reconciler, :reconcile, :succeeded],
+  [:bonny, :reconciler, :run, :started],
+  [:bonny, :reconciler, :fetch, :failed],
+  [:bonny, :reconciler, :fetch, :succeeded],
+  [:bonny, :reconciler, :initialized],
+  [:bonny, :watcher, :genserver, :down],
+  [:bonny, :watcher, :chunk, :received],
+  [:bonny, :watcher, :watch, :timedout],
+  [:bonny, :watcher, :watch, :failed],
+  [:bonny, :watcher, :watch, :finished],
+  [:bonny, :watcher, :watch, :succeeded],
+  [:bonny, :watcher, :watch, :started],
+  [:bonny, :watcher, :initialized]
+]
 ```
 
 ## Terminology
@@ -247,7 +244,7 @@ _[Controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extensio
 
 > A custom controller is a controller that users can deploy and update on a running cluster, independently of the cluster’s own lifecycle. Custom controllers can work with any kind of resource, but they are especially effective when combined with custom resources. The Operator pattern is one example of such a combination. It allows developers to encode domain knowledge for specific applications into an extension of the Kubernetes API.
 
-_Operator_:
+_[Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)_:
 
 A set of application specific controllers deployed on Kubernetes and managed via kubectl and the Kubernetes API.
 

@@ -5,13 +5,13 @@ defmodule Mix.Tasks.Bonny.Gen.DockerfileTest do
   import ExUnit.CaptureIO
 
   describe "run/1" do
-    test "generates a Dockerfile" do
+    test "generates a Dockerfile using the application name" do
       output =
         capture_io(fn ->
           Dockerfile.run(["--out", "-"])
         end)
 
-      assert output =~ "FROM elixir"
+      assert output =~ "/app/_build/prod/rel/bonny"
     end
   end
 end

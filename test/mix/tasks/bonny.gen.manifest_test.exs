@@ -14,6 +14,15 @@ defmodule Mix.Tasks.Bonny.Gen.ManifestTest do
       assert output =~ "CustomResourceDefinition"
     end
 
+    test "manifest includes additional printer columns" do
+      output =
+        capture_io(fn ->
+          Manifest.run(["-i", "quay.io/foo/bar", "--out", "-"])
+        end)
+
+      assert output =~ "additionalPrinterColumns"
+    end
+
     test "manifest includes RBAC" do
       output =
         capture_io(fn ->
@@ -23,9 +32,10 @@ defmodule Mix.Tasks.Bonny.Gen.ManifestTest do
       assert output =~ "ServiceAccount"
       assert output =~ "ClusterRoleBinding"
       assert output =~ "ClusterRole"
+      assert output =~ "rules"
     end
 
-    test "manifest excludes Deployment" do
+    test "manifest excludes Deployment when not specifying an image" do
       output =
         capture_io(fn ->
           Manifest.run(["--out", "-"])
@@ -34,7 +44,7 @@ defmodule Mix.Tasks.Bonny.Gen.ManifestTest do
       refute output =~ "Deployment"
     end
 
-    test "manifest includes Deployment" do
+    test "manifest includes Deployment when specifying an image" do
       output =
         capture_io(fn ->
           Manifest.run(["-i", "quay.io/foo/bar", "--out", "-"])

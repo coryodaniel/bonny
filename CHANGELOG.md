@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic integration w/ [Notion](https://github.com/coryodaniel/notion) for telemetry
 - Bonny.Server.Reconciler continually process a list operation
 - Bonny.Server.Scheduler write custom kubernetes schedulers
+- Dockerfile gen uses OTP releases
+- Removed `reconcile_batch_size`
 
 ## [0.3.3] - 2019-06-25
 
@@ -36,7 +38,7 @@ reconciliation
 when fetching batches of items to reconcile
 - Added `{:error, binary}` as a return value of Controller lifecycle methods
 - Implemented `:telemetry` library
-- `Bonny.Telemetry.events/0` exposes list of telemetry events
+- `Bonny.Sys.Event.events/0` exposes list of telemetry events
 - `mix bonny.gen.manifest --local` for building manifests w/o a Deployment for
   local testing
 - `cluster_name: :default` config options. Now uses [k8s](https://github.com/coryodaniel/k8s) cluster registration configuration.

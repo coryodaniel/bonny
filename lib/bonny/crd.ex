@@ -30,16 +30,16 @@ defmodule Bonny.CRD do
           group: String.t(),
           names: names_t,
           version: String.t(),
-          additionalPrinterColumns: list(columns_t)
+          additional_printer_columns: list(columns_t)
         }
 
   @enforce_keys [:scope, :group, :names]
   @derive Jason.Encoder
-  defstruct scope: :namespaced,
+  defstruct additional_printer_columns: nil,
             group: nil,
             names: nil,
-            version: nil,
-            additionalPrinterColumns: nil
+            scope: :namespaced,
+            version: nil
 
   @doc """
   CRD Kind or plural name
@@ -62,7 +62,7 @@ defmodule Bonny.CRD do
       "hello.example.com/v1"
 
   """
-  @spec api_version(Bonny.CRD.t()) :: binary
+  @spec api_version(Bonny.CRD.t()) :: String.t()
   def api_version(%Bonny.CRD{group: g, version: v}), do: "#{g}/#{v}"
 
   @doc """
@@ -85,9 +85,7 @@ defmodule Bonny.CRD do
   ```
   """
   @spec to_manifest(Bonny.CRD.t()) :: map
-  def to_manifest(%CRD{scope: scope} = crd) do
-    cased_scope = String.capitalize("#{scope}")
-
+  def to_manifest(%CRD{} = crd) do
     %{
       apiVersion: @api_version,
       kind: @kind,
@@ -95,18 +93,57 @@ defmodule Bonny.CRD do
         name: "#{crd.names.plural}.#{crd.group}",
         labels: Bonny.Operator.labels()
       },
-      spec: %{crd | scope: cased_scope}
+      spec: format_spec(crd)
     }
   end
 
-  @doc false
-  @spec telemetry_metadata(Bonny.CRD.t(), map | nil) :: map
-  def telemetry_metadata(%Bonny.CRD{} = spec, extra \\ %{}) do
-    base = %{
-      api_version: Bonny.CRD.api_version(spec),
-      kind: Bonny.CRD.kind(spec)
-    }
+  @doc """
+  Default CLI printer columns.
 
-    Map.merge(base, extra)
+  These are added to the CRDs columns _when_ columns are set.
+
+  The kubernetes API returns these by default when they _are not_ set.
+  """
+  @spec default_columns() :: list(map())
+  def default_columns() do
+    [
+      %{
+        name: "Age",
+        type: "date",
+        description:
+          "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+
+      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+        JSONPath: ".metadata.creationTimestamp"
+      }
+    ]
+  end
+
+  @spec format_spec(Bonny.CRD.t()) :: map
+  defp format_spec(%CRD{scope: scope} = crd) do
+    cased_scope = String.capitalize("#{scope}")
+
+    crd
+    |> Map.from_struct()
+    |> Map.put(:scope, cased_scope)
+    |> rename_keys(keys_to_rename())
+  end
+
+  @spec rename_keys(map, map) :: map
+  defp rename_keys(map, keymap) do
+    Enum.reduce(keymap, map, fn {oldkey, newkey}, agg ->
+      value = Map.get(agg, oldkey)
+
+      agg
+      |> Map.drop([oldkey])
+      |> Map.put(newkey, value)
+    end)
+  end
+
+  @spec keys_to_rename() :: map
+  defp keys_to_rename() do
+    %{
+      additional_printer_columns: :additionalPrinterColumns
+    }
   end
 end

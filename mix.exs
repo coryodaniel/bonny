@@ -6,7 +6,7 @@ defmodule Bonny.MixProject do
       app: :bonny,
       description: description(),
       version: "0.3.3",
-      elixir: "~> 1.7",
+      elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -23,6 +23,7 @@ defmodule Bonny.MixProject do
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:dev), do: ["lib", "examples"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
@@ -37,14 +38,13 @@ defmodule Bonny.MixProject do
   defp deps do
     [
       {:jason, "~> 1.1"},
-      {:k8s, "~> 0.2"},
-      # {:k8s, path: "/Users/odanielc/Workspace/coryodaniel/k8s"},
+      {:k8s, "~> 0.4"},
       {:notion, "~> 0.2"},
       {:telemetry, ">=  0.4.0"},
 
       # Dev deps
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.4", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.20", only: :dev},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
 

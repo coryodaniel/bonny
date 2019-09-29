@@ -4,10 +4,19 @@ defmodule Bonny.K8sMockClient do
   Mock `K8s.Client`
   """
 
-  def list(api_version, kind), do: list(api_version, kind, [])
+  def stream(%K8s.Operation{api_version: "reconciler.test/v1"} = _op, _cluster) do
+    fake_stream = [
+      %{"name" => "foo"},
+      %{"name" => "bar"}
+    ]
 
-  def list(api_version, kind, path_params) do
-    K8s.Operation.build(:list, api_version, kind, path_params)
+    {:ok, fake_stream}
+  end
+
+  def list(api_version, name_or_kind), do: list(api_version, name_or_kind, [])
+
+  def list(api_version, name_or_kind, path_params) do
+    K8s.Operation.build(:list, api_version, name_or_kind, path_params)
   end
 
   def watch(_op, :test, opts) do
@@ -17,7 +26,7 @@ defmodule Bonny.K8sMockClient do
   end
 
   # Mock for Reconciler.run/2
-  def run(%K8s.Operation{kind: "whizbangs", method: :get, verb: :list}, _,
+  def run(%K8s.Operation{name: "whizbangs", method: :get, verb: :list}, _,
         params: %{continue: nil, limit: 50}
       ) do
     response = %{
@@ -28,7 +37,7 @@ defmodule Bonny.K8sMockClient do
     {:ok, response}
   end
 
-  def run(%K8s.Operation{kind: "whizbangs", method: :get, verb: :list}, _,
+  def run(%K8s.Operation{name: "whizbangs", method: :get, verb: :list}, _,
         params: %{continue: "foo", limit: 50}
       ) do
     response = %{
@@ -39,20 +48,25 @@ defmodule Bonny.K8sMockClient do
     {:ok, response}
   end
 
-  # Mock response for Impl.get_resource_version/1
-  def run(%K8s.Operation{kind: "widgets", method: :get, verb: :list}, _, params: %{limit: 1}) do
+  # TODO: remove; Pre 0.4: Mock response for Impl.get_resource_version/1
+  def run(%K8s.Operation{name: "widgets", method: :get, verb: :list}, _, params: %{limit: 1}) do
+    response = %{"metadata" => %{"resourceVersion" => "1337"}}
+    {:ok, response}
+  end
+
+  def run(%K8s.Operation{api_version: "resourceVersion.test/v1"}, _, params: %{limit: 1}) do
     response = %{"metadata" => %{"resourceVersion" => "1337"}}
     {:ok, response}
   end
 
   # Mock response for Impl.watch_for_changes/2
-  def run(%K8s.Operation{kind: "cogs", method: :get, verb: :list}, _, _) do
+  def run(%K8s.Operation{name: "cogs", method: :get, verb: :list}, _, _) do
     response = %{"metadata" => %{"resourceVersion" => "1"}}
     {:ok, response}
   end
 
   def run(_, _, _) do
-    {:ok, %{"mock" => true}}
+    {:error, :mock_client}
   end
 
   def added_chunk() do

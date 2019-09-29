@@ -13,60 +13,102 @@ defmodule Bonny.Controller do
   @callback reconcile(map()) :: :ok | :error
 
   @doc false
-  defmacro __using__(_opts) do
-    quote do
-      import Bonny.Controller
+  defmacro __using__(opts) do
+    quote bind_quoted: [opts: opts] do
       Module.register_attribute(__MODULE__, :rule, accumulate: true)
       @behaviour Bonny.Controller
-      @group nil
-      @version nil
-      @scope nil
-      @names nil
-      @additional_printer_columns nil
+      @client opts[:client] || K8s.Client
+
+      # CRD defaults
+      @group Bonny.Config.group()
+      @kind Bonny.Naming.module_to_kind(__MODULE__)
+      @scope :namespaced
+      @version Bonny.Naming.module_version(__MODULE__)
+
+      @singular Macro.underscore(Bonny.Naming.module_to_kind(__MODULE__))
+      @plural "#{@singular}s"
+      @names %{}
+
+      @additional_printer_columns []
       @before_compile Bonny.Controller
+
+      use Supervisor
+
+      def start_link(_) do
+        Supervisor.start_link(__MODULE__, %{}, name: __MODULE__)
+      end
+
+      @impl true
+      def init(_init_arg) do
+        children = [
+          {__MODULE__.WatchServer, name: __MODULE__.WatchServer},
+          {__MODULE__.ReconcileServer, name: __MODULE__.ReconcileServer}
+        ]
+
+        Supervisor.init(children, strategy: :one_for_one)
+      end
+
+      @doc false
+      @spec client() :: any()
+      def client(), do: @client
     end
   end
 
   @doc false
-  defmacro __before_compile__(_env) do
-    quote do
-      @doc """
-      Kubernetes CRD manifest spec
-      """
-      @spec crd_spec() :: Bonny.CRD.t()
-      def crd_spec do
-        kind = Bonny.Naming.module_to_kind(__MODULE__)
-        version = Bonny.Naming.module_version(__MODULE__)
+  defmacro __before_compile__(env) do
+    controller = env.module
 
+    quote bind_quoted: [controller: controller] do
+      defmodule WatchServer do
+        @moduledoc "Controller watcher implementation"
+        use Bonny.Server.Watcher
+
+        defdelegate add(resource), to: controller
+        defdelegate modify(resource), to: controller
+        defdelegate delete(resource), to: controller
+        defdelegate watch_operation(), to: controller, as: :list_operation
+      end
+
+      defmodule ReconcileServer do
+        @moduledoc "Controller reconciler implementation"
+        use Bonny.Server.Reconciler, frequency: 30
+        defdelegate reconcile(resource), to: controller
+        defdelegate reconcile_operation(), to: controller, as: :list_operation
+      end
+
+      @doc """
+      Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
+      """
+      @spec crd() :: %Bonny.CRD{}
+      def crd() do
         %Bonny.CRD{
-          group: @group || Bonny.Config.group(),
-          scope: @scope || :namespaced,
-          version: @version || version,
-          additionalPrinterColumns: additional_printer_columns(),
-          names: crd_spec_names(@names, kind)
+          group: @group,
+          scope: @scope,
+          version: @version,
+          names: Map.merge(default_names(), @names),
+          additional_printer_columns: additional_printer_columns()
         }
       end
 
-      @doc """
-      Columns default
-      """
-      def default_columns() do
-        [
-          %{
-            name: "Age",
-            type: "date",
-            description:
-              "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+      @spec list_operation() :: K8s.Operation.t()
+      def list_operation() do
+        crd = __MODULE__.crd()
+        api_version = Bonny.CRD.api_version(crd)
+        kind = Bonny.CRD.kind(crd)
+        client = __MODULE__.client()
 
-      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
-            JSONPath: ".metadata.creationTimestamp"
-          }
-        ]
+        case crd.scope do
+          :namespaced -> client.list(api_version, kind, namespace: Bonny.Config.namespace())
+          _ -> client.list(api_version, kind)
+        end
       end
 
       @doc """
-      Kubernetes RBAC rules
+      A list of RBAC rules that this controller needs to operate.
+
+      This list will be serialized into the operator manifest when using `mix bonny.gen.manifest`.
       """
+      @spec rules() :: list(map())
       def rules() do
         Enum.reduce(@rule, [], fn {api, resources, verbs}, acc ->
           rule = %{
@@ -79,31 +121,22 @@ defmodule Bonny.Controller do
         end)
       end
 
-      defp additional_printer_columns() do
-        case @additional_printer_columns do
-          nil ->
-            nil
-
-          some ->
-            some ++ default_columns()
-        end
-      end
-
-      @spec crd_spec_names(nil | map, String.t()) :: map
-      defp crd_spec_names(nil, kind), do: crd_spec_names(%{}, kind)
-
-      defp crd_spec_names(%{} = names, default_kind) do
-        kind = names[:kind] || default_kind
-        singular = Macro.underscore(kind)
-
-        defaults = %{
-          plural: "#{singular}s",
-          singular: singular,
-          kind: kind,
+      @spec default_names() :: map()
+      defp default_names() do
+        %{
+          plural: @plural,
+          singular: @singular,
+          kind: @kind,
           shortNames: nil
         }
+      end
 
-        Map.merge(defaults, names)
+      @spec additional_printer_columns() :: list(map())
+      defp additional_printer_columns() do
+        case @additional_printer_columns do
+          [] -> []
+          any -> @additional_printer_columns ++ Bonny.CRD.default_columns()
+        end
       end
     end
   end

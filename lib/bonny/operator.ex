@@ -19,7 +19,7 @@ defmodule Bonny.Operator do
 
   @doc "ClusterRole rules"
   def rules do
-    plural_names = Enum.map(Bonny.Config.controllers(), &Bonny.CRD.kind(&1.crd_spec()))
+    plural_names = Enum.map(Bonny.Config.controllers(), &Bonny.CRD.kind(&1.crd()))
 
     base_rules = [
       %{
@@ -56,7 +56,7 @@ defmodule Bonny.Operator do
   @spec crds() :: list(map())
   def crds() do
     Enum.map(Bonny.Config.controllers(), fn controller ->
-      Bonny.CRD.to_manifest(controller.crd_spec())
+      Bonny.CRD.to_manifest(controller.crd())
     end)
   end
 
@@ -109,13 +109,13 @@ defmodule Bonny.Operator do
                 resources: resources(),
                 securityContext: %{
                   allowPrivilegeEscalation: false,
-                  readOnlyRootFilesystem: true
+                  readOnlyRootFilesystem: true,
+                  securityContext: %{runAsNonRoot: true, runAsUser: 65_534},
+                  serviceAccountName: Bonny.Config.service_account()
                 },
                 env: env_vars()
               }
-            ],
-            securityContext: %{runAsNonRoot: true, runAsUser: 65_534},
-            serviceAccountName: Bonny.Config.service_account()
+            ]
           }
         }
       }
