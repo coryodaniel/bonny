@@ -84,7 +84,7 @@ defmodule Bonny.OperatorTest do
         kind: "CustomResourceDefinition",
         metadata: %{labels: %{"k8s-app" => "bonny"}, name: "cogs.example.com"},
         spec: %{
-          additionalPrinterColumns: nil,
+          additionalPrinterColumns: [],
           group: "example.com",
           names: %{kind: "Cog", plural: "cogs", shortNames: nil, singular: "cog"},
           scope: "Namespaced",

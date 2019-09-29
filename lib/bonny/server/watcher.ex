@@ -3,7 +3,6 @@ defmodule Bonny.Server.Watcher do
   Continuously watch a list `Operation` for `add`, `modify`, and `delete` events.
   """
 
-  # TODO: moduledoc, docs, and examples
   @callback add(map()) :: :ok | :error
   @callback modify(map()) :: :ok | :error
   @callback delete(map()) :: :ok | :error

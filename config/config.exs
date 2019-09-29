@@ -30,5 +30,7 @@ if Mix.env() == :dev do
 
   config :bonny,
     cluster_name: :dev,
-    controllers: [Example]
+    controllers: [
+      DeploymentEventLogController
+    ]
 end

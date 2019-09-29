@@ -15,7 +15,7 @@ If Kubernetes CRDs and controllers are new to you, read up on the [terminology](
 
 _Tutorials and Examples:_
 
-*Important!* These tutorials are for an older version of Bonny, but the `add/1`, `modify/1`, and `delete/1` APIs are the same, as well as a new `reconcile/1` function. Additionally a [k8s](https://github.com/coryodaniel/k8s) has been added!
+_Important!_ These tutorials are for an older version of Bonny, but the `add/1`, `modify/1`, and `delete/1` APIs are the same, as well as a new `reconcile/1` function. Additionally a [k8s](https://github.com/coryodaniel/k8s) has been added!
 
 Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you need any help!
 
@@ -29,7 +29,7 @@ Bonny can be installed by adding `bonny` to your list of dependencies in `mix.ex
 ```elixir
 def deps do
   [
-    {:bonny, "~> 0.3"}
+    {:bonny, "~> 0.4"}
   ]
 end
 ```
@@ -61,10 +61,6 @@ config :bonny,
   # K8s.Cluster to use, defaults to :default
   cluster_name: :default,
 
-  # How often to run the reconciler for all controllers in milliseconds.
-  # Default: 300000ms (5 minutes)
-  reconcile_every: 10 * 60 * 1000,
-
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
   group: "your-operator.example.com",
@@ -89,7 +85,7 @@ config :bonny,
   }
 ```
 
-When configuring bonny to run *in your cluster* the `mix bonny.gen.manifest` command will generate a service account for you. To use that service account configure the `k8s` library like the following:
+When configuring bonny to run _in your cluster_ the `mix bonny.gen.manifest` command will generate a service account for you. To use that service account configure the `k8s` library like the following:
 
 ```elixir
 config :k8s,
@@ -248,7 +244,7 @@ _[Controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extensio
 
 > A custom controller is a controller that users can deploy and update on a running cluster, independently of the cluster’s own lifecycle. Custom controllers can work with any kind of resource, but they are especially effective when combined with custom resources. The Operator pattern is one example of such a combination. It allows developers to encode domain knowledge for specific applications into an extension of the Kubernetes API.
 
-_Operator_:
+_[Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)_:
 
 A set of application specific controllers deployed on Kubernetes and managed via kubectl and the Kubernetes API.
 

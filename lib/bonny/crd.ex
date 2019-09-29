@@ -62,7 +62,7 @@ defmodule Bonny.CRD do
       "hello.example.com/v1"
 
   """
-  @spec api_version(Bonny.CRD.t()) :: binary
+  @spec api_version(Bonny.CRD.t()) :: String.t()
   def api_version(%Bonny.CRD{group: g, version: v}), do: "#{g}/#{v}"
 
   @doc """

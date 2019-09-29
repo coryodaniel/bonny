@@ -33,7 +33,7 @@ defmodule Bonny.Controller do
       @before_compile Bonny.Controller
 
       use Supervisor
-      
+
       def start_link(_) do
         Supervisor.start_link(__MODULE__, %{}, name: __MODULE__)
       end
@@ -47,10 +47,10 @@ defmodule Bonny.Controller do
 
         Supervisor.init(children, strategy: :one_for_one)
       end
-      
+
       @doc false
       @spec client() :: any()
-      def client(), do: @client      
+      def client(), do: @client
     end
   end
 
@@ -71,7 +71,7 @@ defmodule Bonny.Controller do
 
       defmodule ReconcileServer do
         @moduledoc "Controller reconciler implementation"
-        use Bonny.Server.Reconciler, frequency: 15
+        use Bonny.Server.Reconciler, frequency: 30
         defdelegate reconcile(resource), to: controller
         defdelegate reconcile_operation(), to: controller, as: :list_operation
       end
@@ -96,7 +96,7 @@ defmodule Bonny.Controller do
         api_version = Bonny.CRD.api_version(crd)
         kind = Bonny.CRD.kind(crd)
         client = __MODULE__.client()
-        
+
         case crd.scope do
           :namespaced -> client.list(api_version, kind, namespace: Bonny.Config.namespace())
           _ -> client.list(api_version, kind)
@@ -133,9 +133,10 @@ defmodule Bonny.Controller do
 
       @spec additional_printer_columns() :: list(map())
       defp additional_printer_columns() do
-        # this is how the default is getting included... could pass printer cols to CRD
-        # and let CRD handle ([]) and that should solve dializer issue w/ @ being unused
-        @additional_printer_columns ++ Bonny.CRD.default_columns()
+        case @additional_printer_columns do
+          [] -> []
+          any -> @additional_printer_columns ++ Bonny.CRD.default_columns()
+        end
       end
     end
   end

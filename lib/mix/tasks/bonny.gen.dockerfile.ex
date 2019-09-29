@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Bonny.Gen.Dockerfile do
   use Mix.Task
 
   @switches [out: :string]
-  @default_opts []
+  @default_opts [out: "Dockerfile"]
   @aliases [o: :out]
 
   @shortdoc "Generate operator Dockerfile"

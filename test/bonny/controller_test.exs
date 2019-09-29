@@ -5,7 +5,7 @@ defmodule Bonny.ControllerTest do
   describe "__using__" do
     test "crd/0 returns the CRD definition" do
       assert Whizbang.crd() == %Bonny.CRD{
-               additional_printer_columns: nil,
+               additional_printer_columns: [],
                group: "example.com",
                names: %{
                  kind: "Whizbang",
@@ -79,7 +79,7 @@ defmodule Bonny.ControllerTest do
     end
 
     test "defaults additional printer columns to nil" do
-      assert Whizbang.crd().additional_printer_columns == nil
+      assert Whizbang.crd().additional_printer_columns == []
     end
 
     test "allows additional printer columns to be overridden" do
