@@ -1,6 +1,24 @@
 defmodule Bonny.PeriodicTask do
   @moduledoc """
   Register periodically run tasks.
+  Use for running tasks as a part of reconciling a CRD with a lifetime, duration, or interval field.
+
+  __Note:__ Must be started by your operator.
+
+  Add `Bonny.PeriodicTask.sttart_link(:ok)` to your application.
+
+  Functions are expected to return one of:
+  - `:ok` - task will be passed to subsequent calls
+  - `{:ok, new_state}` state field will be updated in task and provided to next call
+  - `{:stop, reason}` task will be removed from execution loop. Use for tasks opting out of being re-run
+  - `any()` - any other result is treated as an error, and the execution loop will be halted
+
+  ## Examples
+
+    Registering a task
+
+    Unregistering a task
+
   """
   use DynamicSupervisor
   alias Bonny.Sys.Event
