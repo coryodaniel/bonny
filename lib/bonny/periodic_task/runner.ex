@@ -13,7 +13,7 @@ defmodule Bonny.PeriodicTask.Runner do
 
   @impl true
   def init(%PeriodicTask{} = task) do
-    Event.task_initialized(%{}, {id: task.id})
+    Event.task_initialized(%{}, %{id: task.id})
     Process.send_after(self(), :run, calc_offset(task))
     {:ok, task}
   end
@@ -23,22 +23,22 @@ defmodule Bonny.PeriodicTask.Runner do
     next_task =
       case execute(task) do
         {:ok, new_state} ->
-          Event.task_succeeded(%{}, {id: task.id})
+          Event.task_succeeded(%{}, %{id: task.id})
           task = %PeriodicTask{task | state: new_state}
           Process.send_after(self(), :run, calc_offset(task))
           task
 
         :ok ->
-          Event.task_succeeded(%{}, {id: task.id})
+          Event.task_succeeded(%{}, %{id: task.id})
           Process.send_after(self(), :run, calc_offset(task))
           task
 
         {:stop, reason} ->
-          Event.task_stopped(%{}, {id: task.id})
+          Event.task_stopped(%{}, %{id: task.id})
           {:stop, reason, task}
 
         other ->
-          Event.task_failed(%{}, {id: task.id})
+          Event.task_failed(%{}, %{id: task.id})
           {:stop, :error, other}
       end
 

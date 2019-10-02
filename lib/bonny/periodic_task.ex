@@ -16,8 +16,10 @@ defmodule Bonny.PeriodicTask do
   ## Examples
 
     Registering a task
+      iex> Bonny.PeriodicTask.new(:pod_evictor, {PodEvictor, :evict, [reconcile_payload_map]}, 5000)
 
     Unregistering a task
+      iex> Bonny.PeriodicTask.unregister(:pod_evictor)
 
   """
   use DynamicSupervisor
@@ -63,7 +65,7 @@ defmodule Bonny.PeriodicTask do
 
   @doc "Unregisters and stops a `Bonny.PeriodicTask`"
   @spec unregister(t() | atom()) :: any()
-  def unregister(%__MODULE__{id: id} = task), do: unregister(id)
+  def unregister(%__MODULE__{id: id}), do: unregister(id)
 
   def unregister(id) when is_atom(id) do
     Event.task_unregistered(%{}, %{id: id})

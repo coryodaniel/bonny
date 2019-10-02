@@ -1,11 +1,32 @@
 defmodule Bonny.PeriodicTaskTest do
   use ExUnit.Case, async: false
-  doctest Bonny.PeriodicTask
   alias Bonny.PeriodicTask
 
   defmodule Dummy do
     def handler(state) do
       {:ok, Bonny.PeriodicTaskTest.increment_state(state)}
+    end
+  end
+
+  describe "new/1" do
+    test "creates and registers a task" do
+      task_id = :register_mf
+      agent_pid = make_agent(task_id)
+      PeriodicTask.start_link(nil)
+
+      task = %PeriodicTask{
+        id: task_id,
+        handler: {Bonny.PeriodicTaskTest.Dummy, :handler},
+        interval: 5,
+        state: agent_pid
+      }
+
+      {:ok, _child_pid} = PeriodicTask.register(task)
+
+      :timer.sleep(10)
+
+      assert Agent.get(agent_pid, & &1) in 1..2
+      DynamicSupervisor.stop(PeriodicTask)
     end
   end
 
@@ -88,6 +109,22 @@ defmodule Bonny.PeriodicTaskTest do
   end
 
   describe "unregister/1" do
+    test "unregisters and stops a task" do
+      PeriodicTask.start_link(nil)
+
+      {_task_pid, agent_name} = make_increment_task(:unregister, 25)
+
+      :timer.sleep(50)
+      assert Agent.get(agent_name, & &1) in 1..3
+      PeriodicTask.unregister(:unregister)
+      previous_value = Agent.get(agent_name, & &1)
+
+      :timer.sleep(50)
+      current_value = Agent.get(agent_name, & &1)
+      assert previous_value == current_value
+
+      DynamicSupervisor.stop(PeriodicTask)
+    end
   end
 
   def increment_state(pid) do
