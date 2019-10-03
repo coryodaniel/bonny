@@ -26,6 +26,13 @@ defmodule Bonny.Sys.Event do
   defevent([:scheduler, :binding, :succeeded])
   defevent([:scheduler, :binding, :failed])
 
+  defevent([:task, :initialized])
+  defevent([:task, :registered])
+  defevent([:task, :unregistered])
+  defevent([:task, :succeeded])
+  defevent([:task, :failed])
+  defevent([:task, :stopped])
+
   @doc """
   Measure function execution in _ms_ and return in map w/ results.
 
