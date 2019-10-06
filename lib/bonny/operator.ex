@@ -102,6 +102,7 @@ defmodule Bonny.Operator do
         template: %{
           metadata: %{labels: labels()},
           spec: %{
+            serviceAccountName: Bonny.Config.service_account(),
             containers: [
               %{
                 image: image,
@@ -110,8 +111,8 @@ defmodule Bonny.Operator do
                 securityContext: %{
                   allowPrivilegeEscalation: false,
                   readOnlyRootFilesystem: true,
-                  securityContext: %{runAsNonRoot: true, runAsUser: 65_534},
-                  serviceAccountName: Bonny.Config.service_account()
+                  runAsNonRoot: true,
+                  runAsUser: 65_534
                 },
                 env: env_vars()
               }

@@ -21,11 +21,9 @@ defmodule Bonny.Config do
   """
   @spec name() :: binary
   def name() do
-    operator_name = Application.get_env(:bonny, :operator_name, project_name())
-
-    operator_name
-    |> String.downcase()
-    |> String.replace(~r/[^a-z-]/, "-\\1\\g{1}")
+    :bonny
+    |> Application.get_env(:operator_name, project_name())
+    |> dns_safe_name
   end
 
   @doc """
@@ -40,11 +38,9 @@ defmodule Bonny.Config do
   """
   @spec service_account() :: binary
   def service_account() do
-    service_account_name = Application.get_env(:bonny, :service_account_name, project_name())
-
-    service_account_name
-    |> String.downcase()
-    |> String.replace(~r/[^a-z-]/, "-\\1\\g{1}")
+    :bonny
+    |> Application.get_env(:service_account_name, project_name())
+    |> dns_safe_name
   end
 
   defp project_name() do
@@ -52,6 +48,12 @@ defmodule Bonny.Config do
     |> Keyword.fetch!(:app)
     |> Atom.to_string()
     |> String.replace("_", "-")
+  end
+
+  defp dns_safe_name(str) do
+    str
+    |> String.downcase()
+    |> String.replace(~r/[^a-z-]/, "-\\1\\g{1}")
   end
 
   @doc """

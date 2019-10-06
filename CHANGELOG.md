@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
 - Basic integration w/ [Notion](https://github.com/coryodaniel/notion) for telemetry
 - Bonny.Server.Reconciler continually process a list operation
 - Bonny.Server.Scheduler write custom kubernetes schedulers
-- Dockerfile gen uses OTP releases
-- Removed `reconcile_batch_size`
 - Added Bonny.PeriodicTask for scheduling periodically executed functions
+
+### Changed
+
+- Dockerfile gen uses OTP releases
+
+### Removed
+
+- Removed `reconcile_batch_size`
 
 ## [0.3.3] - 2019-06-25
 
@@ -34,9 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for a reconcile/1 callback
 - `reconcile_every` config option to schedule how often to run
-reconciliation
+  reconciliation
 - `reconcile_batch_size` to set the size of the HTTP GET limit
-when fetching batches of items to reconcile
+  when fetching batches of items to reconcile
 - Added `{:error, binary}` as a return value of Controller lifecycle methods
 - Implemented `:telemetry` library
 - `Bonny.Sys.Event.events/0` exposes list of telemetry events
