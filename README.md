@@ -20,7 +20,7 @@ _Important!_ These tutorials are for an older version of Bonny, but the `add/1`,
 Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you need any help!
 
 - HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
-- HelloOperator [source code](https://gitub.com/coryodaniel/hello_operator)
+- HelloOperator [source code](https://github.com/coryodaniel/hello_operator)
 
 ## Installation
 
@@ -118,7 +118,7 @@ mix bonny.gen.controller Widget widgets
 
 You can specify the version flag to create a new version of a controller. Bonny will dispatch the controller for the given version. So old versions of resources can live alongside new versions.
 
-```shell
+```shell/
 mix bonny.gen.controller Widget widgets --version v2alpha1
 ```
 
