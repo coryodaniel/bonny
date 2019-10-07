@@ -19,23 +19,28 @@ defmodule Bonny.Operator do
 
   @doc "ClusterRole rules"
   def rules do
-    plural_names = Enum.map(Bonny.Config.controllers(), &Bonny.CRD.kind(&1.crd()))
-
     base_rules = [
       %{
         apiGroups: ["apiextensions.k8s.io"],
         resources: ["customresourcedefinitions"],
         verbs: ["*"]
-      },
-      %{apiGroups: [Bonny.Config.group()], resources: plural_names, verbs: ["*"]}
+      }
     ]
+
+    crd_rules =
+      Enum.map(Bonny.Config.controllers(), fn controller ->
+        crd = controller.crd()
+        group = crd.group
+        kind = Bonny.CRD.kind(crd)
+        %{apiGroups: [group], resources: [kind], verbs: ["*"]}
+      end)
 
     controller_rules =
       Enum.reduce(Bonny.Config.controllers(), [], fn controller, acc ->
         acc ++ controller.rules()
       end)
 
-    base_rules ++ controller_rules
+    base_rules ++ crd_rules ++ controller_rules
   end
 
   @doc "ServiceAccount manifest"

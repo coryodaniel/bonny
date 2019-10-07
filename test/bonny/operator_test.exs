@@ -9,14 +9,15 @@ defmodule Bonny.OperatorTest do
     expected = %{
       apiVersion: "rbac.authorization.k8s.io/v1",
       kind: "ClusterRole",
-      metadata: %{name: "bonny", labels: %{"k8s-app" => "bonny"}},
+      metadata: %{labels: %{"k8s-app" => "bonny"}, name: "bonny"},
       rules: [
         %{
           apiGroups: ["apiextensions.k8s.io"],
           resources: ["customresourcedefinitions"],
           verbs: ["*"]
         },
-        %{apiGroups: ["example.com"], resources: ["widgets", "cogs"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
         %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
         %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
       ]
@@ -34,7 +35,8 @@ defmodule Bonny.OperatorTest do
         resources: ["customresourcedefinitions"],
         verbs: ["*"]
       },
-      %{apiGroups: ["example.com"], resources: ["widgets", "cogs"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
       %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
       %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
     ]
