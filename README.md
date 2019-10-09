@@ -98,6 +98,7 @@ This will add a cluster named `default`. When no configuration information is pr
 
 ## Example Operators built with Bonny
 
+- [Eviction Operator](https://github.com/bonny-k8s/eviction_operator) - build with Bonny v.0.4
 - [Hello Operator](https://github.com/coryodaniel/hello_operator) - this was built with bonny v 0.2, there have been significant changes since.
 
 ## Bonny Generators
@@ -118,7 +119,7 @@ mix bonny.gen.controller Widget widgets
 
 You can specify the version flag to create a new version of a controller. Bonny will dispatch the controller for the given version. So old versions of resources can live alongside new versions.
 
-```shell/
+```shell
 mix bonny.gen.controller Widget widgets --version v2alpha1
 ```
 
