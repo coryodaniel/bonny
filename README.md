@@ -13,7 +13,7 @@ Bonny make it easy to create Kubernetes Operators, Controllers, and Custom [Sche
 
 If Kubernetes CRDs and controllers are new to you, read up on the [terminology](#terminology).
 
-_Tutorials and Examples:_
+## Tutorials and Examples:
 
 _Important!_ These tutorials are for an older version of Bonny, but the `add/1`, `modify/1`, and `delete/1` APIs are the same, as well as a new `reconcile/1` function. Additionally a [k8s](https://github.com/coryodaniel/k8s) has been added!
 
@@ -21,6 +21,11 @@ Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you nee
 
 - HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
 - HelloOperator [source code](https://github.com/coryodaniel/hello_operator)
+
+## Example Operators built with Bonny
+
+- [Eviction Operator](https://github.com/bonny-k8s/eviction_operator) - Bonny v 0.4
+- [Hello Operator](https://github.com/coryodaniel/hello_operator) - Bonny v 0.2
 
 ## Installation
 
@@ -95,11 +100,6 @@ config :k8s,
 ```
 
 This will add a cluster named `default`. When no configuration information is provided, the `k8s` library will use the service account of the pod.
-
-## Example Operators built with Bonny
-
-- [Eviction Operator](https://github.com/bonny-k8s/eviction_operator) - build with Bonny v.0.4
-- [Hello Operator](https://github.com/coryodaniel/hello_operator) - this was built with bonny v 0.2, there have been significant changes since.
 
 ## Bonny Generators
 
