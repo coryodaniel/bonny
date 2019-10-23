@@ -5,7 +5,7 @@ defmodule Bonny.MixProject do
     [
       app: :bonny,
       description: description(),
-      version: "0.4.0-rc3",
+      version: "0.4.0",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
