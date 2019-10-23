@@ -6,7 +6,7 @@ defmodule Bonny.Server.Reconciler do
 
   `reconcilable_resources/0` has a default implementation of running `K8s.Client.stream/2` with `reconcile_operation/0`.
 
-  For a working example of the `Reconciler see `Bonny.Server.Scheduler`
+  For a working example of the `Reconciler` see `Bonny.Server.Scheduler`
 
   ## Examples
     Print every pod. Not very useful, but a simple copy-paste example.
