@@ -22,6 +22,12 @@ Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you nee
 - HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
 - HelloOperator [source code](https://github.com/coryodaniel/hello_operator)
 
+## Talks
+- Commandeering Kubernetes @ The Big Elixir 2019
+  - [slides](https://speakerdeck.com/coryodaniel/commandeering-kubernetes-with-elixir)
+  - [source code](https://github.com/coryodaniel/talks/tree/master/commandeering)
+  - [video](#tbd)
+
 ## Example Operators built with Bonny
 
 - [Eviction Operator](https://github.com/bonny-k8s/eviction_operator) - Bonny v 0.4
