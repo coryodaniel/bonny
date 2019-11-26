@@ -27,7 +27,7 @@ defmodule Bonny.CRD do
   @typedoc "CRD Spec"
   @type t :: %__MODULE__{
           scope: :namespaced | :cluster,
-          group: String.t(),
+          group: String.t() | nil,
           names: names_t,
           version: String.t(),
           additional_printer_columns: list(columns_t)
@@ -57,12 +57,28 @@ defmodule Bonny.CRD do
   Gets group version from CRD spec
 
   ## Examples
+    Returns apiVersion for an operator
 
       iex> Bonny.CRD.api_version(%Bonny.CRD{group: "hello.example.com", version: "v1", scope: :namespaced, names: %{}})
       "hello.example.com/v1"
 
+    Returns apiVersion for `apps` resources
+
+      iex> Bonny.CRD.api_version(%Bonny.CRD{group: "apps", version: "v1", scope: :namespaced, names: %{}})
+      "apps/v1"
+
+    Returns apiVersion for `core` resources
+
+      iex> Bonny.CRD.api_version(%Bonny.CRD{group: "", version: "v1", scope: :namespaced, names: %{}})
+      "v1"
+
+      iex> Bonny.CRD.api_version(%Bonny.CRD{group: nil, version: "v1", scope: :namespaced, names: %{}})
+      "v1"
+
   """
   @spec api_version(Bonny.CRD.t()) :: String.t()
+  def api_version(%Bonny.CRD{group: nil, version: v}), do: v
+  def api_version(%Bonny.CRD{group: "", version: v}), do: v
   def api_version(%Bonny.CRD{group: g, version: v}), do: "#{g}/#{v}"
 
   @doc """
