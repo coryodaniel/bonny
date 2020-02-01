@@ -26,7 +26,7 @@ Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you nee
 - Commandeering Kubernetes @ The Big Elixir 2019
   - [slides](https://speakerdeck.com/coryodaniel/commandeering-kubernetes-with-elixir)
   - [source code](https://github.com/coryodaniel/talks/tree/master/commandeering)
-  - [video](#tbd)
+  - [video](https://www.youtube.com/watch?v=0r9YmbH0xTY)
 
 ## Example Operators built with Bonny
 
