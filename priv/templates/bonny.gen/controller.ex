@@ -82,7 +82,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   """
   @spec add(map()) :: :ok | :error
   @impl Bonny.Controller
-  def add(payload) do
+  def add(%{} = <%= singular %>) do
     IO.inspect(payload)
     :ok
   end
@@ -92,7 +92,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   """
   @spec modify(map()) :: :ok | :error
   @impl Bonny.Controller
-  def modify(payload) do
+  def modify(%{} = <%= singular %>) do
     IO.inspect(payload)
     :ok
   end
@@ -102,7 +102,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   """
   @spec delete(map()) :: :ok | :error
   @impl Bonny.Controller
-  def delete(payload) do
+  def delete(%{} = <%= singular %>) do
     IO.inspect(payload)
     :ok
   end
@@ -112,7 +112,7 @@ defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
   """
   @spec reconcile(map()) :: :ok | :error
   @impl Bonny.Controller
-  def reconcile(payload) do
+  def reconcile(%{} = <%= singular %>) do
     IO.inspect(payload)
     :ok
   end
