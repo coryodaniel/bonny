@@ -14,6 +14,18 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
       assert output =~ "defmodule Bonny.Controller.V1.Memcached do"
     end
 
+    test "the generated controller injects the singular Controller name as the argument" do
+      output =
+        capture_io(fn ->
+          Controller.run(["Memcached", "memcached", "--out", "-"])
+        end)
+
+      assert output =~ "def add(%{} = memcached) do"
+      assert output =~ "def modify(%{} = memcached) do"
+      assert output =~ "def delete(%{} = memcached) do"
+      assert output =~ "def reconcile(%{} = memcached) do"
+    end
+
     test "generates a test file" do
       output =
         capture_io(fn ->
