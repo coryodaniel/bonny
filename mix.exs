@@ -5,7 +5,7 @@ defmodule Bonny.MixProject do
     [
       app: :bonny,
       description: description(),
-      version: "0.4.1",
+      version: "0.4.2",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -38,7 +38,7 @@ defmodule Bonny.MixProject do
   defp deps do
     [
       {:jason, "~> 1.1"},
-      {:k8s, "~> 0.4"},
+      {:k8s, "~> 0.4.0"},
       {:notion, "~> 0.2"},
       {:telemetry, ">=  0.4.0"},
 
