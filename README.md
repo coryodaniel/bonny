@@ -31,8 +31,8 @@ Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you nee
 ## Example Operators built with Bonny
 
 - [Eviction Operator](https://github.com/bonny-k8s/eviction_operator) - Bonny v 0.4
-- [Hello Operator](https://github.com/coryodaniel/hello_operator) - Bonny v 0.2
-
+- [Hello Operator](https://github.com/coryodaniel/hello_operator) - Bonny v 0.4
+- [Todo Operator](https://github.com/bonny-k8s/todo-operator) - Bonny v 0.4
 ## Installation
 
 Bonny can be installed by adding `bonny` to your list of dependencies in `mix.exs`:
