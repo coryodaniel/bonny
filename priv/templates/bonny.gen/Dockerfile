@@ -2,7 +2,7 @@
 ###### Build Image ######
 #########################
 
-FROM bitwalker/alpine-elixir:1.9.1 as builder
+FROM bitwalker/alpine-elixir:1.9.4 as builder
 
 ENV MIX_ENV=prod \
   MIX_HOME=/opt/mix \
@@ -13,9 +13,15 @@ RUN mix local.hex --force && \
 
 WORKDIR /app
 
-COPY . .
+COPY mix.lock mix.exs ./
+COPY config config
 
-RUN mix deps.get --only-prod && mix release
+RUN mix deps.get --only-prod && mix deps.compile
+
+COPY priv priv
+COPY lib lib
+
+RUN mix release
 
 #########################
 ##### Release Image #####
