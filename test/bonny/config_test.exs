@@ -86,6 +86,14 @@ defmodule Bonny.ConfigTest do
       assert Config.namespace() == "default"
     end
 
+    test "can be set via config.exs" do
+      original = Application.get_env(:bonny, :namespace)
+
+      Application.put_env(:bonny, :namespace, :all)
+      assert Config.namespace() == :all
+      Application.put_env(:bonny, :namespace, original)
+    end
+
     test "can be set by env variable" do
       System.put_env("BONNY_POD_NAMESPACE", "prod")
       assert Config.namespace() == "prod"

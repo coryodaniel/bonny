@@ -104,7 +104,7 @@ defmodule Bonny.Config do
   """
   @spec namespace() :: binary
   def namespace() do
-    System.get_env("BONNY_POD_NAMESPACE") || "default"
+    Application.get_env(:bonny, :namespace, System.get_env("BONNY_POD_NAMESPACE", "default"))
   end
 
   @doc """
