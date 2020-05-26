@@ -100,6 +100,13 @@ defmodule Bonny.Config do
   iex -S mix
   ```
 
+  Or via config.exs:
+  ```
+  config :bonny, namespace: "mynamespace" # specific namespace
+  # or
+  config :bonny; namespace: :all # all namespaces
+  ```
+
   Bonny sets `BONNY_POD_NAMESPACE` on all Kubernetes deployments to the namespace the operator is deployed in.
   """
   @spec namespace() :: binary

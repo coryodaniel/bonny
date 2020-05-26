@@ -72,6 +72,11 @@ config :bonny,
   # K8s.Cluster to use, defaults to :default
   cluster_name: :default,
 
+  # The namespace to watch for Namespaced CRDs.
+  # Defaults to "default". `:all` for all namespaces
+  # Also configurable via environment variable `BONNY_POD_NAMESPACE`
+  namespace: "default",
+
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
   group: "your-operator.example.com",
