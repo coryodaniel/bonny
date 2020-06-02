@@ -99,6 +99,23 @@ defmodule Bonny.ConfigTest do
       assert Config.namespace() == "prod"
       System.delete_env("BONNY_POD_NAMESPACE")
     end
+
+    test "can be set to :all via env variable" do
+      System.put_env("BONNY_POD_NAMESPACE", "__ALL__")
+      assert Config.namespace() == :all
+      System.delete_env("BONNY_POD_NAMESPACE")
+    end
+
+    test "config.exs configuration is preceded by env" do
+      original = Application.get_env(:bonny, :namespace)
+
+      System.put_env("BONNY_POD_NAMESPACE", "prod")
+      Application.put_env(:bonny, :namespace, "my-cool-namespace")
+      assert Config.namespace() == "prod"
+      System.delete_env("BONNY_POD_NAMESPACE")
+      assert Config.namespace() == "my-cool-namespace"
+      Application.put_env(:bonny, :namespace, original)
+    end
   end
 
   describe "controllers/0" do
