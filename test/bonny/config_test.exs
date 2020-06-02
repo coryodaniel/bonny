@@ -83,7 +83,11 @@ defmodule Bonny.ConfigTest do
 
   describe "namespace/0" do
     test "returns 'default' when not set" do
+      original = Application.get_env(:bonny, :namespace)
+
+      Application.delete_env(:bonny, :namespace)
       assert Config.namespace() == "default"
+      Application.put_env(:bonny, :namespace, original)
     end
 
     test "can be set via config.exs" do
