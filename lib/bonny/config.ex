@@ -111,7 +111,11 @@ defmodule Bonny.Config do
   """
   @spec namespace() :: binary
   def namespace() do
-    Application.get_env(:bonny, :namespace, System.get_env("BONNY_POD_NAMESPACE", "default"))
+    case System.get_env("BONNY_POD_NAMESPACE") do
+      nil -> Application.get_env(:bonny, :namespace, "default")
+      "__ALL__" -> :all
+      namespace -> namespace
+    end
   end
 
   @doc """
