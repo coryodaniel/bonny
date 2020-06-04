@@ -83,13 +83,42 @@ defmodule Bonny.ConfigTest do
 
   describe "namespace/0" do
     test "returns 'default' when not set" do
+      original = Application.get_env(:bonny, :namespace)
+
+      Application.delete_env(:bonny, :namespace)
       assert Config.namespace() == "default"
+      Application.put_env(:bonny, :namespace, original)
+    end
+
+    test "can be set via config.exs" do
+      original = Application.get_env(:bonny, :namespace)
+
+      Application.put_env(:bonny, :namespace, :all)
+      assert Config.namespace() == :all
+      Application.put_env(:bonny, :namespace, original)
     end
 
     test "can be set by env variable" do
       System.put_env("BONNY_POD_NAMESPACE", "prod")
       assert Config.namespace() == "prod"
       System.delete_env("BONNY_POD_NAMESPACE")
+    end
+
+    test "can be set to :all via env variable" do
+      System.put_env("BONNY_POD_NAMESPACE", "__ALL__")
+      assert Config.namespace() == :all
+      System.delete_env("BONNY_POD_NAMESPACE")
+    end
+
+    test "config.exs configuration is preceded by env" do
+      original = Application.get_env(:bonny, :namespace)
+
+      System.put_env("BONNY_POD_NAMESPACE", "prod")
+      Application.put_env(:bonny, :namespace, "my-cool-namespace")
+      assert Config.namespace() == "prod"
+      System.delete_env("BONNY_POD_NAMESPACE")
+      assert Config.namespace() == "my-cool-namespace"
+      Application.put_env(:bonny, :namespace, original)
     end
   end
 

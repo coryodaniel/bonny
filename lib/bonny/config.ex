@@ -96,15 +96,30 @@ defmodule Bonny.Config do
   This can be set via environment variable:
 
   ```shell
-  BONNY_POD_NAMESPACE=prod
+  BONNY_POD_NAMESPACE=prod # specific namespace
+  # or
+  BONNY_POD_NAMESPACE=__ALL__ # all namespaces
   iex -S mix
   ```
+
+  Or via config.exs:
+  ```
+  config :bonny, namespace: "mynamespace" # specific namespace
+  # or
+  config :bonny; namespace: :all # all namespaces
+  ```
+
+  Configuration via environment variable always takes precedence over config.exs.
 
   Bonny sets `BONNY_POD_NAMESPACE` on all Kubernetes deployments to the namespace the operator is deployed in.
   """
   @spec namespace() :: binary
   def namespace() do
-    System.get_env("BONNY_POD_NAMESPACE") || "default"
+    case System.get_env("BONNY_POD_NAMESPACE") do
+      nil -> Application.get_env(:bonny, :namespace, "default")
+      "__ALL__" -> :all
+      namespace -> namespace
+    end
   end
 
   @doc """
