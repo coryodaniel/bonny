@@ -123,7 +123,7 @@ config :k8s,
     }
   }
 ```
-3. If you have enabled, you must have RBAC permissions for creating and modifying `CustomResourceDefinition`, `ClusterRole`, `ClusterRoleBinding` and `ServiceAccount`.
+3. If RBAC is enabled, you must have permissions for creating and modifying `CustomResourceDefinition`, `ClusterRole`, `ClusterRoleBinding` and `ServiceAccount`.
 4. Have run generated your manifest `mix bonny.gen.manifest` and installed it using kubectl `kubectl apply -f manifest.yaml`
 
 Now you are ready to run your operator
