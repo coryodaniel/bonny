@@ -112,6 +112,30 @@ config :k8s,
 
 This will add a cluster named `default`. When no configuration information is provided, the `k8s` library will use the service account of the pod.
 
+## Running outside of a cluster
+
+Running an operator outside of kubernetes is not recommended for production use, but can be very useful when testing.
+
+To start your operator and connect it to an existing cluster, one must first:
+1. Have configured your operator. The above example is a good place to start.
+2. Have some way of connecting to your cluster. The most common is to connect using your kubeconfig as in the example:
+```elixir
+# config.exs
+config :k8s,
+  clusters: %{
+    default: %{
+      conn: "~/.kube/config"
+    }
+  }
+```
+3. If RBAC is enabled, you must have permissions for creating and modifying `CustomResourceDefinition`, `ClusterRole`, `ClusterRoleBinding` and `ServiceAccount`.
+4. Generate a manifest `mix bonny.gen.manifest` and install it using kubectl `kubectl apply -f manifest.yaml`
+
+Now you are ready to run your operator
+```shell
+iex -S mix
+```
+
 ## Bonny Generators
 
 There are a number of generators to help create a kubernetes operator.
