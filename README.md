@@ -1,9 +1,12 @@
-![Bonny](./banner.png "Bonny")
+![Bonny](./assets/banner.png "Bonny")
 
 [![Build Status](https://travis-ci.org/coryodaniel/bonny.svg?branch=master)](https://travis-ci.org/coryodaniel/bonny)
 [![Coverage Status](https://coveralls.io/repos/github/coryodaniel/bonny/badge.svg?branch=master)](https://coveralls.io/github/coryodaniel/bonny?branch=master)
-[![Hex.pm](http://img.shields.io/hexpm/v/bonny.svg?style=flat)](https://hex.pm/packages/bonny)
-![Hex.pm](https://img.shields.io/hexpm/l/bonny.svg?style=flat)
+[![Module Version](https://img.shields.io/hexpm/v/bonny.svg)](https://hex.pm/packages/bonny)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/bonny/)
+[![Total Download](https://img.shields.io/hexpm/dt/bonny.svg)](https://hex.pm/packages/bonny)
+[![License](https://img.shields.io/hexpm/l/bonny.svg)](https://github.com/coryodaniel/bonny/blob/master/LICENSE)
+[![Last Updated](https://img.shields.io/github/last-commit/coryodaniel/bonny.svg)](https://github.com/coryodaniel/bonny/commits/master)
 
 # Bonny: Kubernetes Development Framework
 
@@ -52,7 +55,6 @@ Bonny uses the [k8s client](https://github.com/coryodaniel/k8s) under the hood.
 The only configuration parameters required are `:bonny` `controllers` and a `:k8s` cluster:
 
 ```elixir
-
 config :k8s,
   clusters: %{
     default: %{ # `default` here must match `cluster_name` below
@@ -114,7 +116,7 @@ This will add a cluster named `default`. When no configuration information is pr
 
 ## Running outside of a cluster
 
-Running an operator outside of kubernetes is not recommended for production use, but can be very useful when testing.
+Running an operator outside of Kubernetes is not recommended for production use, but can be very useful when testing.
 
 To start your operator and connect it to an existing cluster, one must first:
 1. Have configured your operator. The above example is a good place to start.
@@ -138,7 +140,7 @@ iex -S mix
 
 ## Bonny Generators
 
-There are a number of generators to help create a kubernetes operator.
+There are a number of generators to help create a Kubernetes operator.
 
 `mix help | grep bonny`
 
@@ -180,7 +182,7 @@ Check out the two test controllers:
 
 ### Generating a dockerfile
 
-The following command will generate a dockerfile _for your operator_. This will need to be pushed to a docker repository that your kubernetes cluster can access.
+The following command will generate a dockerfile _for your operator_. This will need to be pushed to a docker repository that your Kubernetes cluster can access.
 
 Again, this Dockerfile is for your operator, not for the pods your operator may deploy.
 
@@ -283,12 +285,6 @@ _[Controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extensio
 _[Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)_:
 
 A set of application specific controllers deployed on Kubernetes and managed via kubectl and the Kubernetes API.
-
-## Docs
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/bonny](https://hexdocs.pm/bonny).
 
 ## Testing
 

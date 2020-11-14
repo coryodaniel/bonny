@@ -1,6 +1,8 @@
 defmodule Bonny.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/coryodaniel/bonny"
+
   def project do
     [
       app: :bonny,
@@ -12,12 +14,8 @@ defmodule Bonny.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [coveralls: :test, "coveralls.travis": :test, "coveralls.html": :test],
-      docs: [
-        extras: ["README.md", "CHANGELOG.md"],
-        main: "readme"
-      ],
+      docs: docs(),
       package: package(),
-      aliases: aliases(),
       dialyzer: [plt_add_apps: [:mix, :eex]]
     ]
   end
@@ -26,7 +24,6 @@ defmodule Bonny.MixProject do
   defp elixirc_paths(:dev), do: ["lib", "examples"]
   defp elixirc_paths(_), do: ["lib"]
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger],
@@ -34,7 +31,6 @@ defmodule Bonny.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:jason, "~> 1.1"},
@@ -45,7 +41,7 @@ defmodule Bonny.MixProject do
       # Dev deps
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.20", only: :dev},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
 
       # Test deps
@@ -59,17 +55,20 @@ defmodule Bonny.MixProject do
       maintainers: ["Cory O'Daniel"],
       licenses: ["MIT"],
       links: %{
-        "GitHub" => "https://github.com/coryodaniel/bonny"
+        "Changelog" => "#{@source_url}/blob/master/CHANGELOG.md",
+        "GitHub" => @source_url
       }
     ]
   end
 
-  defp aliases do
-    [docs: ["docs", &copy_images/1]]
-  end
-
-  defp copy_images(_) do
-    File.cp!("./banner.png", "./doc/banner.png")
+  defp docs do
+    [
+      main: "readme",
+      logo: "assets/bonny.png",
+      assets: "assets",
+      source_url: @source_url,
+      extras: ["README.md", "CHANGELOG.md"]
+    ]
   end
 
   defp description do
