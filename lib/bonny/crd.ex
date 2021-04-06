@@ -161,9 +161,9 @@ defmodule Bonny.CRD do
     |> Map.drop([:version, :additional_printer_columns])
     |> Map.put(:scope, cased_scope)
     |> Map.put(:versions, [%{
+      name: version,
       scheme: %{
         openAPIV3Scheme: %{
-          name: version,
           additionalPrinterColumns: additional_printer_columns_v1
         }
       }

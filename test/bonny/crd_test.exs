@@ -54,9 +54,9 @@ defmodule Bonny.CRDTest do
           scope: "Namespaced",
           versions: [
             %{
+              name: "v1",
               scheme: %{
                 openAPIV3Scheme: %{
-                  name: "v1",
                   additionalPrinterColumns: [
                     %{jsonPath: ".spec.test", description: "test", name: "test", type: "string"},
                     %{
