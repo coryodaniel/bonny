@@ -127,7 +127,7 @@ defmodule Bonny.Config do
   """
   @spec api_version() :: binary
   def api_version() do
-    Application.get_env(:bonny, :api_version, "apiextensions.k8s.io/v1")
+    Application.get_env(:bonny, :api_version, "apiextensions.k8s.io/v1beta1")
   end
 
   @doc """

@@ -100,10 +100,10 @@ defmodule Bonny.CRD do
   ```
   """
   @spec to_manifest(Bonny.CRD.t(), String.t()) :: map
-  def to_manifest(%CRD{} = crd, api_version) do
+  def to_manifest(%CRD{} = crd, api_version \\ "apiextensions.k8s.io/v1beta1") do
     spec = case api_version do
       "apiextensions.k8s.io/v1" -> format_spec_v1(crd)
-      _ -> format_spec(crd)
+      _ -> format_spec_v1beta1(crd)
     end
 
     %{
@@ -139,8 +139,8 @@ defmodule Bonny.CRD do
     ]
   end
 
-  @spec format_spec(Bonny.CRD.t()) :: map
-  defp format_spec(%CRD{scope: scope} = crd) do
+  @spec format_spec_v1beta1(Bonny.CRD.t()) :: map
+  defp format_spec_v1beta1(%CRD{scope: scope} = crd) do
     cased_scope = String.capitalize("#{scope}")
 
     crd
