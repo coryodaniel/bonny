@@ -7,7 +7,8 @@ if Mix.env() == :test do
     k8s_client: Bonny.K8sMockClient,
     controllers: [Widget, Cog],
     group: "example.com",
-    cluster_name: :test
+    cluster_name: :test,
+    api_version: "apiextensions.k8s.io/v1beta1"
 end
 
 if Mix.env() == :dev do

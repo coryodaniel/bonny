@@ -61,7 +61,7 @@ defmodule Bonny.Operator do
   @spec crds() :: list(map())
   def crds() do
     Enum.map(Bonny.Config.controllers(), fn controller ->
-      Bonny.CRD.to_manifest(controller.crd())
+      Bonny.CRD.to_manifest(controller.crd(), Bonny.Config.api_version())
     end)
   end
 
