@@ -36,7 +36,8 @@ defmodule Bonny.MixProject do
       {:jason, "~> 1.1"},
       {:k8s, "~> 0.4.0"},
       {:notion, "~> 0.2"},
-      {:telemetry, ">=  0.4.0"},
+      {:telemetry, ">= 0.4.0"},
+      {:ymlr, "~> 1.0"}, # 2.0 only supports Elixir >= 1.11
 
       # Dev deps
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false},

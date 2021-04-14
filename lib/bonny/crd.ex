@@ -33,7 +33,6 @@ defmodule Bonny.CRD do
         }
 
   @enforce_keys [:scope, :group, :names]
-  @derive Jason.Encoder
   defstruct additional_printer_columns: nil,
             group: nil,
             names: nil,
