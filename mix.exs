@@ -16,7 +16,8 @@ defmodule Bonny.MixProject do
       preferred_cli_env: [coveralls: :test, "coveralls.travis": :test, "coveralls.html": :test],
       docs: docs(),
       package: package(),
-      dialyzer: [plt_add_apps: [:mix, :eex]]
+      dialyzer: [plt_add_apps: [:mix, :eex]],
+      xref: [exclude: [EEx]]
     ]
   end
 
@@ -37,7 +38,8 @@ defmodule Bonny.MixProject do
       {:k8s, "~> 0.4.0"},
       {:notion, "~> 0.2"},
       {:telemetry, ">= 0.4.0"},
-      {:ymlr, "~> 1.0"}, # 2.0 only supports Elixir >= 1.11
+      #  2.0 only supports Elixir >= 1.11
+      {:ymlr, "~> 1.0"},
 
       # Dev deps
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false},

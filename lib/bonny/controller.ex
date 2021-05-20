@@ -63,16 +63,22 @@ defmodule Bonny.Controller do
         @moduledoc "Controller watcher implementation"
         use Bonny.Server.Watcher
 
+        @impl Bonny.Server.Watcher
         defdelegate add(resource), to: controller
+        @impl Bonny.Server.Watcher
         defdelegate modify(resource), to: controller
+        @impl Bonny.Server.Watcher
         defdelegate delete(resource), to: controller
+        @impl Bonny.Server.Watcher
         defdelegate watch_operation(), to: controller, as: :list_operation
       end
 
       defmodule ReconcileServer do
         @moduledoc "Controller reconciler implementation"
         use Bonny.Server.Reconciler, frequency: 30
+        @impl Bonny.Server.Reconciler
         defdelegate reconcile(resource), to: controller
+        @impl Bonny.Server.Reconciler
         defdelegate reconcile_operation(), to: controller, as: :list_operation
       end
 
