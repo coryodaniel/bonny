@@ -185,8 +185,14 @@ defmodule Bonny.Server.Reconciler do
 
     case result do
       {:ok, resources} ->
-        Bonny.Sys.Event.reconciler_fetch_succeeded(measurements, metadata)
-        Enum.each(resources, &reconcile_async(&1, module))
+        Enum.each(resources, fn
+          resource when is_map(resource) ->
+            Bonny.Sys.Event.reconciler_fetch_succeeded(measurements, metadata)
+            reconcile_async(resource, module)
+          {:error, error} ->
+            metadata = Map.put(metadata, :error, error)
+            Bonny.Sys.Event.reconciler_fetch_failed(measurements, metadata)
+        end)
 
       {:error, error} ->
         metadata = Map.put(metadata, :error, error)

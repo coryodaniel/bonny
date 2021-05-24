@@ -7,14 +7,29 @@ defmodule Bonny.Server.ReconcilerTest do
     use Bonny.Server.Reconciler, frequency: 15, client: Bonny.K8sMockClient
 
     @impl true
-    def reconcile(pod) do
-      Agent.update(TestReconcilerCache, fn pods -> [pod | pods] end)
+    def reconcile(%{} = resource) do
+      Agent.update(TestReconcilerCache, fn resources -> [resource | resources] end)
       :ok
     end
 
     @impl true
     def reconcile_operation() do
-      K8s.Client.list("reconciler.test/v1", :foos)
+      K8s.Client.list("reconciler.test.foos/v1", :foos)
+    end
+  end
+
+  defmodule TestReconcilerErrors do
+    use Bonny.Server.Reconciler, frequency: 15, client: Bonny.K8sMockClient
+
+    @impl Bonny.Server.Reconciler
+    def reconcile(%{} = resource) do
+      Agent.update(TestReconcilerCacheErr, fn resources -> [resource | resources] end)
+      :ok
+    end
+
+    @impl Bonny.Server.Reconciler
+    def reconcile_operation() do
+      K8s.Client.list("reconciler.test.errors/v1", :foos)
     end
   end
 
@@ -23,18 +38,31 @@ defmodule Bonny.Server.ReconcilerTest do
     assert_receive :run, 2_000
   end
 
-  test "run/1" do
-    Agent.start_link(fn -> [] end, name: TestReconcilerCache)
-    Reconciler.run(TestReconciler)
-    Process.sleep(500)
+  describe "run/1" do
+    test "happy path" do
+      Agent.start_link(fn -> [] end, name: TestReconcilerCache)
+      Reconciler.run(TestReconciler)
+      Process.sleep(10)
 
-    pods = Agent.get(TestReconcilerCache, fn pods -> pods end)
+      resources = Agent.get(TestReconcilerCache, fn resources -> resources end)
 
-    names =
-      pods
-      |> Enum.map(fn %{"name" => name} -> name end)
-      |> Enum.sort()
+      names =
+        resources
+        |> Enum.map(fn %{"name" => name} -> name end)
+        |> Enum.sort()
 
-    assert names == ["bar", "foo"]
+      assert names == ["bar", "foo"]
+    end
+
+    @tag :wip
+    test "Handles a stream with errors" do
+      Agent.start_link(fn -> [] end, name: TestReconcilerCacheErr)
+      Reconciler.run(TestReconcilerErrors)
+      Process.sleep(10)
+
+      resources = Agent.get(TestReconcilerCacheErr, fn resources -> resources end)
+
+      assert [%{"name" => "bar"}] == resources
+    end
   end
 end
