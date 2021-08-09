@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2021-08-09
+
+### Added
+- @impl to macros for clean compilation
+- error handling for mid-stream errors
+## [0.4.3] - 2020-06-09
+
+### Added
+- Configure watched namespace via config.exs or BONNY_POD_NAMESPACE 
+- BONNY_POD_NAMESPACE supports "magic" value "__ALL__"
+
 ## [0.4.1] - 2019-11-26
 
 ### Added

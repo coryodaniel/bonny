@@ -1,13 +1,13 @@
 defmodule Bonny.MixProject do
   use Mix.Project
-
+  @version "0.4.4"
   @source_url "https://github.com/coryodaniel/bonny"
 
   def project do
     [
       app: :bonny,
       description: description(),
-      version: "0.4.2",
+      version: @version,
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -44,6 +44,7 @@ defmodule Bonny.MixProject do
       # Dev deps
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
+      # {:ex_doc, "~> 0.23", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
 
@@ -69,6 +70,7 @@ defmodule Bonny.MixProject do
       main: "readme",
       logo: "assets/bonny.png",
       assets: "assets",
+      source_ref: @version,
       source_url: @source_url,
       extras: ["README.md", "CHANGELOG.md"]
     ]
