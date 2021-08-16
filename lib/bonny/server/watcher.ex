@@ -39,7 +39,7 @@ defmodule Bonny.Server.Watcher do
         @spec log_event(atom, map) :: :ok
         def log_event(type, pod) do
           name = get_in(pod, ["metadata", "name"])
-          namespace = get_in(pod, ["metadata", "namepace"]) || "default"
+          namespace = get_in(pod, ["metadata", "namespace"]) || "default"
           # log type,name,namespace here
         end
       end

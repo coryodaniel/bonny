@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
 
   *Note:* The one restriction with versions is that they will be camelized into a module name.
 
-  Open up your controller and add functionality for your resoures lifecycle:
+  Open up your controller and add functionality for your resources lifecycle:
 
   * Add
   * Modify
