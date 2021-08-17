@@ -1,5 +1,5 @@
 # credo:disable-for-this-file
-defmodule Bonny.K8sMockClient do
+defmodule Bella.K8sMockClient do
   @moduledoc """
   Mock `K8s.Client`
   """
@@ -21,6 +21,7 @@ defmodule Bonny.K8sMockClient do
 
     {:ok, fake_stream}
   end
+
   def list(api_version, name_or_kind), do: list(api_version, name_or_kind, [])
 
   def list(api_version, name_or_kind, path_params) do

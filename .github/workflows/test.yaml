@@ -2,19 +2,38 @@ name: Bonny Tests
 on: push
 jobs:
   build:
+    strategy:
+      matrix:
+        include:
+          - elixir: 1.12.0
+            otp: 24.0
+            lint: lint
+
     runs-on: ubuntu-latest
-    container:
-      image: elixir:1.9.1-slim
+
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Set up Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
       - uses: actions/checkout@v1
       - name: Install Dependencies
         run: |
-          mix local.rebar --force
-          mix local.hex --force
           mix deps.get
+          mix deps.get --only test
       - name: Compile
         run: |
           mix clean
           mix compile --warnings-as-errors
+      - name: Lint
+        run: mix credo --strict
+        if: ${{ matrix.lint }}
       - name: Run Tests
         run: mix test

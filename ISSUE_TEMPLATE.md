@@ -1,5 +1,5 @@
 ### Environment
-* Bonny version
+* Bella version
 * Elixir & Erlang/OTP versions (elixir --version): 
 * Operating system: 
 

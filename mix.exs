@@ -1,14 +1,14 @@
-defmodule Bonny.MixProject do
+defmodule Bella.MixProject do
   use Mix.Project
-  @version "0.4.4"
-  @source_url "https://github.com/coryodaniel/bonny"
+  @version "1.0.0"
+  @source_url "https://github.com/batteries-included/bella"
 
   def project do
     [
-      app: :bonny,
+      app: :bella,
       description: description(),
       version: @version,
-      elixir: "~> 1.9",
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -27,27 +27,24 @@ defmodule Bonny.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
-      mod: {Bonny.Application, []}
+      extra_applications: [:logger]
     ]
   end
 
   defp deps do
     [
       {:jason, "~> 1.1"},
-      {:k8s, "~> 0.4.0"},
+      {:k8s, "~> 1.0.0"},
       {:notion, "~> 0.2"},
       {:telemetry, ">= 0.4.0"},
-      #  2.0 only supports Elixir >= 1.11
-      {:ymlr, "~> 1.0"},
 
       # Dev deps
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
-      # {:ex_doc, "~> 0.23", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
-
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:credo_envvar, "~> 0.1", only: [:dev, :test], runtime: false},
+      {:credo_naming, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       # Test deps
       {:excoveralls, "~> 0.12", only: :test}
     ]
@@ -55,8 +52,8 @@ defmodule Bonny.MixProject do
 
   defp package do
     [
-      name: :bonny,
-      maintainers: ["Cory O'Daniel"],
+      name: :bella,
+      maintainers: ["Elliott Clark"],
       licenses: ["MIT"],
       links: %{
         "Changelog" => "#{@source_url}/blob/master/CHANGELOG.md",
@@ -68,8 +65,6 @@ defmodule Bonny.MixProject do
   defp docs do
     [
       main: "readme",
-      logo: "assets/bonny.png",
-      assets: "assets",
       source_ref: @version,
       source_url: @source_url,
       extras: ["README.md", "CHANGELOG.md"]
@@ -78,7 +73,7 @@ defmodule Bonny.MixProject do
 
   defp description do
     """
-    Bonny: Kubernetes Operator Development Framework. Extend Kubernetes with Elixir
+    Bella: Kubernetes Controller Library
     """
   end
 end

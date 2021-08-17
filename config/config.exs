@@ -3,8 +3,8 @@ use Mix.Config
 if Mix.env() == :test do
   config :logger, level: :error
 
-  config :bonny,
-    k8s_client: Bonny.K8sMockClient,
+  config :bella,
+    k8s_client: Bella.K8sMockClient,
     controllers: [Widget, Cog],
     group: "example.com",
     cluster_name: :test,
@@ -19,19 +19,5 @@ if Mix.env() == :dev do
       "test --cover",
       "format",
       "credo"
-    ]
-
-  config :k8s,
-    clusters: %{
-      dev: %{
-        conn: "~/.kube/config",
-        conn_opts: [context: "docker-for-desktop"]
-      }
-    }
-
-  config :bonny,
-    cluster_name: :dev,
-    controllers: [
-      DeploymentEventLogController
     ]
 end

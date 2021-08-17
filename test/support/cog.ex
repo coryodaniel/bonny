@@ -1,7 +1,7 @@
 # credo:disable-for-this-file
 defmodule Cog do
   @moduledoc false
-  use Bonny.Controller
+  use Bella.Controller
   require Logger
 
   @impl true

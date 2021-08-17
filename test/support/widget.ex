@@ -1,20 +1,8 @@
 # credo:disable-for-this-file
 defmodule Widget do
   @moduledoc false
-  use Bonny.Controller
+  use Bella.Controller
   require Logger
-
-  @rule {"apps", ["deployments", "services"], ["*"]}
-  @rule {"", ["configmaps"], ["create", "read"]}
-
-  @additional_printer_columns [
-    %{
-      name: "test",
-      type: "string",
-      description: "test",
-      JSONPath: ".spec.test"
-    }
-  ]
 
   @impl true
   @spec add(map()) :: :ok | :error
