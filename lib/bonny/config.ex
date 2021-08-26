@@ -59,7 +59,7 @@ defmodule Bonny.Config do
   @doc """
   Labels to apply to all operator resources.
 
-  *Note:* These are only applied to the resoures that compose the operator itself,
+  *Note:* These are only applied to the resources that compose the operator itself,
   not the resources created by the operator.
 
   This can be set in config.exs:
