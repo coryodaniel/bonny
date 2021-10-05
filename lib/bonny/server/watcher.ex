@@ -54,7 +54,6 @@ defmodule Bonny.Server.Watcher do
       @behaviour Bonny.Server.Watcher
       use GenServer
       @initial_delay opts[:initial_delay] || 500
-      @client opts[:client] || K8s.Client
 
       alias Bonny.Server.Watcher.State
 
@@ -63,10 +62,6 @@ defmodule Bonny.Server.Watcher do
       def start_link(opts) do
         GenServer.start_link(__MODULE__, :ok, opts)
       end
-
-      @doc false
-      @spec client() :: any()
-      def client(), do: @client
 
       @impl GenServer
       def init(:ok) do
@@ -163,12 +158,11 @@ defmodule Bonny.Server.Watcher do
   @spec watch(module(), binary(), pid()) :: no_return
   def watch(module, rv, pid) do
     operation = module.watch_operation()
-    cluster = Bonny.Config.cluster_name()
+    conn = Bonny.Config.conn()
     timeout = 5 * 60 * 1000
-    client = module.client()
 
-    client.watch(operation, cluster,
-      params: %{resourceVersion: rv},
+    K8s.Client.watch(conn, operation,
+      params: [resourceVersion: rv],
       stream_to: pid,
       recv_timeout: timeout
     )

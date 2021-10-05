@@ -52,10 +52,10 @@ defmodule Bonny.Server.Scheduler do
         @impl Bonny.Server.Scheduler
         def nodes() do
           label = "my.label.on.gpu.instances"
-          cluster = Bonny.Config.cluster_name()
+          conn = Bonny.Config.conn()
 
           op = K8s.Client.list("v1", :nodes)
-          K8s.Client.stream(op, cluster, params: %{labelSelector: label})
+          K8s.Client.stream(conn, op, params: %{labelSelector: label})
         end
       end
 
@@ -149,20 +149,15 @@ defmodule Bonny.Server.Scheduler do
   @doc "Binds a pod to a node"
   @spec bind(map(), map()) :: {:ok, map} | {:error, atom}
   def bind(pod, node) do
-    cluster = Bonny.Config.cluster_name()
-
-    pod
-    |> Bonny.Server.Scheduler.Binding.new(node)
-    |> Bonny.Server.Scheduler.Binding.create(cluster)
+    Bonny.Server.Scheduler.Binding.create(pod, node)
   end
 
   @doc "Returns a list of pods for the given `field_selector`."
   @spec pods(module()) :: {:ok, list(map())} | {:error, any()}
   def pods(module) do
-    cluster = Bonny.Config.cluster_name()
     op = module.reconcile_operation()
 
-    response = K8s.Client.stream(op, cluster, params: %{fieldSelector: module.field_selector()})
+    response = K8s.Client.stream(Bonny.Config.conn(), op, params: %{fieldSelector: module.field_selector()})
     metadata = %{module: module, name: module.name()}
 
     case response do
@@ -180,10 +175,9 @@ defmodule Bonny.Server.Scheduler do
   @doc "Returns a list of all nodes in the cluster."
   @spec nodes() :: {:ok, list(map())} | {:error, any()}
   def nodes() do
-    cluster = Bonny.Config.cluster_name()
     op = K8s.Client.list("v1", :nodes)
 
-    response = K8s.Client.stream(op, cluster)
+    response = K8s.Client.stream(Bonny.Config.conn(), op)
     measurements = %{}
     metadata = %{}
 

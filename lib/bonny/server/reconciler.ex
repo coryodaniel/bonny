@@ -26,8 +26,8 @@ defmodule Bonny.Server.Reconciler do
         @impl true
         def reconcilable_resources() do
           operation = reconcile_operation()
-          cluster = Bonny.Config.cluster_name()
-          K8s.Client.stream(operation, cluster)
+          Bonny.Config.conn()
+          |> K8s.Client.stream(operation)
         end
       end
 
@@ -55,8 +55,8 @@ defmodule Bonny.Server.Reconciler do
         @impl true
         def reconcilable_resources() do
           operation = reconcile_operation()
-          cluster = Bonny.Config.cluster_name()
-          K8s.Client.stream(operation, cluster)
+          Bonny.Config.conn()
+          |> K8s.Client.stream(operation)
         end
       end
 
@@ -82,8 +82,8 @@ defmodule Bonny.Server.Reconciler do
         @impl true
         def reconcilable_resources() do
           operation = reconcile_operation()
-          cluster = Bonny.Config.cluster_name()
-          K8s.Client.stream(operation, cluster)
+          Bonny.Config.conn()
+          |> K8s.Client.stream(operation)
         end
       end
 
@@ -110,7 +110,7 @@ defmodule Bonny.Server.Reconciler do
   @doc """
   (Optional) List of resources to be reconciled.
 
-  Default implementation is to stream all resources (`reconcile_operation/0`) from the cluster (`Bonny.Config.cluster_name/0`).
+  Default implementation is to stream all resources (`reconcile_operation/0`) from the conn (`Bonny.Config.conn/0`).
   """
   @callback reconcilable_resources() :: {:ok, list(map())} | {:error, any()}
 
@@ -120,14 +120,9 @@ defmodule Bonny.Server.Reconciler do
       use GenServer
       @frequency (opts[:frequency] || 30) * 1000
       @initial_delay opts[:initial_delay] || 500
-      @client opts[:client] || K8s.Client
 
       def start_link(), do: start_link([])
       def start_link(opts), do: GenServer.start_link(__MODULE__, :ok, opts)
-
-      @doc false
-      @spec client() :: any()
-      def client(), do: @client
 
       @impl GenServer
       def init(:ok) do
@@ -157,8 +152,7 @@ defmodule Bonny.Server.Reconciler do
       @impl Bonny.Server.Reconciler
       def reconcilable_resources() do
         operation = reconcile_operation()
-        cluster = Bonny.Config.cluster_name()
-        @client.stream(operation, cluster)
+        K8s.Client.stream(Bonny.Config.conn(), operation)
       end
 
       defoverridable reconcilable_resources: 0

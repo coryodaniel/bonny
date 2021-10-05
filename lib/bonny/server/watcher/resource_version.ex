@@ -1,13 +1,9 @@
 defmodule Bonny.Server.Watcher.ResourceVersion do
   @moduledoc "Get the resourceVersion for a `K8s.Operation`"
 
-  @client Application.get_env(:bonny, :k8s_client, K8s.Client)
-
   @spec get(K8s.Operation.t()) :: {:ok, binary} | {:error, atom}
   def get(%K8s.Operation{} = operation) do
-    cluster = Bonny.Config.cluster_name()
-
-    case @client.run(operation, cluster, params: %{limit: 1}) do
+    case K8s.Client.run(Bonny.Config.conn(), operation, params: [limit: 1]) do
       {:ok, response} ->
         {:ok, extract_rv(response)}
 
