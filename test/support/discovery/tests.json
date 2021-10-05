@@ -1,0 +1,34 @@
+{
+  "example.com/v1": [
+    {
+      "kind": "Widget",
+      "name": "widgets",
+      "namespaced": false,
+      "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
+    },
+    {
+      "kind": "Cog",
+      "name": "cogs",
+      "namespaced": false,
+      "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
+    },
+    {
+      "kind": "Foo",
+      "name": "foos",
+      "namespaced": false,
+      "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
+    },
+    {
+      "kind": "Error",
+      "name": "errors",
+      "namespaced": false,
+      "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
+    },
+    {
+      "kind": "Watcher",
+      "name": "watchers",
+      "namespaced": false,
+      "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
+    }
+  ]
+}

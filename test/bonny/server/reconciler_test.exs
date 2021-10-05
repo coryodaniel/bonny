@@ -2,9 +2,10 @@ defmodule Bonny.Server.ReconcilerTest do
   @moduledoc false
   use ExUnit.Case, async: true
   alias Bonny.Server.Reconciler
+  import ExUnit.CaptureLog
 
   defmodule TestReconciler do
-    use Bonny.Server.Reconciler, frequency: 15, client: Bonny.K8sMockClient
+    use Bonny.Server.Reconciler, frequency: 15
 
     @impl true
     def reconcile(%{} = resource) do
@@ -14,12 +15,12 @@ defmodule Bonny.Server.ReconcilerTest do
 
     @impl true
     def reconcile_operation() do
-      K8s.Client.list("reconciler.test.foos/v1", :foos)
+      K8s.Client.list("example.com/v1", :foos)
     end
   end
 
   defmodule TestReconcilerErrors do
-    use Bonny.Server.Reconciler, frequency: 15, client: Bonny.K8sMockClient
+    use Bonny.Server.Reconciler, frequency: 15
 
     @impl Bonny.Server.Reconciler
     def reconcile(%{} = resource) do
@@ -29,7 +30,7 @@ defmodule Bonny.Server.ReconcilerTest do
 
     @impl Bonny.Server.Reconciler
     def reconcile_operation() do
-      K8s.Client.list("reconciler.test.errors/v1", :foos)
+      K8s.Client.list("example.com/v1", :errors)
     end
   end
 
@@ -54,15 +55,18 @@ defmodule Bonny.Server.ReconcilerTest do
       assert names == ["bar", "foo"]
     end
 
-    @tag :wip
     test "Handles a stream with errors" do
-      Agent.start_link(fn -> [] end, name: TestReconcilerCacheErr)
-      Reconciler.run(TestReconcilerErrors)
-      Process.sleep(10)
+      fun = fn ->
+        Agent.start_link(fn -> [] end, name: TestReconcilerCacheErr)
+        Reconciler.run(TestReconcilerErrors)
+        Process.sleep(10)
 
-      resources = Agent.get(TestReconcilerCacheErr, fn resources -> resources end)
+        resources = Agent.get(TestReconcilerCacheErr, fn resources -> resources end)
 
-      assert [%{"name" => "bar"}] == resources
+        assert [%{"name" => "bar"}] == resources
+      end
+
+      assert capture_log(fun) =~ "bonny.reconciler.fetch.failed"
     end
   end
 end

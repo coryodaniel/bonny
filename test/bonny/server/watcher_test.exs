@@ -5,11 +5,11 @@ defmodule Bonny.Server.WatcherTest do
   doctest Bonny.Server.Watcher
 
   defmodule TestWatcher do
-    use Bonny.Server.Watcher, client: Bonny.K8sMockClient
+    use Bonny.Server.Watcher
 
     @impl true
     def watch_operation() do
-      K8s.Client.list("watcher.test/v1", :foos)
+      K8s.Client.list("example.com/v1", :watchers)
     end
 
     @impl true
@@ -34,6 +34,7 @@ defmodule Bonny.Server.WatcherTest do
     end
   end
 
+  @tag :wip
   test "watch/3" do
     Agent.start_link(fn -> [] end, name: TestWatcherCache)
     {:ok, pid} = TestWatcher.start_link()
