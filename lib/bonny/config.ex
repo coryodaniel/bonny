@@ -131,10 +131,14 @@ defmodule Bonny.Config do
   end
 
   @doc """
-  `K8s.Cluster` name used for this operator. Defaults to `:default`
+  `K8s.Conn` name used for this operator.
   """
-  @spec cluster_name() :: atom
-  def cluster_name() do
-    Application.get_env(:bonny, :cluster_name, :default)
+  @spec conn() :: K8s.Conn.t()
+  def conn() do
+    with {module, function, args} <- Application.get_env(:bonny, :get_conn),
+         {:ok, conn} <- apply(module, function, args)
+    do
+      conn
+    end
   end
 end

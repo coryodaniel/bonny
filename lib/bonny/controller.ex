@@ -17,7 +17,6 @@ defmodule Bonny.Controller do
     quote bind_quoted: [opts: opts] do
       Module.register_attribute(__MODULE__, :rule, accumulate: true)
       @behaviour Bonny.Controller
-      @client opts[:client] || K8s.Client
 
       # CRD defaults
       @group Bonny.Config.group()
@@ -47,10 +46,6 @@ defmodule Bonny.Controller do
 
         Supervisor.init(children, strategy: :one_for_one)
       end
-
-      @doc false
-      @spec client() :: any()
-      def client(), do: @client
     end
   end
 
@@ -101,11 +96,10 @@ defmodule Bonny.Controller do
         crd = __MODULE__.crd()
         api_version = Bonny.CRD.api_version(crd)
         kind = Bonny.CRD.kind(crd)
-        client = __MODULE__.client()
 
         case crd.scope do
-          :namespaced -> client.list(api_version, kind, namespace: Bonny.Config.namespace())
-          _ -> client.list(api_version, kind)
+          :namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
+          _ -> K8s.Client.list(api_version, kind)
         end
       end
 

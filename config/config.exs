@@ -3,11 +3,15 @@ use Mix.Config
 if Mix.env() == :test do
   config :logger, level: :error
 
+  config :k8s,
+    discovery_driver: K8s.Discovery.Driver.File,
+    discovery_opts: [config: "test/support/discovery/tests.json"],
+    http_provider: K8s.Client.DynamicHTTPProvider
+
   config :bonny,
-    k8s_client: Bonny.K8sMockClient,
     controllers: [Widget, Cog],
     group: "example.com",
-    cluster_name: :test,
+    get_conn: {Bonny.K8sMock, :conn, []},
     api_version: "apiextensions.k8s.io/v1beta1"
 end
 
@@ -21,16 +25,9 @@ if Mix.env() == :dev do
       "credo"
     ]
 
-  config :k8s,
-    clusters: %{
-      dev: %{
-        conn: "~/.kube/config",
-        conn_opts: [context: "docker-for-desktop"]
-      }
-    }
-
   config :bonny,
-    cluster_name: :dev,
+    get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "docker-desktop"]]},
+
     controllers: [
       DeploymentEventLogController
     ]
