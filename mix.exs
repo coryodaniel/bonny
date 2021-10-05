@@ -35,7 +35,7 @@ defmodule Bonny.MixProject do
   defp deps do
     [
       {:jason, "~> 1.1"},
-      {:k8s, "~> 0.4.0"},
+      {:k8s, "~> 1.0"},
       {:notion, "~> 0.2"},
       {:telemetry, ">= 0.4.0"},
       #  2.0 only supports Elixir >= 1.11
