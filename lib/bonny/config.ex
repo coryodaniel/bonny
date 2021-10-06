@@ -135,10 +135,24 @@ defmodule Bonny.Config do
   """
   @spec conn() :: K8s.Conn.t()
   def conn() do
-    with {module, function, args} <- Application.get_env(:bonny, :get_conn),
-         {:ok, conn} <- apply(module, function, args)
-    do
-      conn
+    get_conn = Application.get_env(:bonny, :get_conn)
+
+    case apply_get_conn(get_conn) do
+      {:ok, %K8s.Conn{} = conn} ->
+        conn
+
+      %K8s.Conn{} = conn ->
+        conn
+
+      _ ->
+        raise("""
+        Check bonny.get_conn in your config.exs. get_conn must be a tuple in the form {Module, :function, [args]}
+        which defines a function returning {:ok, K8s.Conn.t()}. Given: #{inspect(get_conn)}
+        """)
     end
   end
+
+  defp apply_get_conn({module, function, args}), do: apply(module, function, args)
+  defp apply_get_conn({module, function}), do: apply(module, function, [])
+  defp apply_get_conn(_), do: :error
 end

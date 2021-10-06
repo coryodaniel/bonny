@@ -11,7 +11,7 @@ if Mix.env() == :test do
   config :bonny,
     controllers: [Widget, Cog],
     group: "example.com",
-    get_conn: {Bonny.K8sMock, :conn, []},
+    get_conn: {Bonny.K8sMock, :conn},
     api_version: "apiextensions.k8s.io/v1beta1"
 end
 
@@ -27,7 +27,6 @@ if Mix.env() == :dev do
 
   config :bonny,
     get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "docker-desktop"]]},
-
     controllers: [
       DeploymentEventLogController
     ]
