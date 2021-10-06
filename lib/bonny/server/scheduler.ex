@@ -157,7 +157,9 @@ defmodule Bonny.Server.Scheduler do
   def pods(module) do
     op = module.reconcile_operation()
 
-    response = K8s.Client.stream(Bonny.Config.conn(), op, params: %{fieldSelector: module.field_selector()})
+    response =
+      K8s.Client.stream(Bonny.Config.conn(), op, params: %{fieldSelector: module.field_selector()})
+
     metadata = %{module: module, name: module.name()}
 
     case response do

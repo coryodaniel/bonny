@@ -51,7 +51,6 @@ defmodule Bonny.Server.Scheduler.Binding do
     {measurements, response} =
       Bonny.Sys.Event.measure(K8s.Client, :run, [Bonny.Config.conn(), operation])
 
-
     case response do
       {:ok, body} ->
         Bonny.Sys.Event.scheduler_binding_succeeded(measurements, pod)

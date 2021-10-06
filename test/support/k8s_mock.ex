@@ -4,12 +4,13 @@ defmodule Bonny.K8sMock do
   require Logger
 
   def conn() do
-    # Have to register the mock here because Bonny uses Task.start() so we won't know the pid when starting the test.
+    #  Have to register the mock here because Bonny uses Task.start() so we won't know the pid when starting the test.
     K8s.Client.DynamicHTTPProvider.register(self(), __MODULE__)
+
     %K8s.Conn{
       discovery_driver: K8s.Discovery.Driver.File,
       discovery_opts: [config: "test/support/discovery/tests.json"],
-      http_provider: K8s.Client.DynamicHTTPProvider,
+      http_provider: K8s.Client.DynamicHTTPProvider
     }
   end
 
@@ -23,13 +24,14 @@ defmodule Bonny.K8sMock do
     limit = get_in(opts, [:params, :limit])
 
     case limit do
-      10 -> resp(%{"items" => [%{"name" => "foo"},%{"name" => "bar"}]})
+      10 -> resp(%{"items" => [%{"name" => "foo"}, %{"name" => "bar"}]})
       1 -> resp(%{"metadata" => %{"resourceVersion" => "1337"}})
     end
   end
 
   def request(:get, "apis/example.com/v1/errors", _, _, opts) do
     continue = get_in(opts, [:params, :continue])
+
     case continue do
       "continue" -> {:error, %HTTPoison.Error{id: nil, reason: :checkout_timeout}}
       _ -> resp(%{"metadata" => %{"continue" => "continue"}, "items" => [%{"name" => "bar"}]})
@@ -39,7 +41,7 @@ defmodule Bonny.K8sMock do
   def request(:get, "apis/example.com/v1/watchers", _, _, opts) do
     stream_to = Keyword.get(opts, :stream_to)
     if stream_to != nil, do: send_chunk(stream_to, added_chunk())
-     resp(%{})
+    resp(%{})
   end
 
   def request(:get, "apis/example.com/v1/namespaces/default/widgets", _, _, _) do

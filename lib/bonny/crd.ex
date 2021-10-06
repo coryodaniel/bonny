@@ -100,10 +100,11 @@ defmodule Bonny.CRD do
   """
   @spec to_manifest(Bonny.CRD.t(), String.t()) :: map
   def to_manifest(%CRD{} = crd, api_version \\ "apiextensions.k8s.io/v1beta1") do
-    spec = case api_version do
-      "apiextensions.k8s.io/v1" -> format_spec_v1(crd)
-      _ -> format_spec_v1beta1(crd)
-    end
+    spec =
+      case api_version do
+        "apiextensions.k8s.io/v1" -> format_spec_v1(crd)
+        _ -> format_spec_v1beta1(crd)
+      end
 
     %{
       apiVersion: api_version,
@@ -149,24 +150,33 @@ defmodule Bonny.CRD do
   end
 
   @spec format_spec_v1(Bonny.CRD.t()) :: map
-  defp format_spec_v1(%CRD{version: version, additional_printer_columns: additional_printer_columns, scope: scope} = crd) do
+  defp format_spec_v1(
+         %CRD{
+           version: version,
+           additional_printer_columns: additional_printer_columns,
+           scope: scope
+         } = crd
+       ) do
     cased_scope = String.capitalize("#{scope}")
 
-    additional_printer_columns_v1 = additional_printer_columns
-    |> Enum.map(fn elem -> rename_keys(elem, %{JSONPath: :jsonPath}) end)
+    additional_printer_columns_v1 =
+      additional_printer_columns
+      |> Enum.map(fn elem -> rename_keys(elem, %{JSONPath: :jsonPath}) end)
 
     crd
     |> Map.from_struct()
     |> Map.drop([:version, :additional_printer_columns])
     |> Map.put(:scope, cased_scope)
-    |> Map.put(:versions, [%{
-      name: version,
-      scheme: %{
-        openAPIV3Scheme: %{
-          additionalPrinterColumns: additional_printer_columns_v1
+    |> Map.put(:versions, [
+      %{
+        name: version,
+        scheme: %{
+          openAPIV3Scheme: %{
+            additionalPrinterColumns: additional_printer_columns_v1
+          }
         }
       }
-    }])
+    ])
   end
 
   @spec rename_keys(map, map) :: map
