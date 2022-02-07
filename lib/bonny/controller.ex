@@ -11,6 +11,8 @@ defmodule Bonny.Controller do
   @callback modify(map()) :: :ok | :error
   @callback delete(map()) :: :ok | :error
   @callback reconcile(map()) :: :ok | :error
+  @callback list_operation() :: K8s.Operation.t()
+  @callback conn() :: K8s.Conn.t()
 
   @doc false
   defmacro __using__(opts) do
@@ -40,12 +42,21 @@ defmodule Bonny.Controller do
       @impl true
       def init(_init_arg) do
         children = [
-          {__MODULE__.WatchServer, name: __MODULE__.WatchServer},
+          {Bonny.Server.AsyncStreamMapper,
+           name: __MODULE__.WatchServer,
+           stream: K8s.Client.watch_and_stream(conn(), list_operation(), []),
+           mapper: &Bonny.Controller.event_handler(__MODULE__, &1)},
           {__MODULE__.ReconcileServer, name: __MODULE__.ReconcileServer}
         ]
 
         Supervisor.init(children, strategy: :one_for_one)
       end
+
+      def list_operation(), do: Bonny.Controller.list_operation(__MODULE__)
+
+      def conn(), do: Bonny.Config.conn()
+
+      defoverridable list_operation: 0, conn: 0
     end
   end
 
@@ -54,20 +65,6 @@ defmodule Bonny.Controller do
     controller = env.module
 
     quote bind_quoted: [controller: controller] do
-      defmodule WatchServer do
-        @moduledoc "Controller watcher implementation"
-        use Bonny.Server.Watcher
-
-        @impl Bonny.Server.Watcher
-        defdelegate add(resource), to: controller
-        @impl Bonny.Server.Watcher
-        defdelegate modify(resource), to: controller
-        @impl Bonny.Server.Watcher
-        defdelegate delete(resource), to: controller
-        @impl Bonny.Server.Watcher
-        defdelegate watch_operation(), to: controller, as: :list_operation
-      end
-
       defmodule ReconcileServer do
         @moduledoc "Controller reconciler implementation"
         use Bonny.Server.Reconciler, frequency: 30
@@ -89,18 +86,6 @@ defmodule Bonny.Controller do
           names: Map.merge(default_names(), @names),
           additional_printer_columns: additional_printer_columns()
         }
-      end
-
-      @spec list_operation() :: K8s.Operation.t()
-      def list_operation() do
-        crd = __MODULE__.crd()
-        api_version = Bonny.CRD.api_version(crd)
-        kind = Bonny.CRD.kind(crd)
-
-        case crd.scope do
-          :namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
-          _ -> K8s.Client.list(api_version, kind)
-        end
       end
 
       @doc """
@@ -135,9 +120,30 @@ defmodule Bonny.Controller do
       defp additional_printer_columns() do
         case @additional_printer_columns do
           [] -> []
-          any -> @additional_printer_columns ++ Bonny.CRD.default_columns()
+          _ -> @additional_printer_columns ++ Bonny.CRD.default_columns()
         end
       end
+    end
+  end
+
+  @spec list_operation(module()) :: K8s.Operation.t()
+  def list_operation(controller) do
+    crd = controller.crd()
+    api_version = Bonny.CRD.api_version(crd)
+    kind = Bonny.CRD.kind(crd)
+
+    case crd.scope do
+      :namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
+      _ -> K8s.Client.list(api_version, kind)
+    end
+  end
+
+  @spec event_handler(module(), map()) :: any()
+  def event_handler(controller, %{"type" => type, "object" => object}) do
+    case type do
+      "ADDED" -> controller.add(object)
+      "MODIFIED" -> controller.modify(object)
+      "DELETED" -> controller.delete(object)
     end
   end
 end
