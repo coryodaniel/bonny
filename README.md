@@ -52,6 +52,40 @@ end
 
 ### Configuration
 
+#### Creating config files
+
+[`mix new <project>` no longer creates initial config files](https://github.com/elixir-lang/elixir/issues/8815),
+so you probably want to create one.  You can find the full documentation for
+[`Config` here](https://hexdocs.pm/elixir/1.13.2/Config.html).
+
+The simplest approach is to use a single config file, but if you plan to run your operator in
+different environments, it can be convenient to have different configs for each
+environment:
+
+```bash
+mkdir -p config
+echo -e "import Config\n\n# Put config here\n\nimport_config \"#{config_env()}.exs\"" > config/config.exs
+```
+
+If you want to follow the common dev, test, prod pattern, create those files now:
+
+```bash
+touch config/{dev,test,prod}.exs
+```
+
+Finally, if you need to provide runtime configuration (such as API token and
+other secrets), you should create `runtime.exs`:
+
+```bash
+echo -e 'import Config\n\n' config/runtime.exs
+```
+
+You may wish to follow the [docs for `Config` to customize your setup](https://hexdocs.pm/elixir/1.13.2/Config.html)
+
+You are now ready to start configuring Bonny!
+
+#### Configuring Bonny
+
 Bonny uses the [k8s client](https://github.com/coryodaniel/k8s) under the hood.
 
 The only configuration parameters required are `:bonny` `controllers` and a `:get_conn` callback:
