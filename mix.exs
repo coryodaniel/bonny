@@ -37,6 +37,7 @@ defmodule Bonny.MixProject do
       {:jason, "~> 1.1"},
       {:k8s, git: "https://github.com/coryodaniel/k8s.git", branch: "develop"},
       {:notion, "~> 0.2"},
+      {:flow, "~> 1.2"},
       {:telemetry, ">= 0.4.0"},
       #  2.0 only supports Elixir >= 1.11
       {:ymlr, "~> 1.0"},

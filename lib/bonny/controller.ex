@@ -41,12 +41,17 @@ defmodule Bonny.Controller do
 
       @impl true
       def init(_init_arg) do
+        {:ok, reconcilation_stream} = K8s.Client.stream(conn(), list_operation())
+
         children = [
           {Bonny.Server.AsyncStreamMapper,
            name: __MODULE__.WatchServer,
            stream: K8s.Client.watch_and_stream(conn(), list_operation(), []),
            mapper: &Bonny.Controller.event_handler(__MODULE__, &1)},
-          {__MODULE__.ReconcileServer, name: __MODULE__.ReconcileServer}
+          {Bonny.Server.StreamReconciler,
+           name: __MODULE__.ReconcileServer,
+           resource_stream: reconcilation_stream,
+           reconcile: &Bonny.Controller.reconcile(__MODULE__, &1)}
         ]
 
         Supervisor.init(children, strategy: :one_for_one)
@@ -65,15 +70,6 @@ defmodule Bonny.Controller do
     controller = env.module
 
     quote bind_quoted: [controller: controller] do
-      defmodule ReconcileServer do
-        @moduledoc "Controller reconciler implementation"
-        use Bonny.Server.Reconciler, frequency: 30
-        @impl Bonny.Server.Reconciler
-        defdelegate reconcile(resource), to: controller
-        @impl Bonny.Server.Reconciler
-        defdelegate reconcile_operation(), to: controller, as: :list_operation
-      end
-
       @doc """
       Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
       """
@@ -139,11 +135,14 @@ defmodule Bonny.Controller do
   end
 
   @spec event_handler(module(), map()) :: any()
-  def event_handler(controller, %{"type" => type, "object" => object}) do
+  def event_handler(controller, %{"type" => type, "object" => resource}) do
     case type do
-      "ADDED" -> controller.add(object)
-      "MODIFIED" -> controller.modify(object)
-      "DELETED" -> controller.delete(object)
+      "ADDED" -> controller.add(resource)
+      "MODIFIED" -> controller.modify(resource)
+      "DELETED" -> controller.delete(resource)
     end
   end
+
+  @spec reconcile(module(), map()) :: any()
+  def reconcile(controller, resource), do: controller.reconcile(resource)
 end

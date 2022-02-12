@@ -31,7 +31,8 @@ defmodule Bonny.Server.AsyncStreamMapper do
   end
 
   def watch(stream, mapper) do
-    Stream.map(stream, mapper)
+    stream
+    |> Stream.map(mapper)
     |> Stream.run()
   end
 end
