@@ -78,7 +78,7 @@ defmodule Bonny.Controller do
       @doc """
       Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
       """
-      @spec crd() :: %Bonny.CRD{}
+      @spec crd() :: Bonny.CRD.t()
       def crd() do
         %Bonny.CRD{
           group: @group,
