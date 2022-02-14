@@ -1,226 +1,65 @@
 defmodule Bonny.Server.Reconciler do
   @moduledoc """
-  Continuously reconciles a set of kubernetes resources.
+  Creates a stream that, when run, streams a list of resources and calls `reconcile/1`
+  on the given controller for each resource in the stream in parallel.
 
-  `reconcile/1` will be executed asynchronously with each result returned from `reconcilable_resources/0`.
+  ## Example
 
-  `reconcilable_resources/0` has a default implementation of running `K8s.Client.stream/2` with `reconcile_operation/0`.
-
-  For a working example of the `Reconciler` see `Bonny.Server.Scheduler`
-
-  ## Examples
-    Print every pod. Not very useful, but a simple copy-paste example.
-
-      defmodule PodPrinterReconciler do
-        use Bonny.Server.Reconciler, frequency: 15
-
-        @impl true
-        def reconcile(pod) do
-          IO.inspect(pod)
-          :ok
-        end
-
-        @impl true
-        def reconcile_operation(), do: K8s.Client.list("v1", :pods, namespace: "default")
-
-        @impl true
-        def reconcilable_resources() do
-          operation = reconcile_operation()
-          Bonny.Config.conn()
-          |> K8s.Client.stream(operation)
-        end
-      end
-
-      PodPrinterReconciler.start_link()
-
-    A quick and dirty chaos monkey for pods. 20% chance of eviction every 15 seconds.
-
-      defmodule ChaosMonkeyReconciler do
-        use Bonny.Server.Reconciler, frequency: 15
-        @percent_chance_evicted 20
-
-        @impl true
-        def reconcile(pod) do
-          chance = :rand.uniform(100)
-
-          if chance < @percent_chance_evicted do
-            my_function_to_evict_pod(pod)
-          end
-          :ok
-        end
-
-        @impl true
-        def reconcile_operation(), do: K8s.Client.list("v1", :pods, namespace: :all)
-
-        @impl true
-        def reconcilable_resources() do
-          operation = reconcile_operation()
-          Bonny.Config.conn()
-          |> K8s.Client.stream(operation)
-        end
-      end
-
-      ChaosMonkeyReconciler.start_link()
-
-    Reconcile a CRD's resources every 15 seconds
-
-      defmodule MyCustomResourceReconciler do
-        use Bonny.Server.Reconciler, frequency: 15
-
-        @impl true
-        def reconcile(resource) do
-          # You should do something much cooler than inspect here...
-          IO.inspect(resource)
-          :ok
-        end
-
-        @impl true
-        def reconcile_operation() do
-          K8s.Client.list("example.com/v1", "MyCustomResourceDef", namespace: :all)
-        end
-
-        @impl true
-        def reconcilable_resources() do
-          operation = reconcile_operation()
-          Bonny.Config.conn()
-          |> K8s.Client.stream(operation)
-        end
-      end
-
-      MyCustomResourceReconciler.start_link()
+      reconciliation_stream = Bonny.Server.Reconciler.get_stream(controller)
+      Task.async(fn -> Stream.run(reconciliation_stream) end)
   """
 
   @doc """
-  Reconciles a resource. This will receive a list of resources from `reconcilable_resources/0`.
+  Takes a controller that must define the following functions and returns a (prepared) stream.
+
+  * `conn/0` - should return a K8s.Conn.t()
+  * `list_operation/0` - should return a K8s.Operation.t() list operation that produces the stream of resources
+  * `reconcile/1` - takes a map and processes it
   """
-  @callback reconcile(map()) :: :ok | {:ok, any()} | {:error, any()}
+  def get_stream(controller) do
+    conn = controller.conn()
+    list_operation = controller.list_operation()
 
-  @doc """
-  [`K8s.Operation`](https://hexdocs.pm/k8s/K8s.Operation.html) to reconcile.
-
-  ## Examples
-  ```elixir
-    def reconcile_operation() do
-      K8s.Client.list("v1", :pods, namespace: :all)
-    end
-  ```
-  """
-  @callback reconcile_operation() :: K8s.Operation.t()
-
-  @doc """
-  (Optional) List of resources to be reconciled.
-
-  Default implementation is to stream all resources (`reconcile_operation/0`) from the conn (`Bonny.Config.conn/0`).
-  """
-  @callback reconcilable_resources() :: {:ok, list(map())} | {:error, any()}
-
-  defmacro __using__(opts) do
-    quote bind_quoted: [opts: opts] do
-      @behaviour Bonny.Server.Reconciler
-      use GenServer
-      @frequency (opts[:frequency] || 30) * 1000
-      @initial_delay opts[:initial_delay] || 500
-
-      def start_link(), do: start_link([])
-      def start_link(opts), do: GenServer.start_link(__MODULE__, :ok, opts)
-
-      @impl GenServer
-      def init(:ok) do
-        Bonny.Sys.Event.reconciler_initialized(%{}, %{module: __MODULE__})
-        Bonny.Server.Reconciler.schedule(self(), @initial_delay)
-        {:ok, %{}}
-      end
-
-      @impl GenServer
-      def handle_info(:run, state) do
-        Bonny.Server.Reconciler.run(__MODULE__)
-        Bonny.Server.Reconciler.schedule(self(), @frequency)
-        {:noreply, state}
-      end
-
-      @impl GenServer
-      def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
-        Bonny.Sys.Event.reconciler_genserver_down(%{}, %{module: __MODULE__})
-        {:stop, :normal, state}
-      end
-
-      @impl GenServer
-      def handle_info(_other, state) do
-        {:noreply, state}
-      end
-
-      @impl Bonny.Server.Reconciler
-      def reconcilable_resources() do
-        operation = reconcile_operation()
-        K8s.Client.stream(Bonny.Config.conn(), operation)
-      end
-
-      defoverridable reconcilable_resources: 0
-    end
+    {:ok, reconciliation_stream} = K8s.Client.stream(conn, list_operation)
+    reconcile_all(reconciliation_stream, controller)
   end
 
-  @doc """
-  Schedules a run of a started `Reconciler`
-  """
-  @spec schedule(pid(), pos_integer()) :: reference()
-  def schedule(pid, frequency) do
-    Process.send_after(pid, :run, frequency)
+  defp reconcile_all(resource_stream, controller) do
+    resource_stream
+    |> Flow.from_enumerable()
+    |> Flow.map(fn
+      resource when is_map(resource) ->
+        reconcile_single_resource(resource, controller)
+        metadata = %{module: controller}
+        Bonny.Sys.Event.reconciler_fetch_succeeded(metadata)
+
+      {:error, error} ->
+        metadata = %{module: controller, error: error}
+        Bonny.Sys.Event.reconciler_fetch_failed(metadata)
+    end)
   end
 
-  @doc """
-  Runs a `Reconcilers` `reconcile/1` for each resource return by `reconcilable_resources/0`
-  """
-  @spec run(module) :: no_return
-  def run(module) do
-    metadata = %{module: module}
-    Bonny.Sys.Event.reconciler_run_started(%{}, metadata)
+  defp reconcile_single_resource(resource, controller) do
+    metadata = %{
+      module: controller,
+      name: K8s.Resource.name(resource),
+      namespace: K8s.Resource.namespace(resource),
+      kind: K8s.Resource.kind(resource),
+      api_version: resource["apiVersion"]
+    }
 
-    {measurements, result} = Bonny.Sys.Event.measure(module, :reconcilable_resources, [])
+    {measurements, result} = Bonny.Sys.Event.measure(controller, :reconcile, [resource])
 
     case result do
-      {:ok, resources} ->
-        Enum.each(resources, fn
-          resource when is_map(resource) ->
-            Bonny.Sys.Event.reconciler_fetch_succeeded(measurements, metadata)
-            reconcile_async(resource, module)
+      :ok ->
+        Bonny.Sys.Event.reconciler_reconcile_succeeded(measurements, metadata)
 
-          {:error, error} ->
-            metadata = Map.put(metadata, :error, error)
-            Bonny.Sys.Event.reconciler_fetch_failed(measurements, metadata)
-        end)
+      {:ok, _} ->
+        Bonny.Sys.Event.reconciler_reconcile_succeeded(measurements, metadata)
 
       {:error, error} ->
         metadata = Map.put(metadata, :error, error)
-        Bonny.Sys.Event.reconciler_fetch_failed(measurements, metadata)
+        Bonny.Sys.Event.reconciler_reconcile_failed(measurements, metadata)
     end
-
-    nil
-  end
-
-  @spec reconcile_async(map, module) :: no_return
-  defp reconcile_async(resource, module) do
-    Task.start(fn ->
-      {measurements, result} = Bonny.Sys.Event.measure(module, :reconcile, [resource])
-
-      metadata = %{
-        module: module,
-        name: K8s.Resource.name(resource),
-        namespace: K8s.Resource.namespace(resource),
-        kind: K8s.Resource.kind(resource),
-        api_version: resource["apiVersion"]
-      }
-
-      case result do
-        :ok ->
-          Bonny.Sys.Event.reconciler_reconcile_succeeded(measurements, metadata)
-
-        {:ok, _} ->
-          Bonny.Sys.Event.reconciler_reconcile_succeeded(measurements, metadata)
-
-        {:error, error} ->
-          metadata = Map.put(metadata, :error, error)
-          Bonny.Sys.Event.reconciler_reconcile_failed(measurements, metadata)
-      end
-    end)
   end
 end

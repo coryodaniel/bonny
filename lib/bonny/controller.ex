@@ -41,20 +41,25 @@ defmodule Bonny.Controller do
 
       @impl true
       def init(_init_arg) do
-        {:ok, reconcilation_stream} = K8s.Client.stream(conn(), list_operation())
-
         children = [
-          {Bonny.Server.AsyncStreamMapper,
+          {Bonny.Server.AsyncStreamRunner,
+           id: __MODULE__.WatchServer,
            name: __MODULE__.WatchServer,
-           stream: K8s.Client.watch_and_stream(conn(), list_operation(), []),
-           mapper: &Bonny.Controller.event_handler(__MODULE__, &1)},
-          {Bonny.Server.StreamReconciler,
+           stream: Bonny.Server.Watcher.get_stream(__MODULE__),
+           termination_delay: 5_000},
+          {Bonny.Server.AsyncStreamRunner,
+           id: __MODULE__.ReconcileServer,
            name: __MODULE__.ReconcileServer,
-           resource_stream: reconcilation_stream,
-           reconcile: &Bonny.Controller.reconcile(__MODULE__, &1)}
+           stream: Bonny.Server.Reconciler.get_stream(__MODULE__),
+           termination_delay: 30_000}
         ]
 
-        Supervisor.init(children, strategy: :one_for_one)
+        Supervisor.init(
+          children,
+          strategy: :one_for_one,
+          max_restarts: 20,
+          max_seconds: 120
+        )
       end
 
       def list_operation(), do: Bonny.Controller.list_operation(__MODULE__)
@@ -133,16 +138,4 @@ defmodule Bonny.Controller do
       _ -> K8s.Client.list(api_version, kind)
     end
   end
-
-  @spec event_handler(module(), map()) :: any()
-  def event_handler(controller, %{"type" => type, "object" => resource}) do
-    case type do
-      "ADDED" -> controller.add(resource)
-      "MODIFIED" -> controller.modify(resource)
-      "DELETED" -> controller.delete(resource)
-    end
-  end
-
-  @spec reconcile(module(), map()) :: any()
-  def reconcile(controller, resource), do: controller.reconcile(resource)
 end
