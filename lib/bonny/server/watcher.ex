@@ -19,9 +19,8 @@ defmodule Bonny.Server.Watcher do
 
   @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t()) :: Enumerable.t()
   def get_stream(controller, conn, watch_operation) do
-    conn
-    |> K8s.Client.watch_and_stream(watch_operation, [])
-    |> Stream.map(&watch_event_handler(controller, &1))
+    {:ok, watch_stream} = K8s.Client.watch_and_stream(conn, watch_operation)
+    Stream.map(watch_stream, &watch_event_handler(controller, &1))
   end
 
   defp watch_event_handler(controller, %{"type" => type, "object" => resource}) do

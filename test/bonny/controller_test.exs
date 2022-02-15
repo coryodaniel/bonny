@@ -3,7 +3,6 @@ defmodule Bonny.ControllerTest do
   use ExUnit.Case, async: true
 
   describe "__using__" do
-    @tag wip: true
     test "crd/0 returns the CRD definition" do
       assert Whizbang.crd() == %Bonny.CRD{
                additional_printer_columns: [],

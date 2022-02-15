@@ -35,7 +35,6 @@ defmodule Bonny.Server.ReconcilerTest do
     [conn: __MODULE__.K8sMock.conn()]
   end
 
-  @tag wip: true
   test "reconciler returns a prepared stream that calls the reconcile function when run", %{
     conn: conn
   } do
