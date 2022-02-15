@@ -3,18 +3,29 @@ on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: elixir:1.9.1-slim
+    strategy:
+      matrix:
+        elixir: [1.9.x]
+        otp: [22.x]
     steps:
       - uses: actions/checkout@v1
+
+      - name: Setup elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{matrix.elixir}}
+          otp-version: ${{matrix.otp}}
+
       - name: Install Dependencies
         run: |
           mix local.rebar --force
           mix local.hex --force
           mix deps.get
+
       - name: Compile
         run: |
           mix clean
           mix compile --warnings-as-errors
+          
       - name: Run Tests
         run: mix test
