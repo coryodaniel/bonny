@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Bonny.Server.WatcherTest do
   @moduledoc false
   use ExUnit.Case, async: true
@@ -52,7 +53,6 @@ defmodule Bonny.Server.WatcherTest do
             }
           })
 
-
           {:ok, %HTTPoison.AsyncResponse{id: make_ref()}}
 
         nil ->
@@ -65,7 +65,6 @@ defmodule Bonny.Server.WatcherTest do
       {:error, %HTTPoison.Error{reason: "request not mocked"}}
     end
   end
-
 
   defmodule TestController do
     @behaviour MUT
@@ -93,11 +92,13 @@ defmodule Bonny.Server.WatcherTest do
     [conn: __MODULE__.K8sMock.conn()]
   end
 
-  test "watcher returns a prepared stream that calls the add/modify/delete functions for each event", %{conn: conn} do
+  test "watcher returns a prepared stream that calls the add/modify/delete functions for each event",
+       %{conn: conn} do
     Process.register(self(), __MODULE__)
 
     operation = K8s.Client.list("example.com/v1", :widgets)
     stream = MUT.get_stream(__MODULE__.TestController, conn, operation) |> Stream.take(4)
+
     Task.async(fn ->
       Stream.run(stream)
     end)

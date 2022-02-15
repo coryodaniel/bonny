@@ -19,6 +19,7 @@ defmodule Bonny.Server.Reconciler do
 
   @callback reconcile(map()) :: :ok | {:ok, any()} | {:error, any()}
 
+  @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), keyword()) :: Enumerable.t()
   def get_stream(controller, conn, reconcile_operation, opts \\ []) do
     {:ok, reconciliation_stream} = K8s.Client.stream(conn, reconcile_operation, opts)
     reconcile_all(reconciliation_stream, controller)
@@ -26,21 +27,23 @@ defmodule Bonny.Server.Reconciler do
 
   defp reconcile_all(resource_stream, controller) do
     resource_stream
-    |> Task.async_stream(fn
-      resource when is_map(resource) ->
-        reconcile_single_resource(resource, controller)
-        metadata = %{module: controller}
-        Bonny.Sys.Event.reconciler_fetch_succeeded(metadata)
+    |> Task.async_stream(
+      fn
+        resource when is_map(resource) ->
+          reconcile_single_resource(resource, controller)
+          metadata = %{module: controller}
+          Bonny.Sys.Event.reconciler_fetch_succeeded(metadata)
 
-        resource
+          resource
 
-      {:error, error} ->
-        metadata = %{module: controller, error: error}
-        Bonny.Sys.Event.reconciler_fetch_failed(metadata)
+        {:error, error} ->
+          metadata = %{module: controller, error: error}
+          Bonny.Sys.Event.reconciler_fetch_failed(metadata)
 
-        error
-
-    end, ordered: false)
+          error
+      end,
+      ordered: false
+    )
   end
 
   defp reconcile_single_resource(resource, controller) do

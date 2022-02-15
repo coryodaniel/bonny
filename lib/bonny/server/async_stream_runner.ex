@@ -32,7 +32,7 @@ defmodule Bonny.Server.AsyncStreamRunner do
 
   require Logger
 
-  @spec child_spec(keyword()) :: map()
+  @spec child_spec(keyword()) :: Supervisor.child_spec()
   def child_spec(args) do
     {id, start_args} = Keyword.pop(args, :id, __MODULE__)
 

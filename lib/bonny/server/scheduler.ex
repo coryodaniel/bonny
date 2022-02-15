@@ -109,12 +109,19 @@ defmodule Bonny.Server.Scheduler do
       @impl Bonny.Server.Scheduler
       def nodes(), do: Bonny.Server.Scheduler.nodes()
 
+      @spec child_spec(keyword()) :: Supervisor.child_spec()
       def child_spec(args \\ []) do
-        list_operation = K8s.Client.list("v1", :pods, namespace: :all) |> Map.put(:query_params, fieldSelector: field_selector())
+        list_operation =
+          K8s.Client.list("v1", :pods, namespace: :all)
+          |> Map.put(:query_params, fieldSelector: field_selector())
+
         conn = conn()
 
         args
-        |> Keyword.put(:stream, Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation))
+        |> Keyword.put(
+          :stream,
+          Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation)
+        )
         |> Keyword.put(:termination_delay, 5_000)
         |> Bonny.Server.AsyncStreamRunner.child_spec()
       end
@@ -128,6 +135,7 @@ defmodule Bonny.Server.Scheduler do
     end
   end
 
+  @spec reconcile(module(), map()) :: :ok
   def reconcile(scheduler, pod) do
     with {:ok, nodes} <- nodes(),
          node <- scheduler.select_node_for_pod(pod, nodes),

@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Bonny.Server.ReconcilerTest do
   @moduledoc false
   use ExUnit.Case, async: true
@@ -35,7 +36,9 @@ defmodule Bonny.Server.ReconcilerTest do
   end
 
   @tag wip: true
-  test "reconciler returns a prepared stream that calls the reconcile function when run", %{conn: conn} do
+  test "reconciler returns a prepared stream that calls the reconcile function when run", %{
+    conn: conn
+  } do
     Process.register(self(), __MODULE__)
 
     operation = K8s.Client.list("example.com/v1", :foos)

@@ -33,6 +33,7 @@ defmodule Bonny.Controller do
 
       use Supervisor
 
+      @spec start_link(term) :: {:ok, pid}
       def start_link(_) do
         Supervisor.start_link(__MODULE__, %{}, name: __MODULE__)
       end

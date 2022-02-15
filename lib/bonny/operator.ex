@@ -18,7 +18,8 @@ defmodule Bonny.Operator do
   end
 
   @doc "ClusterRole rules"
-  def rules do
+  @spec rules() :: list(map())
+  def rules() do
     base_rules = [
       %{
         apiGroups: ["apiextensions.k8s.io"],

@@ -17,13 +17,13 @@ defmodule Bonny.Server.Watcher do
   @callback modify(map()) :: :ok | {:ok, any()} | {:error, any()}
   @callback delete(map()) :: :ok | {:ok, any()} | {:error, any()}
 
+  @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t()) :: Enumerable.t()
   def get_stream(controller, conn, watch_operation) do
     conn
     |> K8s.Client.watch_and_stream(watch_operation, [])
     |> Stream.map(&watch_event_handler(controller, &1))
   end
 
-  @spec watch_event_handler(module(), map()) :: any()
   defp watch_event_handler(controller, %{"type" => type, "object" => resource}) do
     metadata = %{
       module: controller,

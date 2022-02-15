@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Bonny.Server.AsyncStreamRunnerTest do
   @moduledoc false
   use ExUnit.Case, async: false
