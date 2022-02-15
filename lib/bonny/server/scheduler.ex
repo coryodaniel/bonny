@@ -68,13 +68,6 @@ defmodule Bonny.Server.Scheduler do
   @callback name() :: binary()
 
   @doc """
-  List of unscheduled pods awaiting this scheduler.
-
-  Default implementation is all unscheduled pods specifying this scheduler in `spec.schedulerName`.
-  """
-  @callback pods() :: {:ok, Enumerable.t()} | {:error, any()}
-
-  @doc """
   List of nodes available to this scheduler.
 
   Default implementation is all nodes in cluster.
@@ -100,7 +93,8 @@ defmodule Bonny.Server.Scheduler do
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       @behaviour Bonny.Server.Scheduler
-      use Bonny.Server.Reconciler, frequency: 5
+      @behaviour Bonny.Server.Reconciler
+
       @name opts[:name] || Macro.to_string(__MODULE__)
 
       @doc "Scheduler name"
@@ -111,32 +105,34 @@ defmodule Bonny.Server.Scheduler do
       @impl Bonny.Server.Scheduler
       def field_selector(), do: Bonny.Server.Scheduler.field_selector(@name)
 
-      @doc "List of unscheduled pods awaiting this scheduler."
-      @impl Bonny.Server.Scheduler
-      def pods(), do: Bonny.Server.Scheduler.pods(__MODULE__)
-
       @doc "List of nodes available to this scheduler."
       @impl Bonny.Server.Scheduler
       def nodes(), do: Bonny.Server.Scheduler.nodes()
 
-      @impl Bonny.Server.Reconciler
-      def reconcile_operation() do
-        K8s.Client.list("v1", :pods, namespace: :all)
+      def child_spec(args \\ []) do
+        list_operation = K8s.Client.list("v1", :pods, namespace: :all) |> Map.put(:query_params, fieldSelector: field_selector())
+        conn = conn()
+
+        args
+        |> Keyword.put(:stream, Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation))
+        |> Keyword.put(:termination_delay, 5_000)
+        |> Bonny.Server.AsyncStreamRunner.child_spec()
       end
 
-      @impl Bonny.Server.Reconciler
-      defdelegate reconcilable_resources(), to: __MODULE__, as: :pods
+      defdelegate conn(), to: Bonny.Config
 
-      defoverridable pods: 0, nodes: 0, field_selector: 0, reconcilable_resources: 0
+      defoverridable nodes: 0, field_selector: 0, conn: 0
 
       @impl Bonny.Server.Reconciler
-      def reconcile(pod) do
-        with {:ok, nodes} <- nodes(),
-             node <- select_node_for_pod(pod, nodes),
-             {:ok, _} <- Bonny.Server.Scheduler.bind(pod, node) do
-          :ok
-        end
-      end
+      def reconcile(pod), do: Bonny.Server.Scheduler.reconcile(__MODULE__, pod)
+    end
+  end
+
+  def reconcile(scheduler, pod) do
+    with {:ok, nodes} <- nodes(),
+         node <- scheduler.select_node_for_pod(pod, nodes),
+         {:ok, _} <- Bonny.Server.Scheduler.bind(pod, node) do
+      :ok
     end
   end
 
@@ -149,29 +145,10 @@ defmodule Bonny.Server.Scheduler do
   @doc "Binds a pod to a node"
   @spec bind(map(), map()) :: {:ok, map} | {:error, atom}
   def bind(pod, node) do
-    Bonny.Server.Scheduler.Binding.create(pod, node)
-  end
-
-  @doc "Returns a list of pods for the given `field_selector`."
-  @spec pods(module()) :: {:ok, list(map())} | {:error, any()}
-  def pods(module) do
-    op = module.reconcile_operation()
-
-    response =
-      K8s.Client.stream(Bonny.Config.conn(), op, params: %{fieldSelector: module.field_selector()})
-
-    metadata = %{module: module, name: module.name()}
-
-    case response do
-      {:ok, stream} ->
-        Bonny.Sys.Event.scheduler_pods_fetch_succeeded(%{}, metadata)
-        pods = Enum.into(stream, [])
-        {:ok, pods}
-
-      {:error, error} ->
-        Bonny.Sys.Event.scheduler_pods_fetch_failed(%{}, metadata)
-        {:error, error}
-    end
+    pod
+    |> Map.put("apiVersion", "v1")
+    |> Map.put("kind", "pod")
+    |> Bonny.Server.Scheduler.Binding.create(node)
   end
 
   @doc "Returns a list of all nodes in the cluster."

@@ -7,10 +7,6 @@ defmodule Bonny.Controller do
   Controllers allow for simple `add`, `modify`, `delete`, and `reconcile` handling of custom resources in the Kubernetes API.
   """
 
-  @callback add(map()) :: :ok | :error
-  @callback modify(map()) :: :ok | :error
-  @callback delete(map()) :: :ok | :error
-  @callback reconcile(map()) :: :ok | :error
   @callback list_operation() :: K8s.Operation.t()
   @callback conn() :: K8s.Conn.t()
 
@@ -19,6 +15,8 @@ defmodule Bonny.Controller do
     quote bind_quoted: [opts: opts] do
       Module.register_attribute(__MODULE__, :rule, accumulate: true)
       @behaviour Bonny.Controller
+      @behaviour Bonny.Server.Reconciler
+      @behaviour Bonny.Server.Watcher
 
       # CRD defaults
       @group Bonny.Config.group()
@@ -41,16 +39,19 @@ defmodule Bonny.Controller do
 
       @impl true
       def init(_init_arg) do
+        conn = conn()
+        list_operation = list_operation()
+
         children = [
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.WatchServer,
            name: __MODULE__.WatchServer,
-           stream: Bonny.Server.Watcher.get_stream(__MODULE__),
+           stream: Bonny.Server.Watcher.get_stream(__MODULE__, conn, list_operation),
            termination_delay: 5_000},
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.ReconcileServer,
            name: __MODULE__.ReconcileServer,
-           stream: Bonny.Server.Reconciler.get_stream(__MODULE__),
+           stream: Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation),
            termination_delay: 30_000}
         ]
 
@@ -62,9 +63,11 @@ defmodule Bonny.Controller do
         )
       end
 
+      @impl Bonny.Controller
       def list_operation(), do: Bonny.Controller.list_operation(__MODULE__)
 
-      def conn(), do: Bonny.Config.conn()
+      @impl Bonny.Controller
+      defdelegate conn(), to: Bonny.Config
 
       defoverridable list_operation: 0, conn: 0
     end

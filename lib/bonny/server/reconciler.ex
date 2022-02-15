@@ -13,30 +13,34 @@ defmodule Bonny.Server.Reconciler do
   Takes a controller that must define the following functions and returns a (prepared) stream.
 
   * `conn/0` - should return a K8s.Conn.t()
-  * `list_operation/0` - should return a K8s.Operation.t() list operation that produces the stream of resources
+  * `reconcile_operation/0` - should return a K8s.Operation.t() list operation that produces the stream of resources
   * `reconcile/1` - takes a map and processes it
   """
-  def get_stream(controller) do
-    conn = controller.conn()
-    list_operation = controller.list_operation()
 
-    {:ok, reconciliation_stream} = K8s.Client.stream(conn, list_operation)
+  @callback reconcile(map()) :: :ok | {:ok, any()} | {:error, any()}
+
+  def get_stream(controller, conn, reconcile_operation, opts \\ []) do
+    {:ok, reconciliation_stream} = K8s.Client.stream(conn, reconcile_operation, opts)
     reconcile_all(reconciliation_stream, controller)
   end
 
   defp reconcile_all(resource_stream, controller) do
     resource_stream
-    |> Flow.from_enumerable()
-    |> Flow.map(fn
+    |> Task.async_stream(fn
       resource when is_map(resource) ->
         reconcile_single_resource(resource, controller)
         metadata = %{module: controller}
         Bonny.Sys.Event.reconciler_fetch_succeeded(metadata)
 
+        resource
+
       {:error, error} ->
         metadata = %{module: controller, error: error}
         Bonny.Sys.Event.reconciler_fetch_failed(metadata)
-    end)
+
+        error
+
+    end, ordered: false)
   end
 
   defp reconcile_single_resource(resource, controller) do

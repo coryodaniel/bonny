@@ -28,6 +28,7 @@ if Mix.env() == :dev do
   config :bonny,
     get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "k3d-k8s-ex"]]},
     controllers: [
-      DeploymentEventLogController
+      DeploymentEventLogController,
+      TestScheduler
     ]
 end

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## Added
+
+- `K8s.Server.AsyncStreamRunner` to run streams in a separate process
+
+## Updated
+
+- `K8s.Server.Watcher` and `K8s.Server.Reconciler` were rewritten completely. They now prepare streams which are to be run with `K8s.Server.AsyncStreamRunner`
+
 ## [0.4.4] - 2021-08-09
 
 ### Added

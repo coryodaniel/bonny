@@ -16,6 +16,7 @@ defmodule Bonny.MixProject do
       preferred_cli_env: [coveralls: :test, "coveralls.travis": :test, "coveralls.html": :test],
       docs: docs(),
       package: package(),
+      aliases: aliases(),
       dialyzer: [plt_add_apps: [:mix, :eex]],
       xref: [exclude: [EEx]]
     ]
@@ -28,7 +29,13 @@ defmodule Bonny.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Bonny.Application, []}
+      mod: {Bonny.Application, []},
+    ]
+  end
+
+  defp aliases do
+    [
+      test: "test --no-start"
     ]
   end
 
@@ -37,7 +44,6 @@ defmodule Bonny.MixProject do
       {:jason, "~> 1.1"},
       {:k8s, git: "https://github.com/coryodaniel/k8s.git", branch: "develop"},
       {:notion, "~> 0.2"},
-      {:flow, "~> 1.2"},
       {:telemetry, ">= 0.4.0"},
       #  2.0 only supports Elixir >= 1.11
       {:ymlr, "~> 1.0"},
