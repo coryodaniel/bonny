@@ -5,8 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        elixir: [1.9.x]
-        otp: [22.x]
+        elixir: [1.10.x]
+        otp: [23.x]
     steps:
       - uses: actions/checkout@v1
 
@@ -26,6 +26,6 @@ jobs:
         run: |
           mix clean
           mix compile --warnings-as-errors
-          
+
       - name: Run Tests
         run: mix test
