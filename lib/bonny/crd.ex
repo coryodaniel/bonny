@@ -12,8 +12,7 @@ defmodule Bonny.CRD do
            kind: String.t(),
            singular: String.t(),
            plural: String.t(),
-           shortNames: nil | list(String.t()),
-           version: String.t()
+           shortNames: nil | list(String.t())
          }
 
   @typep columns_t :: %{

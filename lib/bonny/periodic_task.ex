@@ -32,7 +32,7 @@ defmodule Bonny.PeriodicTask do
           handler: fun() | mfa(),
           interval: pos_integer(),
           jitter: float(),
-          id: binary(),
+          id: binary() | atom(),
           state: any()
         }
 
@@ -47,7 +47,7 @@ defmodule Bonny.PeriodicTask do
   end
 
   @doc "Registers and starts a new task given `Bonny.PeriodicTask` attributes"
-  @spec new(atom, mfa() | fun(), pos_integer() | nil) :: {:ok, pid} | {:error, term()}
+  @spec new(binary() | atom(), mfa() | fun(), pos_integer()) :: {:ok, pid} | {:error, term()}
   def new(id, handler, interval \\ 5000) do
     register(%__MODULE__{
       id: id,

@@ -122,12 +122,10 @@ defmodule Bonny.Controller do
       end
 
       @spec additional_printer_columns() :: list(map())
-      defp additional_printer_columns() do
-        case @additional_printer_columns do
-          [] -> []
-          _ -> @additional_printer_columns ++ Bonny.CRD.default_columns()
-        end
-      end
+      defp additional_printer_columns() when @additional_printer_columns == [], do: []
+
+      defp additional_printer_columns(),
+        do: @additional_printer_columns ++ Bonny.CRD.default_columns()
     end
   end
 
