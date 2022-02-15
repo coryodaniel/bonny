@@ -75,10 +75,14 @@ defmodule Bonny.Controller do
   end
 
   @doc false
-  defmacro __before_compile__(env) do
-    controller = env.module
+  defmacro __before_compile__(%{module: controller}) do
+    additional_printer_columns =
+      case Module.get_attribute(controller, :additional_printer_columns, []) do
+        [] -> quote do: []
+        _ -> quote do: @additional_printer_columns ++ Bonny.CRD.default_columns()
+      end
 
-    quote bind_quoted: [controller: controller] do
+    quote do
       @doc """
       Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
       """
@@ -121,11 +125,7 @@ defmodule Bonny.Controller do
         }
       end
 
-      @spec additional_printer_columns() :: list(map())
-      defp additional_printer_columns() when @additional_printer_columns == [], do: []
-
-      defp additional_printer_columns(),
-        do: @additional_printer_columns ++ Bonny.CRD.default_columns()
+      defp additional_printer_columns(), do: unquote(additional_printer_columns)
     end
   end
 
