@@ -9,16 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Added
 
-- `K8s.Server.AsyncStreamRunner` to run streams in a separate process
-- `K8s.Sys.Telemetry` defines `telemetry` spans and events
+- `Bonny.Server.AsyncStreamRunner` to run streams in a separate process
+- `Bonny.Sys.Telemetry` defines `telemetry` spans and events
 
 ## Updated
 
-- `K8s.Server.Watcher` and `K8s.Server.Reconciler` were rewritten completely. They now prepare streams which are to be run with `K8s.Server.AsyncStreamRunner`
+- `Bonny.Server.Watcher` and `Bonny.Server.Reconciler` were rewritten completely. They now prepare streams which are to be run with `Bonny.Server.AsyncStreamRunner`
+- Dependency `k8s` was updated to version `~> 1.1` and code was refactored accordingly
 
 ## Removed
 
-- `K8s.Sys.Event` was removed in favor of `K8s.Sys.Telemetry`
+- `Bonny.Sys.Event` was removed in favor of `Bonny.Sys.Telemetry`
 
 ## [0.4.4] - 2021-08-09
 
