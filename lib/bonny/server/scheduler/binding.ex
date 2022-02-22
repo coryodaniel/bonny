@@ -10,6 +10,8 @@ defmodule Bonny.Server.Scheduler.Binding do
 
   """
 
+  require Logger
+
   @doc """
   Returns a map representing a `Binding` kubernetes resource
 
@@ -43,22 +45,24 @@ defmodule Bonny.Server.Scheduler.Binding do
   @doc """
   Creates the pod's /binding subresource through K8s.
   """
-  @spec create(map(), map()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
-  def create(pod, node) do
+  @spec create(K8s.Conn.t(), map(), map()) ::
+          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  def create(conn, pod, node) do
     binding = new(pod, node)
     operation = K8s.Client.create(pod, binding)
+    metadata = %{operation: operation}
 
-    {measurements, response} =
-      Bonny.Sys.Event.measure(K8s.Client, :run, [Bonny.Config.conn(), operation])
+    :telemetry.span([:scheduler, :binding], metadata, fn ->
+      case K8s.Client.run(conn, operation) do
+        {:ok, body} ->
+          Logger.debug("Schduler binding succeeded", metadata)
+          {{:ok, body}, metadata}
 
-    case response do
-      {:ok, body} ->
-        Bonny.Sys.Event.scheduler_binding_succeeded(measurements, pod)
-        {:ok, body}
-
-      {:error, error} ->
-        Bonny.Sys.Event.scheduler_binding_failed(measurements, pod)
-        {:error, error}
-    end
+        {:error, error} ->
+          metadata = Map.put(metadata, :error, error)
+          Logger.error("Schduler binding failed", metadata)
+          {{:error, error}, metadata}
+      end
+    end)
   end
 end

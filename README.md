@@ -230,33 +230,24 @@ TODO: Need to support validation / OpenAPI.
 
 ## Telemetry
 
-Bonny uses the `telemetry` and `notion` library to emit event metrics.
+Bonny uses the `telemetry` to emit event metrics.
 
-Events: `Bonny.Sys.Event.events()`
+Events: `Bonny.Sys.Telemetry.events()`
 
 ```elixir
 [
-  [:bonny, :scheduler, :binding, :failed],
-  [:bonny, :scheduler, :binding, :succeeded],
-  [:bonny, :scheduler, :nodes, :fetch, :failed],
-  [:bonny, :scheduler, :nodes, :fetch, :succeeded],
-  [:bonny, :scheduler, :pods, :fetch, :failed],
-  [:bonny, :scheduler, :pods, :fetch, :succeeded],
-  [:bonny, :reconciler, :genserver, :down],
-  [:bonny, :reconciler, :reconcile, :failed],
-  [:bonny, :reconciler, :reconcile, :succeeded],
-  [:bonny, :reconciler, :run, :started],
-  [:bonny, :reconciler, :fetch, :failed],
-  [:bonny, :reconciler, :fetch, :succeeded],
-  [:bonny, :reconciler, :initialized],
-  [:bonny, :watcher, :genserver, :down],
-  [:bonny, :watcher, :chunk, :received],
-  [:bonny, :watcher, :watch, :timedout],
-  [:bonny, :watcher, :watch, :failed],
-  [:bonny, :watcher, :watch, :finished],
-  [:bonny, :watcher, :watch, :succeeded],
-  [:bonny, :watcher, :watch, :started],
-  [:bonny, :watcher, :initialized]
+    [:reconciler, :reconcile, :start],
+    [:reconciler, :reconcile, :stop],
+    [:reconciler, :reconcile, :exception],
+    [:watcher, :watch, :start],
+    [:watcher, :watch, :stop],
+    [:watcher, :watch, :exception],
+    [:scheduler, :binding, :start],
+    [:scheduler, :binding, :stop],
+    [:scheduler, :binding, :exception],
+    [:task, :execution, :start],
+    [:task, :execution, :stop],
+    [:task, :execution, :exception],
 ]
 ```
 

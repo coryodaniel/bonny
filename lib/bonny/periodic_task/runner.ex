@@ -4,7 +4,6 @@ defmodule Bonny.PeriodicTask.Runner do
   use Bitwise
   require Logger
   alias Bonny.PeriodicTask
-  alias Bonny.Sys.Event
 
   @spec start_link(PeriodicTask.t()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(%PeriodicTask{id: id} = task) do
@@ -13,36 +12,41 @@ defmodule Bonny.PeriodicTask.Runner do
 
   @impl true
   def init(%PeriodicTask{} = task) do
-    Event.task_initialized(%{}, %{id: task.id})
+    Logger.info("Task initialized", %{id: task.id})
     Process.send_after(self(), :run, calc_offset(task))
     {:ok, task}
   end
 
   @impl true
   def handle_info(:run, %PeriodicTask{} = task) do
-    next_task =
+    metadata = %{id: task.id}
+
+    :telemetry.span([:task, :execution], metadata, fn ->
+      Logger.info("Task execution started", metadata)
+
       case execute(task) do
         {:ok, new_state} ->
-          Event.task_succeeded(%{}, %{id: task.id})
+          Logger.debug("Task execution succeeded", metadata)
           task = %PeriodicTask{task | state: new_state}
           Process.send_after(self(), :run, calc_offset(task))
-          task
+          {{:noreply, task}, metadata}
 
         :ok ->
-          Event.task_succeeded(%{}, %{id: task.id})
+          Logger.debug("Task execution succeeded", metadata)
           Process.send_after(self(), :run, calc_offset(task))
-          task
+          {{:noreply, task}, metadata}
 
         {:stop, reason} ->
-          Event.task_stopped(%{}, %{id: task.id})
-          {:stop, reason, task}
+          metadata = Map.put(metadata, :reason, reason)
+          Logger.info("Task execution stopped", metadata)
+          {{:noreply, {:stop, reason, task}}, metadata}
 
         other ->
-          Event.task_failed(%{}, %{id: task.id})
-          {:stop, :error, other}
+          metadata = Map.put(metadata, :error, other)
+          Logger.error("Task execution failed", metadata)
+          {{:noreply, {:stop, :error, other}}, metadata}
       end
-
-    {:noreply, next_task}
+    end)
   end
 
   defp calc_offset(%PeriodicTask{interval: int, jitter: jitter}) do

@@ -17,6 +17,8 @@ defmodule Bonny.Server.Reconciler do
   * `reconcile/1` - takes a map and processes it
   """
 
+  require Logger
+
   @callback reconcile(map()) :: :ok | {:ok, any()} | {:error, any()}
 
   @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), keyword()) :: Enumerable.t()
@@ -32,13 +34,13 @@ defmodule Bonny.Server.Reconciler do
         resource when is_map(resource) ->
           reconcile_single_resource(resource, controller)
           metadata = %{module: controller}
-          Bonny.Sys.Event.reconciler_fetch_succeeded(metadata)
+          Logger.debug("Reconciler fetch succeeded", metadata)
 
           resource
 
         {:error, error} ->
           metadata = %{module: controller, error: error}
-          Bonny.Sys.Event.reconciler_fetch_failed(metadata)
+          Logger.debug("Reconciler fetch failed", metadata)
 
           error
       end,
@@ -55,18 +57,21 @@ defmodule Bonny.Server.Reconciler do
       api_version: resource["apiVersion"]
     }
 
-    {measurements, result} = Bonny.Sys.Event.measure(controller, :reconcile, [resource])
+    :telemetry.span([:reconciler, :reconcile], metadata, fn ->
+      case controller.reconcile(resource) do
+        :ok ->
+          Logger.debug("Reconciler reconciliation succeeded", metadata)
+          {:ok, metadata}
 
-    case result do
-      :ok ->
-        Bonny.Sys.Event.reconciler_reconcile_succeeded(measurements, metadata)
+        {:ok, _} ->
+          Logger.debug("Reconciler reconciliation succeeded", metadata)
+          {:ok, metadata}
 
-      {:ok, _} ->
-        Bonny.Sys.Event.reconciler_reconcile_succeeded(measurements, metadata)
-
-      {:error, error} ->
-        metadata = Map.put(metadata, :error, error)
-        Bonny.Sys.Event.reconciler_reconcile_failed(measurements, metadata)
-    end
+        {:error, error} ->
+          metadata = Map.put(metadata, :error, error)
+          Logger.error("Reconciler reconciliation failed", metadata)
+          {:error, metadata}
+      end
+    end)
   end
 end

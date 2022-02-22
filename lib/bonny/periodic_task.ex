@@ -23,7 +23,8 @@ defmodule Bonny.PeriodicTask do
 
   """
   use DynamicSupervisor
-  alias Bonny.Sys.Event
+
+  require Logger
 
   @enforce_keys [:handler, :id]
   defstruct handler: nil, id: nil, interval: 1000, jitter: 0.0, state: nil
@@ -59,7 +60,7 @@ defmodule Bonny.PeriodicTask do
   @doc "Registers and starts a new `Bonny.PeriodicTask`"
   @spec register(t()) :: {:ok, pid} | {:error, term()}
   def register(%__MODULE__{id: id} = task) do
-    Event.task_registered(%{}, %{id: id})
+    Logger.info("Task registered", %{id: id})
     DynamicSupervisor.start_child(__MODULE__, {Bonny.PeriodicTask.Runner, task})
   end
 
@@ -68,7 +69,7 @@ defmodule Bonny.PeriodicTask do
   def unregister(%__MODULE__{id: id}), do: unregister(id)
 
   def unregister(id) when is_atom(id) do
-    Event.task_unregistered(%{}, %{id: id})
+    Logger.info("Task unregistered", %{id: id})
 
     case Process.whereis(id) do
       nil ->

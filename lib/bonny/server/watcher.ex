@@ -32,23 +32,24 @@ defmodule Bonny.Server.Watcher do
       api_version: resource["apiVersion"]
     }
 
-    {measurements, result} =
-      case type do
-        "ADDED" -> Bonny.Sys.Event.measure(controller, :add, [resource])
-        "MODIFIED" -> Bonny.Sys.Event.measure(controller, :modify, [resource])
-        "DELETED" -> Bonny.Sys.Event.measure(controller, :delete, [resource])
+    :telemetry.span([:watcher, :watch], metadata, fn ->
+      operation =
+        case type do
+          "ADDED" -> :add
+          "MODIFIED" -> :modify
+          "DELETED" -> :delete
+        end
+
+      case apply(controller, operation, [resource]) do
+        :ok ->
+          {:ok, metadata}
+
+        {:ok, _} ->
+          {:ok, metadata}
+
+        {:error, error} ->
+          {:error, Map.put(metadata, :error, error)}
       end
-
-    case result do
-      :ok ->
-        Bonny.Sys.Event.watcher_watch_succeeded(measurements, metadata)
-
-      {:ok, _} ->
-        Bonny.Sys.Event.watcher_watch_succeeded(measurements, metadata)
-
-      {:error, error} ->
-        metadata = Map.put(metadata, :error, error)
-        Bonny.Sys.Event.watcher_watch_failed(measurements, metadata)
-    end
+    end)
   end
 end

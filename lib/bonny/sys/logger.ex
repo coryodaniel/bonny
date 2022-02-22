@@ -10,7 +10,7 @@ defmodule Bonny.Sys.Logger do
   Attaches telemetry events to the Elixir Logger
   """
   def attach() do
-    events = Bonny.Sys.Event.events()
+    events = Bonny.Sys.Telemetry.events()
     :telemetry.attach_many("bonny-events-logger", events, &log_handler/4, :debug)
   end
 

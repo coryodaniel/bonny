@@ -62,6 +62,8 @@ defmodule Bonny.Server.Scheduler do
       GpuScheduler.start_link()
   """
 
+  require Logger
+
   @doc """
   Name of the scheduler.
   """
@@ -72,7 +74,7 @@ defmodule Bonny.Server.Scheduler do
 
   Default implementation is all nodes in cluster.
   """
-  @callback nodes() :: {:ok, Enumerable.t()} | {:error, any()}
+  @callback nodes(K8s.Conn.t()) :: {:ok, Enumerable.t()} | {:error, any()}
 
   @doc """
   Field selector for selecting unscheduled pods waiting to be scheduled by this scheduler.
@@ -80,6 +82,8 @@ defmodule Bonny.Server.Scheduler do
   Default implementation is all unscheduled pods assigned to this scheduler.
   """
   @callback field_selector() :: binary()
+
+  @callback conn() :: K8s.Conn.t()
 
   @doc """
   Selects the best node for the current `pod`.
@@ -107,7 +111,7 @@ defmodule Bonny.Server.Scheduler do
 
       @doc "List of nodes available to this scheduler."
       @impl Bonny.Server.Scheduler
-      def nodes(), do: Bonny.Server.Scheduler.nodes()
+      def nodes(conn), do: Bonny.Server.Scheduler.nodes(conn)
 
       @spec child_spec(keyword()) :: Supervisor.child_spec()
       def child_spec(args \\ []) do
@@ -128,7 +132,7 @@ defmodule Bonny.Server.Scheduler do
 
       defdelegate conn(), to: Bonny.Config
 
-      defoverridable nodes: 0, field_selector: 0, conn: 0
+      defoverridable nodes: 1, field_selector: 0, conn: 0
 
       @impl Bonny.Server.Reconciler
       def reconcile(pod), do: Bonny.Server.Scheduler.reconcile(__MODULE__, pod)
@@ -137,9 +141,11 @@ defmodule Bonny.Server.Scheduler do
 
   @spec reconcile(module(), map()) :: :ok
   def reconcile(scheduler, pod) do
-    with {:ok, nodes} <- nodes(),
+    conn = scheduler.conn()
+
+    with {:ok, nodes} <- nodes(conn),
          node <- scheduler.select_node_for_pod(pod, nodes),
-         {:ok, _} <- Bonny.Server.Scheduler.bind(pod, node) do
+         {:ok, _} <- Bonny.Server.Scheduler.bind(scheduler.conn(), pod, node) do
       :ok
     end
   end
@@ -151,31 +157,31 @@ defmodule Bonny.Server.Scheduler do
   end
 
   @doc "Binds a pod to a node"
-  @spec bind(map(), map()) :: {:ok, map} | {:error, atom}
-  def bind(pod, node) do
-    pod
-    |> Map.put("apiVersion", "v1")
-    |> Map.put("kind", "pod")
-    |> Bonny.Server.Scheduler.Binding.create(node)
+  @spec bind(K8s.Conn.t(), map(), map()) :: {:ok, map} | {:error, atom}
+  def bind(conn, pod, node) do
+    pod =
+      pod
+      |> Map.put("apiVersion", "v1")
+      |> Map.put("kind", "pod")
+
+    Bonny.Server.Scheduler.Binding.create(conn, pod, node)
   end
 
   @doc "Returns a list of all nodes in the cluster."
-  @spec nodes() :: {:ok, list(map())} | {:error, any()}
-  def nodes() do
+  @spec nodes(K8s.Conn.t()) :: {:ok, list(map())} | {:error, any()}
+  def nodes(conn) do
     op = K8s.Client.list("v1", :nodes)
 
-    response = K8s.Client.stream(Bonny.Config.conn(), op)
-    measurements = %{}
-    metadata = %{}
+    response = K8s.Client.stream(conn, op)
+    metadata = %{operation: op}
 
     case response do
       {:ok, stream} ->
-        Bonny.Sys.Event.scheduler_nodes_fetch_succeeded(measurements, metadata)
-        nodes = Enum.into(stream, [])
-        {:ok, nodes}
+        Logger.debug("Scheduler fetching nodes succeeded", metadata)
+        {:ok, Enum.into(stream, [])}
 
       {:error, error} ->
-        Bonny.Sys.Event.scheduler_nodes_fetch_failed(measurements, metadata)
+        Logger.error("Scheduler fetching nodes failed", Map.put(metadata, :error, error))
         {:error, error}
     end
   end
