@@ -13,10 +13,6 @@ defmodule Bonny.Server.Watcher do
       Task.async(fn -> Stream.run(watch_stream) end)
   """
 
-  @callback add(map()) :: :ok | {:ok, any()} | {:error, any()}
-  @callback modify(map()) :: :ok | {:ok, any()} | {:error, any()}
-  @callback delete(map()) :: :ok | {:ok, any()} | {:error, any()}
-
   @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t()) :: Enumerable.t()
   def get_stream(controller, conn, watch_operation) do
     {:ok, watch_stream} = K8s.Client.watch_and_stream(conn, watch_operation)

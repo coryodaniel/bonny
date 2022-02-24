@@ -7,16 +7,29 @@ defmodule Bonny.Controller do
   Controllers allow for simple `add`, `modify`, `delete`, and `reconcile` handling of custom resources in the Kubernetes API.
   """
 
+  @doc """
+  Should return an operation to list resources for watching and reconciliation.
+
+  Bonny.Controller comes with a default implementation
+  """
   @callback list_operation() :: K8s.Operation.t()
+
+  @doc """
+  Bonny.Controller comes with a default implementation which returns Bonny.Config.config()
+  """
   @callback conn() :: K8s.Conn.t()
+
+  # Action Callbacks
+  @callback add(map()) :: :ok | :error
+  @callback modify(map()) :: :ok | :error
+  @callback delete(map()) :: :ok | :error
+  @callback reconcile(map()) :: :ok | :error
 
   @doc false
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       Module.register_attribute(__MODULE__, :rule, accumulate: true)
       @behaviour Bonny.Controller
-      @behaviour Bonny.Server.Reconciler
-      @behaviour Bonny.Server.Watcher
 
       # CRD defaults
       @group Bonny.Config.group()
