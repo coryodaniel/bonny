@@ -23,3 +23,5 @@ erl_crash.dump
 bonny-*.tar
 
 .elixir_ls
+
+/.vscode

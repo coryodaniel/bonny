@@ -8,7 +8,7 @@ defmodule Bonny.MixProject do
       app: :bonny,
       description: description(),
       version: @version,
-      elixir: "~> 1.9",
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -16,6 +16,7 @@ defmodule Bonny.MixProject do
       preferred_cli_env: [coveralls: :test, "coveralls.travis": :test, "coveralls.html": :test],
       docs: docs(),
       package: package(),
+      aliases: aliases(),
       dialyzer: [plt_add_apps: [:mix, :eex]],
       xref: [exclude: [EEx]]
     ]
@@ -32,12 +33,17 @@ defmodule Bonny.MixProject do
     ]
   end
 
+  defp aliases do
+    [
+      test: "test --no-start"
+    ]
+  end
+
   defp deps do
     [
       {:jason, "~> 1.1"},
-      {:k8s, "~> 0.4.0"},
-      {:notion, "~> 0.2"},
-      {:telemetry, ">= 0.4.0"},
+      {:k8s, "~> 1.1"},
+      {:telemetry, "~> 1.0"},
       #  2.0 only supports Elixir >= 1.11
       {:ymlr, "~> 1.0"},
 
@@ -46,7 +52,7 @@ defmodule Bonny.MixProject do
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
       # {:ex_doc, "~> 0.23", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
 
       # Test deps
       {:excoveralls, "~> 0.12", only: :test}

@@ -10,7 +10,7 @@ defmodule Bonny.Server.Scheduler.Binding do
 
   """
 
-  @json_headers [{"Accept", "application/json"}, {"Content-Type", "application/json"}]
+  require Logger
 
   @doc """
   Returns a map representing a `Binding` kubernetes resource
@@ -43,38 +43,26 @@ defmodule Bonny.Server.Scheduler.Binding do
   end
 
   @doc """
-  Performs a POST HTTP request against the pod's binding subresource.
-
-  `/api/v1/namespaces/{NAMESPACE}/pods/{POD}/binding`
+  Creates the pod's /binding subresource through K8s.
   """
+  @spec create(K8s.Conn.t(), map(), map()) ::
+          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  def create(conn, pod, node) do
+    binding = new(pod, node)
+    operation = K8s.Client.create(pod, binding)
+    metadata = %{operation: operation}
 
-  @spec create(map, atom) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
-  def create(binding, cluster) do
-    pod_name = K8s.Resource.name(binding)
-    pod_namespace = K8s.Resource.namespace(binding)
-    node_name = get_in(binding, ["target", "name"])
-    operation = K8s.Operation.build(:get, "v1", :pod, namespace: pod_namespace, name: pod_name)
-
-    with {:ok, base_url} <- K8s.Cluster.url_for(operation, cluster),
-         {:ok, cluster_connection_config} <- K8s.Cluster.conn(cluster),
-         {:ok, request_options} <- K8s.Conn.RequestOptions.generate(cluster_connection_config),
-         {:ok, body} <- Jason.encode(binding),
-         headers <- request_options.headers ++ @json_headers,
-         options <- [ssl: request_options.ssl_options] do
-      metadata = %{pod_name: pod_name, pod_namespace: pod_namespace, node_name: node_name}
-
-      {measurements, response} =
-        Bonny.Sys.Event.measure(HTTPoison, :post, ["#{base_url}/binding", body, headers, options])
-
-      case response do
+    :telemetry.span([:scheduler, :binding], metadata, fn ->
+      case K8s.Client.run(conn, operation) do
         {:ok, body} ->
-          Bonny.Sys.Event.scheduler_binding_succeeded(measurements, metadata)
-          {:ok, body}
+          Logger.debug("Schduler binding succeeded", metadata)
+          {{:ok, body}, metadata}
 
         {:error, error} ->
-          Bonny.Sys.Event.scheduler_binding_failed(measurements, metadata)
-          {:error, error}
+          metadata = Map.put(metadata, :error, error)
+          Logger.error("Schduler binding failed", metadata)
+          {{:error, error}, metadata}
       end
-    end
+    end)
   end
 end

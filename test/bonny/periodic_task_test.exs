@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Bonny.PeriodicTaskTest do
   use ExUnit.Case, async: false
   alias Bonny.PeriodicTask

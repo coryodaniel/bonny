@@ -7,6 +7,19 @@ defmodule Bonny.Controller do
   Controllers allow for simple `add`, `modify`, `delete`, and `reconcile` handling of custom resources in the Kubernetes API.
   """
 
+  @doc """
+  Should return an operation to list resources for watching and reconciliation.
+
+  Bonny.Controller comes with a default implementation
+  """
+  @callback list_operation() :: K8s.Operation.t()
+
+  @doc """
+  Bonny.Controller comes with a default implementation which returns Bonny.Config.config()
+  """
+  @callback conn() :: K8s.Conn.t()
+
+  # Action Callbacks
   @callback add(map()) :: :ok | :error
   @callback modify(map()) :: :ok | :error
   @callback delete(map()) :: :ok | :error
@@ -17,7 +30,6 @@ defmodule Bonny.Controller do
     quote bind_quoted: [opts: opts] do
       Module.register_attribute(__MODULE__, :rule, accumulate: true)
       @behaviour Bonny.Controller
-      @client opts[:client] || K8s.Client
 
       # CRD defaults
       @group Bonny.Config.group()
@@ -34,58 +46,60 @@ defmodule Bonny.Controller do
 
       use Supervisor
 
+      @spec start_link(term) :: {:ok, pid}
       def start_link(_) do
         Supervisor.start_link(__MODULE__, %{}, name: __MODULE__)
       end
 
       @impl true
       def init(_init_arg) do
+        conn = conn()
+        list_operation = list_operation()
+
         children = [
-          {__MODULE__.WatchServer, name: __MODULE__.WatchServer},
-          {__MODULE__.ReconcileServer, name: __MODULE__.ReconcileServer}
+          {Bonny.Server.AsyncStreamRunner,
+           id: __MODULE__.WatchServer,
+           name: __MODULE__.WatchServer,
+           stream: Bonny.Server.Watcher.get_stream(__MODULE__, conn, list_operation),
+           termination_delay: 5_000},
+          {Bonny.Server.AsyncStreamRunner,
+           id: __MODULE__.ReconcileServer,
+           name: __MODULE__.ReconcileServer,
+           stream: Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation),
+           termination_delay: 30_000}
         ]
 
-        Supervisor.init(children, strategy: :one_for_one)
+        Supervisor.init(
+          children,
+          strategy: :one_for_one,
+          max_restarts: 20,
+          max_seconds: 120
+        )
       end
 
-      @doc false
-      @spec client() :: any()
-      def client(), do: @client
+      @impl Bonny.Controller
+      def list_operation(), do: Bonny.Controller.list_operation(__MODULE__)
+
+      @impl Bonny.Controller
+      defdelegate conn(), to: Bonny.Config
+
+      defoverridable list_operation: 0, conn: 0
     end
   end
 
   @doc false
-  defmacro __before_compile__(env) do
-    controller = env.module
-
-    quote bind_quoted: [controller: controller] do
-      defmodule WatchServer do
-        @moduledoc "Controller watcher implementation"
-        use Bonny.Server.Watcher
-
-        @impl Bonny.Server.Watcher
-        defdelegate add(resource), to: controller
-        @impl Bonny.Server.Watcher
-        defdelegate modify(resource), to: controller
-        @impl Bonny.Server.Watcher
-        defdelegate delete(resource), to: controller
-        @impl Bonny.Server.Watcher
-        defdelegate watch_operation(), to: controller, as: :list_operation
+  defmacro __before_compile__(%{module: controller}) do
+    additional_printer_columns =
+      case Module.get_attribute(controller, :additional_printer_columns, []) do
+        [] -> quote do: []
+        _ -> quote do: @additional_printer_columns ++ Bonny.CRD.default_columns()
       end
 
-      defmodule ReconcileServer do
-        @moduledoc "Controller reconciler implementation"
-        use Bonny.Server.Reconciler, frequency: 30
-        @impl Bonny.Server.Reconciler
-        defdelegate reconcile(resource), to: controller
-        @impl Bonny.Server.Reconciler
-        defdelegate reconcile_operation(), to: controller, as: :list_operation
-      end
-
+    quote do
       @doc """
       Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
       """
-      @spec crd() :: %Bonny.CRD{}
+      @spec crd() :: Bonny.CRD.t()
       def crd() do
         %Bonny.CRD{
           group: @group,
@@ -94,19 +108,6 @@ defmodule Bonny.Controller do
           names: Map.merge(default_names(), @names),
           additional_printer_columns: additional_printer_columns()
         }
-      end
-
-      @spec list_operation() :: K8s.Operation.t()
-      def list_operation() do
-        crd = __MODULE__.crd()
-        api_version = Bonny.CRD.api_version(crd)
-        kind = Bonny.CRD.kind(crd)
-        client = __MODULE__.client()
-
-        case crd.scope do
-          :namespaced -> client.list(api_version, kind, namespace: Bonny.Config.namespace())
-          _ -> client.list(api_version, kind)
-        end
       end
 
       @doc """
@@ -137,13 +138,19 @@ defmodule Bonny.Controller do
         }
       end
 
-      @spec additional_printer_columns() :: list(map())
-      defp additional_printer_columns() do
-        case @additional_printer_columns do
-          [] -> []
-          any -> @additional_printer_columns ++ Bonny.CRD.default_columns()
-        end
-      end
+      defp additional_printer_columns(), do: unquote(additional_printer_columns)
+    end
+  end
+
+  @spec list_operation(module()) :: K8s.Operation.t()
+  def list_operation(controller) do
+    crd = controller.crd()
+    api_version = Bonny.CRD.api_version(crd)
+    kind = Bonny.CRD.kind(crd)
+
+    case crd.scope do
+      :namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
+      _ -> K8s.Client.list(api_version, kind)
     end
   end
 end

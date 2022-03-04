@@ -26,6 +26,7 @@ Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you nee
 - HelloOperator [source code](https://github.com/coryodaniel/hello_operator)
 
 ## Talks
+
 - Commandeering Kubernetes @ The Big Elixir 2019
   - [slides](https://speakerdeck.com/coryodaniel/commandeering-kubernetes-with-elixir)
   - [source code](https://github.com/coryodaniel/talks/tree/master/commandeering)
@@ -36,6 +37,7 @@ Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you nee
 - [Eviction Operator](https://github.com/bonny-k8s/eviction_operator) - Bonny v 0.4
 - [Hello Operator](https://github.com/coryodaniel/hello_operator) - Bonny v 0.4
 - [Todo Operator](https://github.com/bonny-k8s/todo-operator) - Bonny v 0.4
+
 ## Installation
 
 Bonny can be installed by adding `bonny` to your list of dependencies in `mix.exs`:
@@ -52,15 +54,9 @@ end
 
 Bonny uses the [k8s client](https://github.com/coryodaniel/k8s) under the hood.
 
-The only configuration parameters required are `:bonny` `controllers` and a `:k8s` cluster:
+The only configuration parameters required are `:bonny` `controllers` and a `:get_conn` callback:
 
 ```elixir
-config :k8s,
-  clusters: %{
-    default: %{ # `default` here must match `cluster_name` below
-      conn: "~/.kube/config"
-    }
-  }
 
 config :bonny,
   # Add each CRD Controller module for this operator to load here
@@ -71,8 +67,9 @@ config :bonny,
     MyApp.Controllers.V1.Memcached
   ],
 
-  # K8s.Cluster to use, defaults to :default
-  cluster_name: :default,
+  # Function to call to get a K8s.Conn object. 
+  # The function should return a %K8s.Conn{} struct or a {:ok, %K8s.Conn{}} tuple 
+  get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "docker-for-desktop"]]},
 
   # The namespace to watch for Namespaced CRDs.
   # Defaults to "default". `:all` for all namespaces
@@ -106,34 +103,30 @@ config :bonny,
 When configuring bonny to run _in your cluster_ the `mix bonny.gen.manifest` command will generate a service account for you. To use that service account configure the `k8s` library like the following:
 
 ```elixir
-config :k8s,
-  clusters: %{
-    default: %{}
-  }
+config :bonny,
+  get_conn: {K8s.Conn, :from_service_account, []}
 ```
-
-This will add a cluster named `default`. When no configuration information is provided, the `k8s` library will use the service account of the pod.
 
 ## Running outside of a cluster
 
 Running an operator outside of Kubernetes is not recommended for production use, but can be very useful when testing.
 
 To start your operator and connect it to an existing cluster, one must first:
+
 1. Have configured your operator. The above example is a good place to start.
 2. Have some way of connecting to your cluster. The most common is to connect using your kubeconfig as in the example:
+
 ```elixir
 # config.exs
-config :k8s,
-  clusters: %{
-    default: %{
-      conn: "~/.kube/config"
-    }
-  }
+config :bonny,
+  {K8s.Conn, :from_file, ["~/.kube/config", [context: "optional-alternate-context"]]}
 ```
+
 3. If RBAC is enabled, you must have permissions for creating and modifying `CustomResourceDefinition`, `ClusterRole`, `ClusterRoleBinding` and `ServiceAccount`.
 4. Generate a manifest `mix bonny.gen.manifest` and install it using kubectl `kubectl apply -f manifest.yaml`
 
 Now you are ready to run your operator
+
 ```shell
 iex -S mix
 ```
@@ -238,33 +231,24 @@ TODO: Need to support validation / OpenAPI.
 
 ## Telemetry
 
-Bonny uses the `telemetry` and `notion` library to emit event metrics.
+Bonny uses the `telemetry` to emit event metrics.
 
-Events: `Bonny.Sys.Event.events()`
+Events: `Bonny.Sys.Telemetry.events()`
 
 ```elixir
 [
-  [:bonny, :scheduler, :binding, :failed],
-  [:bonny, :scheduler, :binding, :succeeded],
-  [:bonny, :scheduler, :nodes, :fetch, :failed],
-  [:bonny, :scheduler, :nodes, :fetch, :succeeded],
-  [:bonny, :scheduler, :pods, :fetch, :failed],
-  [:bonny, :scheduler, :pods, :fetch, :succeeded],
-  [:bonny, :reconciler, :genserver, :down],
-  [:bonny, :reconciler, :reconcile, :failed],
-  [:bonny, :reconciler, :reconcile, :succeeded],
-  [:bonny, :reconciler, :run, :started],
-  [:bonny, :reconciler, :fetch, :failed],
-  [:bonny, :reconciler, :fetch, :succeeded],
-  [:bonny, :reconciler, :initialized],
-  [:bonny, :watcher, :genserver, :down],
-  [:bonny, :watcher, :chunk, :received],
-  [:bonny, :watcher, :watch, :timedout],
-  [:bonny, :watcher, :watch, :failed],
-  [:bonny, :watcher, :watch, :finished],
-  [:bonny, :watcher, :watch, :succeeded],
-  [:bonny, :watcher, :watch, :started],
-  [:bonny, :watcher, :initialized]
+    [:reconciler, :reconcile, :start],
+    [:reconciler, :reconcile, :stop],
+    [:reconciler, :reconcile, :exception],
+    [:watcher, :watch, :start],
+    [:watcher, :watch, :stop],
+    [:watcher, :watch, :exception],
+    [:scheduler, :binding, :start],
+    [:scheduler, :binding, :stop],
+    [:scheduler, :binding, :exception],
+    [:task, :execution, :start],
+    [:task, :execution, :stop],
+    [:task, :execution, :exception],
 ]
 ```
 

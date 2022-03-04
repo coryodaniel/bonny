@@ -39,6 +39,8 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
   @aliases [o: :out, n: :namespace, i: :image]
 
   @shortdoc "Generate Kubernetes YAML manifest for this operator"
+
+  @spec run(list()) :: any()
   def run(args) do
     Mix.Task.run("loadpaths", args)
 

@@ -1,68 +1,49 @@
+# credo:disable-for-this-file
 defmodule Bonny.Server.ReconcilerTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Bonny.Server.Reconciler
 
-  defmodule TestReconciler do
-    use Bonny.Server.Reconciler, frequency: 15, client: Bonny.K8sMockClient
+  alias Bonny.Server.Reconciler, as: MUT
 
-    @impl true
-    def reconcile(%{} = resource) do
-      Agent.update(TestReconcilerCache, fn resources -> [resource | resources] end)
+  defmodule K8sMock do
+    import K8s.Test.HTTPHelper
+
+    def conn(), do: Bonny.K8sMock.conn(__MODULE__)
+
+    def request(:get, "apis/example.com/v1/foos", _, _, opts) do
+      limit = get_in(opts, [:params, :limit])
+
+      case limit do
+        10 -> render(%{"items" => [%{"name" => "foo"}, %{"name" => "bar"}]})
+        1 -> render(%{"metadata" => %{"resourceVersion" => "1337"}})
+      end
+    end
+  end
+
+  defmodule TestController do
+    @behaviour MUT
+
+    def reconcile(resource) do
+      # Process runing test was registered under the name of its module
+      send(Bonny.Server.ReconcilerTest, {:name, resource["name"]})
+
       :ok
     end
-
-    @impl true
-    def reconcile_operation() do
-      K8s.Client.list("reconciler.test.foos/v1", :foos)
-    end
   end
 
-  defmodule TestReconcilerErrors do
-    use Bonny.Server.Reconciler, frequency: 15, client: Bonny.K8sMockClient
-
-    @impl Bonny.Server.Reconciler
-    def reconcile(%{} = resource) do
-      Agent.update(TestReconcilerCacheErr, fn resources -> [resource | resources] end)
-      :ok
-    end
-
-    @impl Bonny.Server.Reconciler
-    def reconcile_operation() do
-      K8s.Client.list("reconciler.test.errors/v1", :foos)
-    end
+  setup do
+    [conn: __MODULE__.K8sMock.conn()]
   end
 
-  test "schedule/2 sends `:run` after delay" do
-    Reconciler.schedule(self(), 1)
-    assert_receive :run, 2_000
-  end
+  test "reconciler returns a prepared stream that calls the reconcile function when run", %{
+    conn: conn
+  } do
+    Process.register(self(), __MODULE__)
 
-  describe "run/1" do
-    test "happy path" do
-      Agent.start_link(fn -> [] end, name: TestReconcilerCache)
-      Reconciler.run(TestReconciler)
-      Process.sleep(10)
+    operation = K8s.Client.list("example.com/v1", :foos)
+    MUT.get_stream(TestController, conn, operation) |> Stream.run()
 
-      resources = Agent.get(TestReconcilerCache, fn resources -> resources end)
-
-      names =
-        resources
-        |> Enum.map(fn %{"name" => name} -> name end)
-        |> Enum.sort()
-
-      assert names == ["bar", "foo"]
-    end
-
-    @tag :wip
-    test "Handles a stream with errors" do
-      Agent.start_link(fn -> [] end, name: TestReconcilerCacheErr)
-      Reconciler.run(TestReconcilerErrors)
-      Process.sleep(10)
-
-      resources = Agent.get(TestReconcilerCacheErr, fn resources -> resources end)
-
-      assert [%{"name" => "bar"}] == resources
-    end
+    assert_receive {:name, "foo"}
+    assert_receive {:name, "bar"}
   end
 end

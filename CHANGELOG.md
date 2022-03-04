@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## Added
+
+- `Bonny.Server.AsyncStreamRunner` to run streams in a separate process
+- `Bonny.Sys.Telemetry` defines `telemetry` spans and events
+
+## Updated
+
+- `Bonny.Server.Watcher` and `Bonny.Server.Reconciler` were rewritten completely. They now prepare streams which are to be run with `Bonny.Server.AsyncStreamRunner`
+- Dependency `k8s` was updated to version `~> 1.1` and code was refactored accordingly
+
+## Deprecated
+
+- `Bonny.Sys.Event` was deprecated in favor of `Bonny.Sys.Telemetry`
+
 ## [0.4.4] - 2021-08-09
 
 ### Added
