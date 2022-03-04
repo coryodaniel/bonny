@@ -13,7 +13,7 @@ defmodule Bonny.MixProject do
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [coveralls: :test, "coveralls.travis": :test, "coveralls.html": :test],
+      preferred_cli_env: cli_env(),
       docs: docs(),
       package: package(),
       aliases: aliases(),
@@ -39,6 +39,19 @@ defmodule Bonny.MixProject do
     ]
   end
 
+  defp cli_env do
+    [
+      coveralls: :test,
+      "coveralls.detail": :test,
+      "coveralls.post": :test,
+      "coveralls.html": :test,
+      "coveralls.travis": :test,
+      "coveralls.github": :test,
+      "coveralls.xml": :test,
+      "coveralls.json": :test
+    ]
+  end
+
   defp deps do
     [
       {:jason, "~> 1.1"},
@@ -55,7 +68,7 @@ defmodule Bonny.MixProject do
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
 
       # Test deps
-      {:excoveralls, "~> 0.12", only: :test}
+      {:excoveralls, "~> 0.14", only: :test}
     ]
   end
 

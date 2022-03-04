@@ -19,7 +19,7 @@ defmodule Bonny.Controller do
   """
   @callback conn() :: K8s.Conn.t()
 
-  # Action Callbacks
+  #  Action Callbacks
   @callback add(map()) :: :ok | :error
   @callback modify(map()) :: :ok | :error
   @callback delete(map()) :: :ok | :error
