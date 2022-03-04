@@ -67,7 +67,8 @@ config :bonny,
     MyApp.Controllers.V1.Memcached
   ],
 
-  # Function to call to get a K8s.Conn object
+  # Function to call to get a K8s.Conn object. 
+  # The function should return a %K8s.Conn{} struct or a {:ok, %K8s.Conn{}} tuple 
   get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "docker-for-desktop"]]},
 
   # The namespace to watch for Namespaced CRDs.

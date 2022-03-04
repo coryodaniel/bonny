@@ -1,5 +1,7 @@
 defmodule Bonny.Sys.Telemetry do
-  @moduledoc false
+  @moduledoc """
+  Telemetry event defimitions for this library
+  """
 
   @spans [
     [:reconciler, :reconcile],
