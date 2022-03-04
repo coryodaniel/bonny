@@ -61,7 +61,7 @@ defmodule Bonny.MixProject do
       {:ymlr, "~> 1.0"},
 
       # Dev deps
-      {:mix_test_watch, "~> 0.8", only: :dev, runtime: false},
+      {:mix_test_watch, "~> 1.1", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
       # {:ex_doc, "~> 0.23", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
