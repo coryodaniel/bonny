@@ -140,7 +140,7 @@ defmodule Bonny.Operator do
 
   @doc false
   @spec resources() :: map()
-  defp resources do
+  defp resources() do
     Application.get_env(:bonny, :resources, %{
       limits: %{cpu: "200m", memory: "200Mi"},
       requests: %{cpu: "200m", memory: "200Mi"}

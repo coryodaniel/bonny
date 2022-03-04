@@ -19,5 +19,5 @@ defmodule Bonny.Sys.Telemetry do
           end)
 
   @spec events() :: list()
-  def events, do: @events
+  def events(), do: @events
 end

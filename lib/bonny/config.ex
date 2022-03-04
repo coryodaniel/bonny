@@ -7,7 +7,7 @@ defmodule Bonny.Config do
   Kubernetes API Group of this operator
   """
   @spec group() :: binary
-  def group do
+  def group() do
     default = "#{project_name()}.example.com"
     Application.get_env(:bonny, :group, default)
   end

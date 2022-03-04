@@ -46,7 +46,7 @@ defmodule Mix.Bonny do
   end
 
   @spec no_umbrella! :: any
-  def no_umbrella! do
+  def no_umbrella!() do
     if Mix.Project.umbrella?() do
       Mix.raise("mix bonny.gen.* can only be run inside an application directory")
     end
