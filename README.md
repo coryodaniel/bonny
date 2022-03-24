@@ -80,6 +80,14 @@ other secrets), you should create `runtime.exs`:
 echo -e 'import Config\n\n' config/runtime.exs
 ```
 
+It is recommended that your `runtime.exs` file loads values from environment variables.
+However, if you plan to keep secrets directly in `runtime.exs`, you should add it to
+your `.gitignore` file
+
+```bash
+echo 'config/runtime.exs' >> .gitignore
+```
+
 You may wish to follow the [docs for `Config` to customize your setup](https://hexdocs.pm/elixir/1.13.2/Config.html)
 
 You are now ready to start configuring Bonny!
