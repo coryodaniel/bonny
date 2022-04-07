@@ -52,9 +52,17 @@ end
 
 ### Configuration
 
+#### Creating config files
+
+[`mix new <project>` no longer creates initial config files](https://github.com/elixir-lang/elixir/issues/8815).
+If you want to follow theses setup instructions you will need to create one.
+You can find the full documentation for [`Config` here](https://hexdocs.pm/elixir/1.13.2/Config.html).
+
+#### Configuring Bonny
+
 Bonny uses the [k8s client](https://github.com/coryodaniel/k8s) under the hood.
 
-The only configuration parameters required are `:bonny` `controllers` and a `:get_conn` callback:
+The only configuration parameters required are `:bonny` `controllers` and a `:get_conn` callback (Note: this file will not exist unless you created it in the previous step):
 
 ```elixir
 
