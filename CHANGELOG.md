@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-## [0.5.0] - 
+## [0.5.0] - 2022-04-23
 
 Version 0.5.0 comes with some major changes. Please read through the [migration guide](guides/migrations.md) before upgrading.
 
@@ -28,17 +28,21 @@ Version 0.5.0 comes with some major changes. Please read through the [migration 
 ## [0.4.4] - 2021-08-09
 
 ### Added
+
 - @impl to macros for clean compilation
 - error handling for mid-stream errors
+
 ## [0.4.3] - 2020-06-09
 
 ### Added
-- Configure watched namespace via config.exs or BONNY_POD_NAMESPACE 
-- BONNY_POD_NAMESPACE supports "magic" value "__ALL__"
+
+- Configure watched namespace via config.exs or BONNY_POD_NAMESPACE
+- BONNY_POD_NAMESPACE supports "magic" value "**ALL**"
 
 ## [0.4.1] - 2019-11-26
 
 ### Added
+
 - Support for reconciling/watching `core` resources
 
 ## [0.4.0] - 2019-10-23
