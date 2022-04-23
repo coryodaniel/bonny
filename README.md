@@ -45,7 +45,7 @@ Bonny can be installed by adding `bonny` to your list of dependencies in `mix.ex
 ```elixir
 def deps do
   [
-    {:bonny, "~> 0.4"}
+    {:bonny, "~> 0.5"}
   ]
 end
 ```
