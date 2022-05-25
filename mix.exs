@@ -1,6 +1,6 @@
 defmodule Bonny.MixProject do
   use Mix.Project
-  @version "0.5.0"
+  @version "0.5.1"
   @source_url "https://github.com/coryodaniel/bonny"
 
   def project do
@@ -81,7 +81,7 @@ defmodule Bonny.MixProject do
         "Changelog" => "#{@source_url}/blob/master/CHANGELOG.md",
         "GitHub" => @source_url
       },
-      files: ["lib", "mix.exs", "README.md", "LICENSE", "CHANGELOG.md"]
+      files: ["lib", "mix.exs", "priv", "README.md", "LICENSE", "CHANGELOG.md"]
     ]
   end
 
