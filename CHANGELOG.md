@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.5.1] - 2022-05-25
+
+- Add missing `priv` folder to package
+
 ## [0.5.0] - 2022-04-23
 
 Version 0.5.0 comes with some major changes. Please read through the [migration guide](guides/migrations.md) before upgrading.
