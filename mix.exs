@@ -58,7 +58,7 @@ defmodule Bonny.MixProject do
       {:k8s, "~> 1.1"},
       {:telemetry, "~> 1.0"},
       #  2.0 only supports Elixir >= 1.11
-      {:ymlr, "~> 1.0"},
+      {:ymlr, "~> 3.0"},
 
       # Dev deps
       {:mix_test_watch, "~> 1.1", only: :dev, runtime: false},
