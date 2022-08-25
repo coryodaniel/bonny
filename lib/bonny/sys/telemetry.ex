@@ -1,6 +1,6 @@
 defmodule Bonny.Sys.Telemetry do
   @moduledoc """
-  Telemetry event defimitions for this library
+  Telemetry event definitions for this library
   """
 
   @spans [

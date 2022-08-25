@@ -1,7 +1,7 @@
 defmodule Bonny.Sys.Event do
   @deprecated "Use Bonny.Sys.Telemetry instead"
   @moduledoc """
-  Telemetry event defimitions for this library
+  Telemetry event definitions for this library
   """
 
   @spec events() :: list()
