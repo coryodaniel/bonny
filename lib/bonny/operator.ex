@@ -99,7 +99,7 @@ defmodule Bonny.Operator do
       kind: "Deployment",
       metadata: %{
         labels: labels(),
-        name: Bonny.Config.service_account(),
+        name: Bonny.Config.name(),
         namespace: namespace
       },
       spec: %{
