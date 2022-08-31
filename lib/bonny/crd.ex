@@ -169,11 +169,15 @@ defmodule Bonny.CRD do
     |> Map.put(:versions, [
       %{
         name: version,
-        scheme: %{
-          openAPIV3Scheme: %{
-            additionalPrinterColumns: additional_printer_columns_v1
+        served: true,
+        storage: true,
+        schema: %{
+          openAPIV3Schema: %{
+            type: "object",
+            "x-kubernetes-preserve-unknown-fields": true
           }
-        }
+        },
+        additionalPrinterColumns: additional_printer_columns_v1
       }
     ])
   end

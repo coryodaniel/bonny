@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-## Updated
+### Updated
 
-- Use name of application in Deployments instead of service account name.
+- Use name of application in Deployments instead of service account name. ([#142](https://github.com/coryodaniel/bonny/pull/142))
+
+### Fixed
+
+- CRD manifest generation for `apiextensions.k8s.io/v1` ([#143](https://github.com/coryodaniel/bonny/pull/143), [#117](https://github.com/coryodaniel/bonny/issues/117), [#101](https://github.com/coryodaniel/bonny/pull/101))
 
 ## [0.5.1] - 2022-05-25
 

@@ -55,20 +55,24 @@ defmodule Bonny.CRDTest do
           versions: [
             %{
               name: "v1",
-              scheme: %{
-                openAPIV3Scheme: %{
-                  additionalPrinterColumns: [
-                    %{jsonPath: ".spec.test", description: "test", name: "test", type: "string"},
-                    %{
-                      jsonPath: ".metadata.creationTimestamp",
-                      description:
-                        "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\n\n      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
-                      name: "Age",
-                      type: "date"
-                    }
-                  ]
+              served: true,
+              storage: true,
+              schema: %{
+                openAPIV3Schema: %{
+                  type: "object",
+                  "x-kubernetes-preserve-unknown-fields": true
                 }
-              }
+              },
+              additionalPrinterColumns: [
+                %{jsonPath: ".spec.test", description: "test", name: "test", type: "string"},
+                %{
+                  jsonPath: ".metadata.creationTimestamp",
+                  description:
+                    "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\n\n      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+                  name: "Age",
+                  type: "date"
+                }
+              ]
             }
           ]
         }

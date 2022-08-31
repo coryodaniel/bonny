@@ -9,10 +9,10 @@ if Mix.env() == :test do
     http_provider: K8s.Client.DynamicHTTPProvider
 
   config :bonny,
-    controllers: [Widget, Cog],
+    controllers: [Widget, Cog, Whizbang],
     group: "example.com",
     get_conn: {Bonny.K8sMock, :conn},
-    api_version: "apiextensions.k8s.io/v1beta1"
+    api_version: "apiextensions.k8s.io/v1"
 end
 
 if Mix.env() == :dev do
