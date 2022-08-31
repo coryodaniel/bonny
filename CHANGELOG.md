@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Updated
 
-- Use name of application in Deployments instead of service account name.
+- Use name of application in Deployments instead of service account name. ([#142](https://github.com/coryodaniel/bonny/pull/142))
 
 ### Fixed
 
