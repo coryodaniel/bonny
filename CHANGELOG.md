@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+<!-- Add your changelog entry to the relevant subsection -->
+
+<!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
+
+## [0.5.2] - 2022-08-31
+
 ### Updated
 
 - Use name of application in Deployments instead of service account name. ([#142](https://github.com/coryodaniel/bonny/pull/142))
