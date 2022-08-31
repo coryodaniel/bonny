@@ -75,9 +75,14 @@ config :bonny,
     MyApp.Controllers.V1.Memcached
   ],
 
-  # Function to call to get a K8s.Conn object. 
-  # The function should return a %K8s.Conn{} struct or a {:ok, %K8s.Conn{}} tuple 
+  # Function to call to get a K8s.Conn object.
+  # The function should return a %K8s.Conn{} struct or a {:ok, %K8s.Conn{}} tuple
   get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "docker-for-desktop"]]},
+
+  # The API version of the CRD.
+  # Defaults to "apiextensions.k8s.io/v1beta1" which is not supported
+  # by newer versions of Kubernetes anymore.
+  api_version: "apiextensions.k8s.io/v1",
 
   # The namespace to watch for Namespaced CRDs.
   # Defaults to "default". `:all` for all namespaces
