@@ -55,8 +55,8 @@ defmodule Bonny.CRDTest do
           versions: [
             %{
               name: "v1",
-              scheme: %{
-                openAPIV3Scheme: %{
+              schema: %{
+                openAPIV3Schema: %{
                   additionalPrinterColumns: [
                     %{jsonPath: ".spec.test", description: "test", name: "test", type: "string"},
                     %{
