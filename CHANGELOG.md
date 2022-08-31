@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.1] - 2022-05-25
 
+## Updated
+
+- Use name of application in Deployments instead of service account name.
+
 ### Fixed
 
 - Add missing `priv` folder to package
