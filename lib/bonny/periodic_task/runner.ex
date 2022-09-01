@@ -1,7 +1,6 @@
 defmodule Bonny.PeriodicTask.Runner do
   @moduledoc false
   use GenServer
-  use Bitwise
   require Logger
   alias Bonny.PeriodicTask
 
