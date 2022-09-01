@@ -2,7 +2,10 @@ K3D_KUBECONFIG_PATH?=./integration.yaml
 MANIFEST_PATH?=./manifest/all-in-one.yaml
 CLUSTER_NAME=bonny-ex
 
-.PHONY: test lint analyze docs i
+.PHONY: help
+help: ## Show this help
+help:
+	@grep -E '^[\/a-zA-Z0-9._%-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 all: test lint docs analyze
 
@@ -29,15 +32,24 @@ k3d.delete: ## Delete k3d cluster
 k3d.create: ## Created k3d cluster
 	k3d cluster create ${CLUSTER_NAME} --servers 1 --wait
 
+.PHONY: lint
 lint:
 	mix format
 	mix credo
 
+.PHONY: test
 test:
-	mix test --cover
+	TEST_KUBECONFIG=${K3D_KUBECONFIG_PATH} mix test --include integration --cover
 
+.PHONY: test.watch
+test.watch: integration.yaml
+test.watch: ## Run all tests with mix.watch
+	TEST_KUBECONFIG=${K3D_KUBECONFIG_PATH} mix test.watch --include integration
+
+.PHONY: analyze
 analyze:
 	mix dialyzer
 
+.PHONY: docs
 docs:
 	mix docs
