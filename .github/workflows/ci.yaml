@@ -11,10 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        k8s_version: [latest]
         elixir: [1.13.x]
         otp: [24.x]
     steps:
       - uses: actions/checkout@v2
+
+      - uses: debianmaster/actions-k3s@v1.0.5
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
 
       - name: Setup elixir
         id: beam
@@ -63,7 +69,10 @@ jobs:
       - name: Run Coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mix coveralls.github
+        run: |
+          MIX_ENV=test mix bonny.gen.manifest --out ./manifest/all-in-one.yaml
+          kubectl apply -f ./manifest/all-in-one.yaml
+          TEST_KUBECONFIG=$KUBECONFIG mix coveralls.github --include integration
 
       # Create PLTs if no cache was found
       - name: Create PLTs
