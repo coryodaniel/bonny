@@ -10,7 +10,7 @@ defmodule Bonny.ControllerIntegrationTest do
 
   alias Bonny.Test.IntegrationHelper
 
-  @msg_timeout 500
+  @msg_timeout 2000
 
   setup_all do
     Supervisor.start_link([TestResource], strategy: :one_for_one)
