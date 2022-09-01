@@ -24,6 +24,6 @@ defmodule Bonny.Server.AsyncStreamRunnerTest do
     assert_receive({^ref, "Current number: 2"}, @msg_timeout)
     assert_receive({^ref, "Current number: 3"}, @msg_timeout)
     assert_receive({^ref, "Current number: 4"}, @msg_timeout)
-    assert_receive({:DOWN, ^monitor_ref, :process, _, :normal}, @msg_timeout)
+    assert_receive({:DOWN, ^monitor_ref, :process, _, _}, @msg_timeout)
   end
 end

@@ -1,5 +1,13 @@
 defmodule TestResource do
-  @moduledoc false
+  @moduledoc """
+  This controller gets the pid and reference from the resource's spec.
+  It then sends a message including that reference, the action and the resource
+  name to the pid from the resource.
+
+  A test can therefore create a resource with its own pid (self()), send it
+  to kubernetes and wait to receive the message from this controller.
+  """
+
   use Bonny.Controller
 
   @names %{
