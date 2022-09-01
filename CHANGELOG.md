@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+### Added
+
+- `Bonny.Controller.add_owner_reference/3` used to add the owner reference to resources created by the controller.
+
+<!-- No new entries below this line! -->
+
 ## [0.5.2] - 2022-08-31
 
 ### Updated
