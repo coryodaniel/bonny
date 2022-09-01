@@ -4,7 +4,7 @@ defmodule Bonny.ControllerTest do
 
   describe "__using__" do
     test "crd/0 returns the CRD definition" do
-      assert Whizbang.crd() == %Bonny.CRD{
+      assert V1.Whizbang.crd() == %Bonny.CRD{
                additional_printer_columns: [],
                group: "example.com",
                names: %{
@@ -19,7 +19,7 @@ defmodule Bonny.ControllerTest do
     end
 
     test "sets a default group" do
-      crd = Whizbang.crd()
+      crd = V1.Whizbang.crd()
       assert crd.group == "example.com"
     end
 
@@ -29,7 +29,7 @@ defmodule Bonny.ControllerTest do
     end
 
     test "defaults the scope to `:namespaced`" do
-      assert Whizbang.crd().scope == :namespaced
+      assert V1.Whizbang.crd().scope == :namespaced
     end
 
     test "allows overriding a scope" do
@@ -37,19 +37,19 @@ defmodule Bonny.ControllerTest do
     end
 
     test "derives the kind from the module name" do
-      crd = Whizbang.crd()
+      crd = V1.Whizbang.crd()
       kind = crd.names[:kind]
       assert kind == "Whizbang"
     end
 
     test "allows overriding a kind" do
-      crd = V1.Whizbang.crd()
+      crd = V2.Whizbang.crd()
       kind = crd.names[:kind]
-      assert kind == "Whizzo"
+      assert kind == "Foo"
     end
 
     test "sets a default version" do
-      assert Whizbang.crd().version == "v1"
+      assert V1.Whizbang.crd().version == "v1"
     end
 
     test "derives the version from the module name" do
@@ -61,7 +61,7 @@ defmodule Bonny.ControllerTest do
     end
 
     test "derives the CRD names from the module" do
-      assert Whizbang.crd().names == %{
+      assert V1.Whizbang.crd().names == %{
                plural: "whizbangs",
                singular: "whizbang",
                kind: "Whizbang",
@@ -79,7 +79,7 @@ defmodule Bonny.ControllerTest do
     end
 
     test "defaults additional printer columns to nil" do
-      assert Whizbang.crd().additional_printer_columns == []
+      assert V1.Whizbang.crd().additional_printer_columns == []
     end
 
     test "allows additional printer columns to be overridden" do

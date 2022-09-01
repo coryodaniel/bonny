@@ -67,8 +67,6 @@ defmodule Bonny.Server.WatcherTest do
   end
 
   defmodule TestController do
-    @behaviour MUT
-
     def add(resource) do
       # Process runing test was registered under the name of its module
       send(Bonny.Server.WatcherTest, {:add, resource["metadata"]["name"]})

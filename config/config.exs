@@ -1,7 +1,7 @@
 import Config
 
 if Mix.env() == :test do
-  config :logger, level: :error
+  config :logger, level: :none
 
   config :k8s,
     discovery_driver: K8s.Discovery.Driver.File,
@@ -9,7 +9,7 @@ if Mix.env() == :test do
     http_provider: K8s.Client.DynamicHTTPProvider
 
   config :bonny,
-    controllers: [Widget, Cog, Whizbang],
+    controllers: [Widget, Cog, V1.Whizbang, TestResource],
     group: "example.com",
     get_conn: {Bonny.K8sMock, :conn},
     api_version: "apiextensions.k8s.io/v1"
