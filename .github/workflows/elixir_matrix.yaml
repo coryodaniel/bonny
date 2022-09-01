@@ -11,14 +11,33 @@ jobs:
     name: Test - OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
     strategy:
       matrix:
-        # See https://hexdocs.pm/elixir/1.13/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
-        otp: [22.x, 23.x, 24.x]
-        elixir: [1.11.x, 1.12.x, 1.13.x]
+        # See https://hexdocs.pm/elixir/1.13/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
+        otp: ["22.x", "23.x", "24.x", "25.x"]
+        elixir: ["1.10.x", "1.11.x", "1.12.x", "1.13.x", "1.14.x"]
+        exclude:
+          # OTP 22
+          - elixir: "1.14.x"
+            otp: "22.x"
+          # OTP 23
+          - elixir: "1.10.x"
+            otp: "23.x"
+          # OTP 24
+          - elixir: "1.10.x"
+            otp: "24.x"
+          - elixir: "1.11.x"
+            otp: "24.x"
+          # OTP 25
+          - elixir: "1.10.x"
+            otp: "25.x"
+          - elixir: "1.11.x"
+            otp: "25.x"
+          - elixir: "1.12.x"
+            otp: "25.x"
+          - elixir: "1.13.x"
+            otp: "25.x"
         include:
-          - otp: 22.x
-            elixir: 1.10.x
-          - otp: 23.x
-            elixir: 1.10.x
+          - elixir: "1.13.4"
+            otp: "25.x"
     steps:
       - uses: actions/checkout@v1.0.0
       - uses: erlef/setup-beam@v1
