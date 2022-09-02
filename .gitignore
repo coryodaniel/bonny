@@ -25,3 +25,9 @@ bonny-*.tar
 .elixir_ls
 
 /.vscode
+
+# Ignore generated manifest
+/manifest
+
+# Ignore local k8s config/integration test files
+/integration.yaml

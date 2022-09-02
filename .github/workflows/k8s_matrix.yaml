@@ -1,0 +1,46 @@
+name: Kubernetes Compatibility Matrix
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        k8s_version: [v1.21.9-k3s1, v1.22.6-k3s1, latest]
+        otp: [25.x] # with 24.3.0 hackney returns :checkout_failure
+        elixir: [1.14.x]
+    steps:
+      - uses: debianmaster/actions-k3s@v1.0.5
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+      - uses: actions/checkout@v1.0.0
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+
+      - name: Retrieve Build Cache
+        uses: actions/cache@v3
+        id: build-folder-cache
+        with:
+          path: _build
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-build-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+
+      - name: Retrieve Mix Dependencies Cache
+        uses: actions/cache@v3
+        id: mix-cache
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+
+      - run: mix local.rebar --force
+      - run: mix local.hex --force
+      - run: mix deps.get
+      - run: |
+          MIX_ENV=test mix bonny.gen.manifest --out ./manifest/all-in-one.yaml
+          kubectl apply -f ./manifest/all-in-one.yaml
+          TEST_KUBECONFIG=$KUBECONFIG mix test --only integration

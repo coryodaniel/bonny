@@ -19,6 +19,7 @@ defmodule Bonny.OperatorTest do
         %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["test-resource"], verbs: ["*"]},
         %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
         %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
       ]
@@ -39,6 +40,7 @@ defmodule Bonny.OperatorTest do
       %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
       %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
       %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["test-resource"], verbs: ["*"]},
       %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
       %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
     ]
@@ -120,6 +122,32 @@ defmodule Bonny.OperatorTest do
         spec: %{
           group: "example.com",
           names: %{kind: "Whizbang", plural: "whizbangs", shortNames: nil, singular: "whizbang"},
+          scope: "Namespaced",
+          versions: [
+            %{
+              additionalPrinterColumns: [],
+              name: "v1",
+              schema: %{
+                openAPIV3Schema: %{type: "object", "x-kubernetes-preserve-unknown-fields": true}
+              },
+              served: true,
+              storage: true
+            }
+          ]
+        }
+      },
+      %{
+        apiVersion: "apiextensions.k8s.io/v1",
+        kind: "CustomResourceDefinition",
+        metadata: %{labels: %{"k8s-app" => "bonny"}, name: "test-resource.example.com"},
+        spec: %{
+          group: "example.com",
+          names: %{
+            kind: "TestResource",
+            plural: "test-resource",
+            shortNames: nil,
+            singular: "test-resource"
+          },
           scope: "Namespaced",
           versions: [
             %{

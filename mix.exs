@@ -95,7 +95,11 @@ defmodule Bonny.MixProject do
       extras: [
         "README.md",
         "CHANGELOG.md",
-        "guides/migrations.md"
+        "guides/migrations.md",
+        "guides/testing.md"
+      ],
+      groups_for_extras: [
+        Guides: Path.wildcard("guides/*.md")
       ]
     ]
   end

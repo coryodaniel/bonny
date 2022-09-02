@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Bonny.Controller.add_owner_reference/3` used to add the owner reference to resources created by the controller.
+- An integration test suite was added that runs tests agains a "real" kubernetes cluster on the CI pipeline
 
 <!-- No new entries below this line! -->
 
