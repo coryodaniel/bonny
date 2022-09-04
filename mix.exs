@@ -54,6 +54,7 @@ defmodule Bonny.MixProject do
 
   defp deps do
     [
+      {:inflex, "~> 2.0"},
       {:jason, "~> 1.1"},
       {:k8s, "~> 1.1"},
       {:telemetry, "~> 1.0"},
