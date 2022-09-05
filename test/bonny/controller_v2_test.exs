@@ -7,8 +7,27 @@ defmodule Bonny.ControllerV2Test do
 
     use Bonny.ControllerV2,
       rbac_rule: {"", ["secrets"], ["get", "watch", "list"]},
-      rbac_rule: {"v1", ["pods"], ["get", "watch", "list"]},
-      crd: [
+      rbac_rule: {"v1", ["pods"], ["get", "watch", "list"]}
+
+    @impl true
+    @spec add(map()) :: :ok | :error
+    def add(_resource), do: :ok
+
+    @impl true
+    @spec modify(map()) :: :ok | :error
+    def modify(_resource), do: :ok
+
+    @impl true
+    @spec delete(map()) :: :ok | :error
+    def delete(_resource), do: :ok
+
+    @impl true
+    @spec reconcile(map()) :: :ok | :error
+    def reconcile(_resource), do: :ok
+
+    @impl true
+    def customize_crd(_) do
+      Bonny.CRDV2.new!(
         group: "test.com",
         version: Version.new!(name: "v1beta1", storage: false),
         version:
@@ -39,23 +58,8 @@ defmodule Bonny.ControllerV2Test do
           ),
         scope: :Cluster,
         names: Bonny.CRDV2.kind_to_names("FooBar", ["fb"])
-      ]
-
-    @impl true
-    @spec add(map()) :: :ok | :error
-    def add(_resource), do: :ok
-
-    @impl true
-    @spec modify(map()) :: :ok | :error
-    def modify(_resource), do: :ok
-
-    @impl true
-    @spec delete(map()) :: :ok | :error
-    def delete(_resource), do: :ok
-
-    @impl true
-    @spec reconcile(map()) :: :ok | :error
-    def reconcile(_resource), do: :ok
+      )
+    end
   end
 
   describe "__using__" do

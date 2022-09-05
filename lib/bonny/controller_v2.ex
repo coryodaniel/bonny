@@ -4,14 +4,22 @@ defmodule Bonny.ControllerV2 do
   @doc """
   Should return an operation to list resources for watching and reconciliation.
 
-  Bonny.Controller comes with a default implementation
+  Bonny.ControllerV2 comes with a default implementation which can be
+  overridden by the using module.
   """
   @callback list_operation() :: K8s.Operation.t()
 
   @doc """
-  Bonny.Controller comes with a default implementation which returns Bonny.Config.config()
+  Bonny.ControllerV2 comes with a default implementation which returns Bonny.Config.config()
   """
   @callback conn() :: K8s.Conn.t()
+
+  @doc """
+  This is an optional callback which can be implemented by the using module in order
+  to customize the auto-generated CRD. Implement this e.g. to add your OpenAPIV3Schema
+  to the resulting CRD in your manifest.
+  """
+  @callback customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
 
   #  Action Callbacks
   @callback add(map()) :: :ok | :error
@@ -19,25 +27,11 @@ defmodule Bonny.ControllerV2 do
   @callback delete(map()) :: :ok | :error
   @callback reconcile(map()) :: :ok | :error
 
+  @optional_callbacks customize_crd: 1
+
   @doc false
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
-      crd =
-        opts
-        |> Keyword.fetch!(:crd)
-        |> Keyword.put_new_lazy(:names, fn ->
-          __MODULE__
-          |> Atom.to_string()
-          |> String.split(".")
-          |> Enum.reverse()
-          |> hd()
-          |> CRD.kind_to_names()
-        end)
-        |> Keyword.put_new(:group, Bonny.Config.group())
-        |> Keyword.put_new_lazy(:version, fn -> Bonny.CRD.Version.new!(name: "v1") end)
-        |> CRD.new!()
-        |> Macro.escape()
-
       rules =
         opts
         |> Keyword.get_lazy(:rbac_rules, fn -> Keyword.get_values(opts, :rbac_rule) end)
@@ -53,9 +47,6 @@ defmodule Bonny.ControllerV2 do
       use Supervisor
 
       @behaviour Bonny.ControllerV2
-
-      @spec crd() :: Bonny.CRDV2.t()
-      def crd(), do: unquote(crd)
 
       @spec rules() :: list(map())
       def rules(), do: unquote(rules)
@@ -97,14 +88,39 @@ defmodule Bonny.ControllerV2 do
       @impl Bonny.ControllerV2
       defdelegate conn(), to: Bonny.Config
 
+      def crd(), do: Bonny.ControllerV2.crd(__MODULE__)
+
       defoverridable list_operation: 0, conn: 0
+    end
+  end
+
+  def crd(controller) do
+    names =
+      controller
+      |> Atom.to_string()
+      |> String.split(".")
+      |> Enum.reverse()
+      |> hd()
+      |> CRD.kind_to_names()
+
+    crd =
+      CRD.new!(
+        names: names,
+        group: Bonny.Config.group(),
+        version: Bonny.CRD.Version.new!(name: "v1")
+      )
+
+    if function_exported?(controller, :customize_crd, 1) do
+      controller.customize_crd(crd)
+    else
+      crd
     end
   end
 
   @spec list_operation(module()) :: K8s.Operation.t()
   def list_operation(controller) do
     crd = controller.crd()
-    api_version = Bonny.CRDV2.resource_api_version(crd)
+    api_version = CRD.resource_api_version(crd)
     kind = crd.names.kind
 
     case crd.scope do

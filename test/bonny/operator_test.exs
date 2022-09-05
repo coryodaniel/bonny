@@ -187,7 +187,15 @@ defmodule Bonny.OperatorTest do
               deprecated: false,
               deprecationWarning: nil,
               schema: %{
-                openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}
+                openAPIV3Schema: %{
+                  type: :object,
+                  properties: %{
+                    spec: %{
+                      properties: %{pid: %{type: "string"}, ref: %{type: "string"}},
+                      type: "object"
+                    }
+                  }
+                }
               },
               additionalPrinterColumns: []
             }

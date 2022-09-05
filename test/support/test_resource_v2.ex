@@ -9,13 +9,38 @@ defmodule TestResourceV2 do
   """
 
   use Bonny.ControllerV2,
-    rbac_rule: {"", ["secrets"], ["get", "watch", "list"]},
-    crd: [
-      scope: :Namespaced
-    ]
+    rbac_rule: {"", ["secrets"], ["get", "watch", "list"]}
 
+  @impl true
   @spec conn() :: K8s.Conn.t()
   def conn(), do: Bonny.Test.IntegrationHelper.conn()
+
+  @impl true
+  @spec customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
+  def customize_crd(crd) do
+    struct!(
+      crd,
+      versions: [
+        Bonny.CRD.Version.new!(
+          name: "v1",
+          schema: %{
+            openAPIV3Schema: %{
+              type: :object,
+              properties: %{
+                spec: %{
+                  type: "object",
+                  properties: %{
+                    pid: %{type: "string"},
+                    ref: %{type: "string"}
+                  }
+                }
+              }
+            }
+          }
+        )
+      ]
+    )
+  end
 
   @impl true
   def add(resource), do: respond(resource, :created)
