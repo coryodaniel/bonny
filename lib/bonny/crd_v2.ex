@@ -47,6 +47,7 @@ defmodule Bonny.CRDV2 do
 
   @spec new!(keyword()) :: __MODULE__.t()
   def new!(fields) do
+    fields = Keyword.update!(fields, :versions, &List.wrap/1)
     struct!(__MODULE__, fields)
   end
 
@@ -75,4 +76,45 @@ defmodule Bonny.CRDV2 do
       shortNames: short_names
     }
   end
+
+  @doc """
+  Gets apiVersion of the actual resources.
+
+  ## Examples
+    Returns apiVersion for an operator
+
+      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: "hello.example.com", versions: [Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
+      "hello.example.com/v1"
+
+    Returns apiVersion for `apps` resources
+
+      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: "apps", versions: [Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
+      "apps/v1"
+
+    Returns apiVersion for `core` resources
+
+      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: "", versions: [Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
+      "v1"
+
+      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: nil, versions: [Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
+      "v1"
+
+    Returs apiVresion of stored version if there are multiple
+
+      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: "", versions: [Bonny.CRD.Version.new!(name: "v1beta1", storage: false), Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
+      "v1"
+  """
+  @spec resource_api_version(t()) :: String.t()
+  def resource_api_version(crd),
+    do: api_group_prefix(crd) <> stored_version(crd)
+
+  defp stored_version(crd) do
+    crd.versions
+    |> Enum.find(&(&1.storage == true))
+    |> Map.get(:name)
+  end
+
+  defp api_group_prefix(%__MODULE__{group: ""}), do: ""
+  defp api_group_prefix(%__MODULE__{group: nil}), do: ""
+  defp api_group_prefix(%__MODULE__{group: g}), do: "#{g}/"
 end

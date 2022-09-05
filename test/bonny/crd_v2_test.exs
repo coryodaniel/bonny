@@ -3,8 +3,24 @@ defmodule Bonny.CRDV2Test do
 
   use ExUnit.Case, async: true
 
-  alias Bonny.CRDV2, as: MUT
   alias Bonny.CRD.Version
+  alias Bonny.CRDV2, as: MUT
+
+  doctest MUT
+
+  describe "new!/1" do
+    test "wraps versions if only one given" do
+      crd =
+        MUT.new!(
+          names: %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []},
+          group: "example.xom",
+          versions: struct!(Version, name: "v1")
+        )
+
+      assert is_list(crd.versions)
+      assert 1 == length(crd.versions)
+    end
+  end
 
   describe "to_manifest" do
     test "creates manifest" do
@@ -31,8 +47,10 @@ defmodule Bonny.CRDV2Test do
               storage: true,
               deprecated: false,
               deprecationWarning: nil,
-              schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true},
-              additional_printer_columns: []
+              schema: %{
+                openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}
+              },
+              additionalPrinterColumns: []
             }
           ]
         }
