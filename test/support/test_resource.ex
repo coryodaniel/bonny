@@ -11,8 +11,8 @@ defmodule TestResource do
   use Bonny.Controller
 
   @names %{
-    plural: "test-resource",
-    singular: "test-resource",
+    plural: "testresources",
+    singular: "testresource",
     kind: "TestResource",
     shortNames: nil
   }
