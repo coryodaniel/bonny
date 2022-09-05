@@ -44,10 +44,17 @@ defmodule TestResourceV2 do
 
   @impl true
   def apply(resource), do: respond(resource, :applied)
+
   @impl true
   def delete(resource), do: respond(resource, :deleted)
+
+  @spec add(map()) :: :ok | :error
   def add(resource), do: respond(resource, :created)
+
+  @spec modify(map()) :: :ok | :error
   def modify(resource), do: respond(resource, :modified)
+
+  @spec reconcile(map()) :: :ok | :error
   def reconcile(resource), do: respond(resource, :reconciled)
 
   defp parse_pid(pid), do: pid |> String.to_charlist() |> :erlang.list_to_pid()
