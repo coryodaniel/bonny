@@ -1,9 +1,17 @@
 defmodule Bonny.Test.IntegrationHelper do
   @moduledoc "Kubernetes integration helpers for test suite"
 
-  @resource_for_test """
+  @test_resource """
   apiVersion: example.com/v1
   kind: TestResource
+  metadata:
+    namespace: default
+  spec: {}
+  """
+
+  @test_resource_v2 """
+  apiVersion: example.com/v1
+  kind: TestResourceV2
   metadata:
     namespace: default
   spec: {}
@@ -34,9 +42,27 @@ defmodule Bonny.Test.IntegrationHelper do
     }
   end
 
+  @spec delete_test_resource_v2(binary()) :: map()
+  def delete_test_resource_v2(name) do
+    %{
+      "apiVersion" => "example.com/v1",
+      "kind" => "TestResourceV2",
+      "metadata" => %{"namespace" => "default", "name" => name}
+    }
+  end
+
   @spec create_test_resource(binary(), pid(), reference()) :: map()
   def create_test_resource(name, pid, ref) do
-    @resource_for_test
+    @test_resource
+    |> YamlElixir.read_from_string!()
+    |> put_in(["metadata", "name"], name)
+    |> put_in(["spec", "pid"], pid |> :erlang.pid_to_list() |> List.to_string())
+    |> put_in(["spec", "ref"], ref |> :erlang.ref_to_list() |> List.to_string())
+  end
+
+  @spec create_test_resource_v2(binary(), pid(), reference()) :: map()
+  def create_test_resource_v2(name, pid, ref) do
+    @test_resource_v2
     |> YamlElixir.read_from_string!()
     |> put_in(["metadata", "name"], name)
     |> put_in(["spec", "pid"], pid |> :erlang.pid_to_list() |> List.to_string())

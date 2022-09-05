@@ -47,7 +47,11 @@ defmodule Bonny.CRDV2 do
 
   @spec new!(keyword()) :: __MODULE__.t()
   def new!(fields) do
-    fields = Keyword.update!(fields, :versions, &List.wrap/1)
+    fields =
+      fields
+      |> Keyword.put_new_lazy(:versions, fn -> Keyword.get_values(fields, :version) end)
+      |> Keyword.delete(:version)
+
     struct!(__MODULE__, fields)
   end
 

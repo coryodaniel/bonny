@@ -14,7 +14,7 @@ defmodule Bonny.CRDV2Test do
         MUT.new!(
           names: %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []},
           group: "example.xom",
-          versions: struct!(Version, name: "v1")
+          version: struct!(Version, name: "v1")
         )
 
       assert is_list(crd.versions)
