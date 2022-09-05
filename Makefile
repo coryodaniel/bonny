@@ -1,5 +1,4 @@
 K3D_KUBECONFIG_PATH?=./integration.yaml
-MANIFEST_PATH?=./manifest/all-in-one.yaml
 CLUSTER_NAME=bonny-ex
 
 .PHONY: help
@@ -18,9 +17,8 @@ integration.yaml: ## Create a k3d cluster
 .PHONY: test.integration
 test.integration: integration.yaml
 test.integration: ## Run integration tests using k3d `make cluster`
-	MIX_ENV=test mix bonny.gen.manifest --out ${MANIFEST_PATH}
+	MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
 	kubectl config use-context k3d-${CLUSTER_NAME}
-	kubectl apply -f ${MANIFEST_PATH} 
 	TEST_KUBECONFIG=${K3D_KUBECONFIG_PATH} mix test --only integration
 
 .PHONY: k3d.delete

@@ -41,6 +41,5 @@ jobs:
       - run: mix local.hex --force
       - run: mix deps.get
       - run: |
-          MIX_ENV=test mix bonny.gen.manifest --out ./manifest/all-in-one.yaml
-          kubectl apply -f ./manifest/all-in-one.yaml
+          MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
           TEST_KUBECONFIG=$KUBECONFIG mix test --only integration
