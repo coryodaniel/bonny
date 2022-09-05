@@ -28,7 +28,7 @@ defmodule TestResourceV2 do
               type: :object,
               properties: %{
                 spec: %{
-                  type: "object",
+                  type: :object,
                   properties: %{
                     pid: %{type: "string"},
                     ref: %{type: "string"}
@@ -43,12 +43,11 @@ defmodule TestResourceV2 do
   end
 
   @impl true
-  def add(resource), do: respond(resource, :created)
-  @impl true
-  def modify(resource), do: respond(resource, :modified)
+  def apply(resource), do: respond(resource, :applied)
   @impl true
   def delete(resource), do: respond(resource, :deleted)
-  @impl true
+  def add(resource), do: respond(resource, :created)
+  def modify(resource), do: respond(resource, :modified)
   def reconcile(resource), do: respond(resource, :reconciled)
 
   defp parse_pid(pid), do: pid |> String.to_charlist() |> :erlang.list_to_pid()

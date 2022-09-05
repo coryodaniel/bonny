@@ -35,10 +35,8 @@ defmodule Bonny.ControllerV2 do
   @callback customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
 
   #  Action Callbacks
-  @callback add(map()) :: :ok | :error
-  @callback modify(map()) :: :ok | :error
+  @callback apply(map()) :: :ok | :error
   @callback delete(map()) :: :ok | :error
-  @callback reconcile(map()) :: :ok | :error
 
   @optional_callbacks customize_crd: 1
 
@@ -101,9 +99,13 @@ defmodule Bonny.ControllerV2 do
       @impl Bonny.ControllerV2
       defdelegate conn(), to: Bonny.Config
 
+      defdelegate add(resource), to: __MODULE__, as: :apply
+      defdelegate modify(resource), to: __MODULE__, as: :apply
+      defdelegate reconcile(resource), to: __MODULE__, as: :apply
+
       def crd(), do: Bonny.ControllerV2.crd(__MODULE__)
 
-      defoverridable list_operation: 0, conn: 0
+      defoverridable list_operation: 0, conn: 0, add: 1, modify: 1, reconcile: 1
     end
   end
 

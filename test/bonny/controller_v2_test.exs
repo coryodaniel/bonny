@@ -10,20 +10,12 @@ defmodule Bonny.ControllerV2Test do
       rbac_rule: {"v1", ["pods"], ["get", "watch", "list"]}
 
     @impl true
-    @spec add(map()) :: :ok | :error
-    def add(_resource), do: :ok
-
-    @impl true
-    @spec modify(map()) :: :ok | :error
-    def modify(_resource), do: :ok
+    @spec apply(map()) :: :ok | :error
+    def apply(_resource), do: :ok
 
     @impl true
     @spec delete(map()) :: :ok | :error
     def delete(_resource), do: :ok
-
-    @impl true
-    @spec reconcile(map()) :: :ok | :error
-    def reconcile(_resource), do: :ok
 
     @impl true
     def customize_crd(_) do
