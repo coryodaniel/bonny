@@ -90,7 +90,7 @@ defmodule Bonny.OperatorTest do
               ],
               name: "v1",
               schema: %{
-                openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}
+                openAPIV3Schema: %{type: "object", "x-kubernetes-preserve-unknown-fields": true}
               },
               served: true,
               storage: true
@@ -111,7 +111,7 @@ defmodule Bonny.OperatorTest do
               additionalPrinterColumns: [],
               name: "v1",
               schema: %{
-                openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}
+                openAPIV3Schema: %{type: "object", "x-kubernetes-preserve-unknown-fields": true}
               },
               served: true,
               storage: true
@@ -132,7 +132,7 @@ defmodule Bonny.OperatorTest do
               additionalPrinterColumns: [],
               name: "v1",
               schema: %{
-                openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}
+                openAPIV3Schema: %{type: "object", "x-kubernetes-preserve-unknown-fields": true}
               },
               served: true,
               storage: true
@@ -158,7 +158,7 @@ defmodule Bonny.OperatorTest do
               additionalPrinterColumns: [],
               name: "v1",
               schema: %{
-                openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}
+                openAPIV3Schema: %{type: "object", "x-kubernetes-preserve-unknown-fields": true}
               },
               served: true,
               storage: true
@@ -191,7 +191,7 @@ defmodule Bonny.OperatorTest do
                   type: :object,
                   properties: %{
                     spec: %{
-                      properties: %{pid: %{type: "string"}, ref: %{type: "string"}},
+                      properties: %{pid: %{type: :string}, ref: %{type: :string}},
                       type: :object
                     }
                   }

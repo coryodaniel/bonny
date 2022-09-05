@@ -30,8 +30,8 @@ defmodule TestResourceV2 do
                 spec: %{
                   type: :object,
                   properties: %{
-                    pid: %{type: "string"},
-                    ref: %{type: "string"}
+                    pid: %{type: :string},
+                    ref: %{type: :string}
                   }
                 }
               }

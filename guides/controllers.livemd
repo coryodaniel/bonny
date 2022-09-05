@@ -15,15 +15,15 @@ Name the controller like the `kind` of the kubernetes resource it processes.
 
 Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It therefore has to implement callbacks for the actions. Per default there are two functions to implement:
 
-* `apply/1` - Called upon the resource's creation, modification or reconciliation.
-* `delete/1` - Called upon the resource's deletion.
+- `apply/1` - Called upon the resource's creation, modification or reconciliation.
+- `delete/1` - Called upon the resource's deletion.
 
 However, if you want more fine graned control over the four actions, you can alternatively implement all the action callbacks:
 
-* `add/1` - Called upon the resource's creation.
-* `delete/1` - Called upon the resource's deletion.
-* `modify/1` - Called upon the resource's modification.
-* `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
+- `add/1` - Called upon the resource's creation.
+- `delete/1` - Called upon the resource's deletion.
+- `modify/1` - Called upon the resource's modification.
+- `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
 
 ```elixir
 defmodule Apple do
@@ -119,10 +119,10 @@ defmodule DatabaseUser do
         Bonny.CRD.Version.new!(
           name: "v1",
           additionalPrinterColumns: [
-            %{name: "username", type: "string", jsonPath: ".spec.username"},
+            %{name: "username", type: :string, jsonPath: ".spec.username"},
             %{
               name: "connections",
-              type: "integer",
+              type: :integer,
               jsonPath: ".spec.max_conn",
               description: "Maximum of simultaneos connections allowed for this user."
             }

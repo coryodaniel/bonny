@@ -8,7 +8,7 @@ defmodule Bonny.CRD.Version do
   """
   @type printer_column_t :: %{
           required(:name) => String.t(),
-          required(:type) => String.t(),
+          required(:type) => String.t() | atom(),
           optional(:description) => String.t(),
           required(:jsonPath) => String.t()
         }
