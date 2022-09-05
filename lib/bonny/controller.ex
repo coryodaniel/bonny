@@ -26,6 +26,7 @@ defmodule Bonny.Controller do
   @callback reconcile(map()) :: :ok | :error
 
   @doc false
+  @deprecated "Use `Bonny.ControllerV2` instead."
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       Module.register_attribute(__MODULE__, :rule, accumulate: true)
