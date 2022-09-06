@@ -15,15 +15,15 @@ Name the controller like the `kind` of the kubernetes resource it processes.
 
 Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It therefore has to implement callbacks for the actions. Per default there are two functions to implement:
 
-* `apply/1` - Called upon the resource's creation, modification or reconciliation.
-* `delete/1` - Called upon the resource's deletion.
+- `apply/1` - Called upon the resource's creation, modification or reconciliation.
+- `delete/1` - Called upon the resource's deletion.
 
 However, if you want more fine graned control over the four actions, you can alternatively implement all the action callbacks:
 
-* `add/1` - Called upon the resource's creation.
-* `delete/1` - Called upon the resource's deletion.
-* `modify/1` - Called upon the resource's modification.
-* `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
+- `add/1` - Called upon the resource's creation.
+- `delete/1` - Called upon the resource's deletion.
+- `modify/1` - Called upon the resource's modification.
+- `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
 
 ```elixir
 defmodule Apple do
@@ -68,7 +68,7 @@ Pear.rules()
 
 ## Custom Resource Definition (CRD)
 
-The controller creates a default CRD from the information it's got, being the module name and some variables defined in `config.exs`. This CRD is used to generate the manifest when running `mix bonny.gen.manifest`. The default CRD for our `Apple` controller looks as follows:
+Bonny creates a default CRD from the information it's got, i.e. the module name and some variables defined in `config.exs`. This CRD is used to generate the manifest when running `mix bonny.gen.manifest`. The default CRD for our `Apple` controller looks as follows:
 
 ```elixir
 Apple.crd() |> Bonny.CRDV2.to_manifest()
