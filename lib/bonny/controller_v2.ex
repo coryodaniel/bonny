@@ -103,6 +103,8 @@ defmodule Bonny.ControllerV2 do
       defdelegate modify(resource), to: __MODULE__, as: :apply
       defdelegate reconcile(resource), to: __MODULE__, as: :apply
 
+      defdelegate add_owner_reference(resource, owner, opts \\ []), to: Bonny.Resource
+
       def crd(), do: Bonny.ControllerV2.crd(__MODULE__)
 
       defoverridable list_operation: 0, conn: 0, add: 1, modify: 1, reconcile: 1

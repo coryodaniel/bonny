@@ -18,6 +18,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
   setup do
     resource_name = "test-#{:rand.uniform(10_000)}"
     conn = IntegrationHelper.conn()
+    ref = make_ref()
 
     timeout =
       "TEST_WAIT_TIMEOUT"
@@ -33,17 +34,16 @@ defmodule Bonny.ControllerV2IntegrationTest do
       {:ok, _} = K8s.Client.run(conn, delete_op)
     end)
 
-    [conn: conn, resource_name: resource_name, timeout: timeout]
+    [conn: conn, resource_name: resource_name, timeout: timeout, ref: ref]
   end
 
   @tag :integration
   test "creating resource triggers add/1", %{
     conn: conn,
     resource_name: resource_name,
-    timeout: timeout
+    timeout: timeout,
+    ref: ref
   } do
-    ref = make_ref()
-
     resource = IntegrationHelper.create_test_resource_v2(resource_name, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
@@ -55,10 +55,9 @@ defmodule Bonny.ControllerV2IntegrationTest do
   test "updating resource triggers modify/1", %{
     conn: conn,
     resource_name: resource_name,
-    timeout: timeout
+    timeout: timeout,
+    ref: ref
   } do
-    ref = make_ref()
-
     resource = IntegrationHelper.create_test_resource_v2(resource_name, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
@@ -78,10 +77,9 @@ defmodule Bonny.ControllerV2IntegrationTest do
   test "deleting resource triggers delete/1", %{
     conn: conn,
     resource_name: resource_name,
-    timeout: timeout
+    timeout: timeout,
+    ref: ref
   } do
-    ref = make_ref()
-
     resource = IntegrationHelper.create_test_resource_v2(resource_name, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
