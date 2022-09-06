@@ -7,39 +7,37 @@ Application.put_env(:bonny, :group, "example.com")
 Application.put_env(:bonny, :operator_name, "livebook-operator")
 ```
 
-## A simple controller
+## Creating a Simple Controller
 
-Name the controller like the `kind` of the kubernetes resource it processes.
+Use `mix bonny.gen.controller KindOfYourResource` to create a controller.
 
-### Actions
+Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It therefore has to implement the callbacks to handle the events. Per default there are two functions to implement:
 
-Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It therefore has to implement callbacks for the actions. Per default there are two functions to implement:
+* `apply/1` - Called upon the resource's creation, modification or reconciliation.
+* `delete/1` - Called upon the resource's deletion.
 
-- `apply/1` - Called upon the resource's creation, modification or reconciliation.
-- `delete/1` - Called upon the resource's deletion.
+If you want more fine-graned control over the four actions, you can implement all the action callbacks:
 
-However, if you want more fine graned control over the four actions, you can alternatively implement all the action callbacks:
+* `add/1` - Called upon the resource's creation.
+* `delete/1` - Called upon the resource's deletion.
+* `modify/1` - Called upon the resource's modification.
+* `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
 
-- `add/1` - Called upon the resource's creation.
-- `delete/1` - Called upon the resource's deletion.
-- `modify/1` - Called upon the resource's modification.
-- `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
+Per default, `add/1`, `modify/1` and `reconcile/1` are all delegated to `apply/1`.
 
 ```elixir
 defmodule Apple do
   use Bonny.ControllerV2
 
   @impl true
-  def apply(resource), do: IO.inspect(resource)
+  def apply(resource),
+    # Create subresources or so...
+    do: IO.inspect(resource)
 
   @impl true
-  def delete(resource), do: IO.inspect(resource)
-
-  # These are default implemenations of add, modify and reoncile
-
-  def add(resource), do: apply(resource)
-  def modify(resource), do: apply(resource)
-  def reconcnile(resource), do: apply(resource)
+  def delete(resource),
+    #  Clean up
+    do: IO.inspect(resource)
 end
 ```
 
@@ -56,10 +54,12 @@ defmodule Pear do
     rbac_rule: {"v1", ["pods"], ["get", "watch", "list"]}
 
   @impl true
-  def apply(resource), do: IO.inspect(resource)
+  def apply(resource),
+    do: IO.inspect(resource)
 
   @impl true
-  def delete(resource), do: IO.inspect(resource)
+  def delete(resource),
+    do: IO.inspect(resource)
 end
 
 # When generating the manifest, an auto-generated function `rules/0` is called.
@@ -68,13 +68,53 @@ Pear.rules()
 
 ## Custom Resource Definition (CRD)
 
-Bonny creates a default CRD from the information it's got, i.e. the module name and some variables defined in `config.exs`. This CRD is used to generate the manifest when running `mix bonny.gen.manifest`. The default CRD for our `Apple` controller looks as follows:
+The controller creates a default CRD from the information it's got, being the module name and some variables defined in `config.exs`. This CRD is used to generate the manifest when running `mix bonny.gen.manifest`. The default CRD for our `Apple` controller looks as follows:
 
 ```elixir
 Apple.crd() |> Bonny.CRDV2.to_manifest()
 ```
 
-As you can see, the CRD contains one single version with the default name of "v1" and a very generic OpenAPIV3Schema which allows the spec to be an arbitrary object. If you would like to add additional printer columns or define a more specific schema and profit from kubernetes' input validation, you can implement `customize_crd/1` in your controller:
+As you can see, the CRD contains one single version with the default name of "v1" and a very generic OpenAPIV3Schema which allows the spec to be an arbitrary object. If you would like to add additional printer columns or define a more specific schema and profit from kubernetes' input validation, you can implement `customize_crd/1` in your controller.
+
+<!-- livebook:{"break_markdown":true} -->
+
+A simple case where you would just set `additionalPrinterColumns` on the default version:
+
+```elixir
+defmodule Peach do
+  use Bonny.ControllerV2
+
+  @impl true
+  def apply(resource), do: IO.inspect(resource)
+
+  @impl true
+  def delete(resource), do: IO.inspect(resource)
+
+  @impl true
+  @spec customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
+  def customize_crd(crd) do
+    additional_printer_columns = [
+      %{name: "color", type: "string", jsonPath: ".spec.color"},
+      %{
+        name: "ripe",
+        type: "boolean",
+        jsonPath: ".spec.ripe",
+        description: "Indicates whether the fruit is ripe or not."
+      }
+    ]
+
+    put_in(
+      crd,
+      [Access.key(:versions), Access.at(0), Access.key(:additionalPrinterColumns)],
+      additional_printer_columns
+    )
+  end
+end
+
+Peach.crd() |> Bonny.CRDV2.to_manifest()
+```
+
+A more complex case where you redefine the whole CRD including OpenAPIV3Schema:
 
 ```elixir
 defmodule DatabaseUser do

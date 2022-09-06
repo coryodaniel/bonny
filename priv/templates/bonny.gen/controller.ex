@@ -42,6 +42,25 @@ defmodule <%= app_name %>.Controller.<%= mod_name %> do
   end
   ```
 
+  ## Add additional printer columns
+
+  In version 1 of this controller, you could define additional printer columns
+  as module attributes. Now they are part of your versions array and are defined
+  withing the `customize_crd/1` callback.
+
+  ```
+  @impl Bonny.ControllerV2
+  def customize_crd(crd) do
+    additional_printer_columns = [
+      %{name: "username", type: "string", jsonPath: ".spec.username"},
+      %{name: "connections", type: "integer", jsonPath: ".spec.max_conn", description: "Maximum of simultaneos connections allowed for this user."
+      }
+    ]
+    put_in(crd, [Access.key(:versions), Access.at(0), Access.key(:additionalPrinterColumns)], additional_printer_columns)
+  end
+
+  ```
+
   ## Declare RBAC permissions used by this module
 
   RBAC rules can be declared by passing them as options to the `use` statement and generated using `mix bonny.manifest`.
@@ -53,12 +72,6 @@ defmodule <%= app_name %>.Controller.<%= mod_name %> do
     # rbac_rule: {apiGroup, resources_list, verbs_list}
     rbac_rule: {"", ["pods", "secrets"], ["*"]},
     rbac_rule: {"apiextensions.k8s.io", ["foo"], ["*"]}
-
-  ## Add additional printer columns
-
-  In version 1 of this controller, you could define additional printer columns
-  as module attributes. Now they are part of your versions array and are defined
-  withing the `customize_crd/1` callback.
   """
 
   use Bonny.ControllerV2
