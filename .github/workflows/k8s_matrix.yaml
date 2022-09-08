@@ -43,4 +43,4 @@ jobs:
       - run: |
           MIX_ENV=test mix compile
           MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
-          TEST_WAIT_TIMEOUT=5000 TEST_KUBECONFIG=$KUBECONFIG mix test --only integration
+          TEST_WAIT_TIMEOUT=10000 TEST_KUBECONFIG=$KUBECONFIG mix test --only integration
