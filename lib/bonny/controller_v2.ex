@@ -95,6 +95,9 @@ defmodule Bonny.ControllerV2 do
         )
       end
 
+      reject_observed_generations? = Keyword.get(opts, :reject_observed_generations, false)
+      def reject_observed_generations?(), do: unquote(reject_observed_generations?)
+
       @impl Bonny.ControllerV2
       def list_operation(), do: Bonny.ControllerV2.list_operation(__MODULE__)
 
@@ -119,18 +122,21 @@ defmodule Bonny.ControllerV2 do
       |> hd()
       |> CRD.kind_to_names()
 
-    crd =
-      CRD.new!(
-        names: names,
-        group: Bonny.Config.group(),
-        version: Bonny.CRD.Version.new!(name: "v1")
-      )
-
-    if function_exported?(controller, :customize_crd, 1) do
-      controller.customize_crd(crd)
-    else
-      crd
-    end
+    CRD.new!(
+      names: names,
+      group: Bonny.Config.group(),
+      version: Bonny.CRD.Version.new!(name: "v1")
+    )
+    |> then(fn crd ->
+      if function_exported?(controller, :customize_crd, 1),
+        do: controller.customize_crd(crd),
+        else: crd
+    end)
+    |> then(fn crd ->
+      if controller.reject_observed_generations?(),
+        do: add_obseved_generation_status(crd),
+        else: crd
+    end)
   end
 
   @spec list_operation(module()) :: K8s.Operation.t()
@@ -143,5 +149,36 @@ defmodule Bonny.ControllerV2 do
       :Namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
       _ -> K8s.Client.list(api_version, kind)
     end
+  end
+
+  defp add_obseved_generation_status(crd) do
+    crd
+    |> update_in(
+      [
+        Access.key(:versions),
+        Access.filter(& &1.storage)
+      ],
+      fn version ->
+        put_in(
+          version,
+          [
+            Access.key(:subresources, %{}),
+            :status
+          ],
+          %{}
+        )
+        |> put_in(
+          [
+            Access.key(:schema, %{}),
+            Access.key(:openAPIV3Schema, %{type: :object}),
+            Access.key(:properties, %{}),
+            Access.key(:status, %{type: :object, properties: %{}}),
+            Access.key(:properties, %{}),
+            :observedGeneration
+          ],
+          %{type: :integer}
+        )
+      end
+    )
   end
 end

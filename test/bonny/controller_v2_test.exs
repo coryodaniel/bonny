@@ -70,6 +70,25 @@ defmodule Bonny.ControllerV2Test do
              } = crd
 
       assert 2 == length(crd.versions)
+
+      # no subresource
+      assert %{} == hd(crd.versions).subresources
+    end
+
+    test "creates status subresource if reject_observed_generations is true" do
+      crd = TestResourceV3.crd()
+
+      assert %{status: %{}} == hd(crd.versions).subresources
+
+      assert %{properties: %{observedGeneration: %{type: :integer}}, type: :object} ==
+               get_in(crd, [
+                 Access.key(:versions),
+                 Access.at(0),
+                 Access.key(:schema),
+                 :openAPIV3Schema,
+                 :properties,
+                 :status
+               ])
     end
 
     test "creates rules/0 with all rules" do

@@ -28,7 +28,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     cleanup = fn ->
       delete_op =
         resource_name
-        |> IntegrationHelper.delete_test_resource_v2()
+        |> IntegrationHelper.delete_test_resource(:v2)
         |> K8s.Client.delete()
 
       {:ok, _} = K8s.Client.run(conn, delete_op)
@@ -46,7 +46,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     ref: ref,
     cleanup: cleanup
   } do
-    resource = IntegrationHelper.create_test_resource_v2(resource_name, self(), ref)
+    resource = IntegrationHelper.create_test_resource(resource_name, :v2, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
     assert_receive({^ref, :created, ^resource_name}, timeout)
@@ -62,7 +62,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     ref: ref,
     cleanup: cleanup
   } do
-    resource = IntegrationHelper.create_test_resource_v2(resource_name, self(), ref)
+    resource = IntegrationHelper.create_test_resource(resource_name, :v2, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
     assert_receive({^ref, :created, ^resource_name}, timeout)
@@ -86,7 +86,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     ref: ref,
     cleanup: cleanup
   } do
-    resource = IntegrationHelper.create_test_resource_v2(resource_name, self(), ref)
+    resource = IntegrationHelper.create_test_resource(resource_name, :v2, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
     assert_receive({^ref, :created, ^resource_name}, timeout)
