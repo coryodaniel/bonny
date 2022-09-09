@@ -75,6 +75,9 @@ defmodule <%= app_name %>.Controller.<%= mod_name %> do
   """
 
   use Bonny.ControllerV2
+    # check the controller guide for an explanation on skip_observed_generations.
+    # If you enable skip_observed_generations, make sure to regenerate your manifest!
+    skip_observed_generations: false
     # rbac_rule: {"", ["pods", "secrets"], ["*"]}
 
   @doc """
