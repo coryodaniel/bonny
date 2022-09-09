@@ -75,7 +75,7 @@ defmodule Bonny.ControllerV2Test do
       assert %{} == hd(crd.versions).subresources
     end
 
-    test "creates status subresource if reject_observed_generations is true" do
+    test "creates status subresource if skip_observed_generations is true" do
       crd = TestResourceV3.crd()
 
       assert %{status: %{}} == hd(crd.versions).subresources

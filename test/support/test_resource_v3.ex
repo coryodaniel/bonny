@@ -4,7 +4,7 @@ defmodule TestResourceV3 do
   """
 
   use Bonny.ControllerV2,
-    reject_observed_generations: true
+    skip_observed_generations: true
 
   @impl true
   @spec conn() :: K8s.Conn.t()
@@ -26,11 +26,21 @@ defmodule TestResourceV3 do
                   type: :object,
                   properties: %{
                     pid: %{type: :string},
-                    ref: %{type: :string}
+                    ref: %{type: :string},
+                    rand: %{type: :string}
+                  }
+                },
+                status: %{
+                  type: :object,
+                  properties: %{
+                    rand: %{type: :string}
                   }
                 }
               }
             }
+          },
+          subresources: %{
+            status: %{}
           }
         )
       ]

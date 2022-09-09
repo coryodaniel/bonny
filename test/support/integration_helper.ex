@@ -23,15 +23,6 @@ defmodule Bonny.Test.IntegrationHelper do
     }
   end
 
-  @spec delete_test_resource(binary(), atom()) :: map()
-  def delete_test_resource(name, version) do
-    %{
-      "apiVersion" => "example.com/v1",
-      "kind" => @kinds[version],
-      "metadata" => %{"namespace" => "default", "name" => name}
-    }
-  end
-
   @spec create_test_resource(binary(), atom(), pid(), reference()) :: map()
   def create_test_resource(name, version, pid, ref) do
     """

@@ -57,6 +57,8 @@ defmodule Bonny.ControllerV2 do
         end)
         |> Macro.escape()
 
+      skip_observed_generations = Keyword.get(opts, :skip_observed_generations, false)
+
       use Supervisor
 
       @behaviour Bonny.ControllerV2
@@ -78,7 +80,10 @@ defmodule Bonny.ControllerV2 do
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.WatchServer,
            name: __MODULE__.WatchServer,
-           stream: Bonny.Server.Watcher.get_stream(__MODULE__, conn, list_operation),
+           stream:
+             Bonny.Server.Watcher.get_stream(__MODULE__, conn, list_operation,
+               skip_observed_generations: unquote(skip_observed_generations)
+             ),
            termination_delay: 5_000},
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.ReconcileServer,
@@ -95,8 +100,7 @@ defmodule Bonny.ControllerV2 do
         )
       end
 
-      reject_observed_generations? = Keyword.get(opts, :reject_observed_generations, false)
-      def reject_observed_generations?(), do: unquote(reject_observed_generations?)
+      def skip_observed_generations(), do: unquote(skip_observed_generations)
 
       @impl Bonny.ControllerV2
       def list_operation(), do: Bonny.ControllerV2.list_operation(__MODULE__)
@@ -133,7 +137,7 @@ defmodule Bonny.ControllerV2 do
         else: crd
     end)
     |> then(fn crd ->
-      if controller.reject_observed_generations?(),
+      if controller.skip_observed_generations(),
         do: add_obseved_generation_status(crd),
         else: crd
     end)
