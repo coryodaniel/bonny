@@ -100,6 +100,7 @@ defmodule Bonny.ControllerV2 do
         )
       end
 
+      @spec skip_observed_generations() :: boolean
       def skip_observed_generations(), do: unquote(skip_observed_generations)
 
       @impl Bonny.ControllerV2
@@ -163,14 +164,8 @@ defmodule Bonny.ControllerV2 do
         Access.filter(& &1.storage)
       ],
       fn version ->
-        put_in(
-          version,
-          [
-            Access.key(:subresources, %{}),
-            :status
-          ],
-          %{}
-        )
+        version
+        |> put_in([Access.key(:subresources, %{}), :status], %{})
         |> put_in(
           [
             Access.key(:schema, %{}),
