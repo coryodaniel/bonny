@@ -15,14 +15,14 @@ defmodule Bonny.Server.Watcher do
 
   @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), Keyword.t()) :: Enumerable.t()
   def get_stream(controller, conn, watch_operation, opts \\ []) do
-    reject_observed_genrations = Keyword.get(opts, :skip_observed_generations, false)
+    skip_observed_generations = Keyword.get(opts, :skip_observed_generations, false)
     {:ok, watch_stream} = K8s.Client.watch_and_stream(conn, watch_operation)
 
     watch_stream
-    |> Stream.reject(&(reject_observed_genrations && observed_generation?(&1)))
+    |> Stream.reject(&(skip_observed_generations && observed_generation?(&1)))
     |> Stream.map(&watch_event_handler(controller, &1))
     |> Stream.map(fn
-      {:ok, resource} when reject_observed_genrations ->
+      {:ok, resource} when skip_observed_generations ->
         set_observed_generations(resource, controller, conn)
         :ok
 
