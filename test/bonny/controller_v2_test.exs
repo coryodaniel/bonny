@@ -80,7 +80,10 @@ defmodule Bonny.ControllerV2Test do
 
       assert %{status: %{}} == hd(crd.versions).subresources
 
-      assert %{properties: %{observedGeneration: %{type: :integer}}, type: :object} ==
+      assert %{
+               properties: %{observedGeneration: %{type: :integer}, rand: %{type: :string}},
+               type: :object
+             } ==
                get_in(crd, [
                  Access.key(:versions),
                  Access.at(0),

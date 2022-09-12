@@ -7,6 +7,12 @@
       "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
     },
     {
+      "kind": "Widget",
+      "name": "widgets/status",
+      "namespaced": false,
+      "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
+    },
+    {
       "kind": "Cog",
       "name": "cogs",
       "namespaced": false,

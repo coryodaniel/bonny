@@ -61,6 +61,8 @@ defmodule Bonny.ControllerV2 do
 
       use Supervisor
 
+      import Bonny.Resource, only: [add_owner_reference: 2]
+
       @behaviour Bonny.ControllerV2
 
       @spec rules() :: list(map())
@@ -88,7 +90,10 @@ defmodule Bonny.ControllerV2 do
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.ReconcileServer,
            name: __MODULE__.ReconcileServer,
-           stream: Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation),
+           stream:
+             Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation,
+               skip_observed_generations: unquote(skip_observed_generations)
+             ),
            termination_delay: 30_000}
         ]
 
@@ -108,8 +113,6 @@ defmodule Bonny.ControllerV2 do
 
       @impl Bonny.ControllerV2
       defdelegate conn(), to: Bonny.Config
-
-      defdelegate add_owner_reference(resource, owner, opts \\ []), to: Bonny.Resource
 
       def crd(), do: Bonny.ControllerV2.crd(__MODULE__)
 
@@ -138,9 +141,10 @@ defmodule Bonny.ControllerV2 do
         else: crd
     end)
     |> then(fn crd ->
-      if controller.skip_observed_generations(),
-        do: add_obseved_generation_status(crd),
-        else: crd
+      if function_exported?(controller, :skip_observed_generations, 0) &&
+           controller.skip_observed_generations(),
+         do: add_obseved_generation_status(crd),
+         else: crd
     end)
   end
 

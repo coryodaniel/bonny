@@ -1,4 +1,4 @@
-defmodule TestResourceV3 do
+defmodule TestResourceV32 do
   @moduledoc """
   Like TestResourceV2 but observed generations are rejected.
   """
@@ -14,44 +14,12 @@ defmodule TestResourceV3 do
   def list_operation() do
     __MODULE__
     |> Bonny.ControllerV2.list_operation()
-    |> K8s.Operation.put_label_selector(K8s.Selector.label({"version", "3.1"}))
+    |> K8s.Operation.put_label_selector(K8s.Selector.label({"version", "3.2"}))
   end
 
-  @impl true
-  @spec customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
+  @impl Bonny.ControllerV2
   def customize_crd(crd) do
-    struct!(
-      crd,
-      versions: [
-        Bonny.CRD.Version.new!(
-          name: "v1",
-          schema: %{
-            openAPIV3Schema: %{
-              type: :object,
-              properties: %{
-                spec: %{
-                  type: :object,
-                  properties: %{
-                    pid: %{type: :string},
-                    ref: %{type: :string},
-                    rand: %{type: :string}
-                  }
-                },
-                status: %{
-                  type: :object,
-                  properties: %{
-                    rand: %{type: :string}
-                  }
-                }
-              }
-            }
-          },
-          subresources: %{
-            status: %{}
-          }
-        )
-      ]
-    )
+    struct!(crd, names: Bonny.CRDV2.kind_to_names("TestResourceV3"))
   end
 
   @impl true

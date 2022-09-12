@@ -23,8 +23,10 @@ defmodule Bonny.Test.IntegrationHelper do
     }
   end
 
-  @spec create_test_resource(binary(), atom(), pid(), reference()) :: map()
-  def create_test_resource(name, version, pid, ref) do
+  @spec create_test_resource(binary(), atom(), pid(), reference(), keyword()) :: map()
+  def create_test_resource(name, version, pid, ref, opts \\ []) do
+    labels = Keyword.get(opts, :labels, %{})
+
     """
     apiVersion: example.com/v1
     kind: #{@kinds[version]}
@@ -36,5 +38,6 @@ defmodule Bonny.Test.IntegrationHelper do
       ref: "#{ref |> :erlang.ref_to_list() |> List.to_string()}"
     """
     |> YamlElixir.read_from_string!()
+    |> put_in(~w(metadata labels), labels)
   end
 end

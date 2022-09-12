@@ -23,26 +23,35 @@ defmodule Bonny.Server.Reconciler do
 
   @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), keyword()) :: Enumerable.t()
   def get_stream(controller, conn, reconcile_operation, opts \\ []) do
+    {skip_observed_generations, opts} = Keyword.pop(opts, :skip_observed_generations, false)
+    plural = Bonny.ControllerV2.crd(controller).names.plural
     {:ok, reconciliation_stream} = K8s.Client.stream(conn, reconcile_operation, opts)
-    reconcile_all(reconciliation_stream, controller)
+
+    reconciliation_stream
+    |> reconcile_all(controller)
+    |> Stream.filter(&match?({:ok, {:ok, _}}, &1))
+    |> Stream.map(fn {:ok, {:ok, resource}} ->
+      if skip_observed_generations,
+        do: Bonny.Resource.set_observed_generation(resource),
+        else: resource
+    end)
+    |> Stream.map(&Bonny.Resource.apply_status(&1, plural, conn))
   end
 
   defp reconcile_all(resource_stream, controller) do
-    resource_stream
-    |> Task.async_stream(
+    Task.async_stream(
+      resource_stream,
       fn
         resource when is_map(resource) ->
-          reconcile_single_resource(resource, controller)
           metadata = %{module: controller}
           Logger.debug("Reconciler fetch succeeded", metadata)
-
-          resource
+          reconcile_single_resource(resource, controller)
 
         {:error, error} ->
           metadata = %{module: controller, error: error}
           Logger.debug("Reconciler fetch failed", metadata)
 
-          error
+          :error
       end,
       ordered: false
     )
@@ -61,11 +70,11 @@ defmodule Bonny.Server.Reconciler do
       case controller.reconcile(resource) do
         :ok ->
           Logger.debug("Reconciler reconciliation succeeded", metadata)
-          {:ok, metadata}
+          {{:ok, resource}, metadata}
 
         {:ok, _} ->
           Logger.debug("Reconciler reconciliation succeeded", metadata)
-          {:ok, metadata}
+          {{:ok, resource}, metadata}
 
         {:error, error} ->
           metadata = Map.put(metadata, :error, error)
