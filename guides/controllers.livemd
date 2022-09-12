@@ -15,6 +15,7 @@ Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It t
 
 * `apply/1` - Called upon the resource's creation, modification or reconciliation.
 * `delete/1` - Called upon the resource's deletion.
+* `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
 
 If you want more fine-graned control over the four actions, you can implement all the action callbacks:
 
@@ -23,7 +24,7 @@ If you want more fine-graned control over the four actions, you can implement al
 * `modify/1` - Called upon the resource's modification.
 * `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
 
-Per default, `add/1`, `modify/1` and `reconcile/1` are all delegated to `apply/1`.
+Per default, `add/1` and`modify/1` are all delegated to `apply/1`.
 
 ```elixir
 defmodule Apple do
@@ -60,6 +61,10 @@ defmodule Pear do
   @impl true
   def delete(resource),
     do: IO.inspect(resource)
+
+  @impl true
+  def reconcile(resource),
+    do: IO.inspect(resource)
 end
 
 # When generating the manifest, an auto-generated function `rules/0` is called.
@@ -89,6 +94,9 @@ defmodule Peach do
 
   @impl true
   def delete(resource), do: IO.inspect(resource)
+
+  @impl true
+  def reconcile(resource), do: IO.inspect(resource)
 
   @impl true
   @spec customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
@@ -125,6 +133,9 @@ defmodule DatabaseUser do
 
   @impl true
   def delete(resource), do: IO.inspect(resource)
+
+  @impl true
+  def reconcile(resource), do: IO.inspect(resource)
 
   @impl true
   @spec customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
