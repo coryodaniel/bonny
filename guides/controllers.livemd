@@ -13,10 +13,10 @@ Use `mix bonny.gen.controller KindOfYourResource` to create a controller.
 
 Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It therefore has to implement the following action callbacks to handle the events:
 
-* `add/1` - Called upon the resource's creation.
-* `delete/1` - Called upon the resource's deletion.
-* `modify/1` - Called upon the resource's modification.
-* `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
+- `add/1` - Called upon the resource's creation.
+- `delete/1` - Called upon the resource's deletion.
+- `modify/1` - Called upon the resource's modification.
+- `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
 
 If you used `mix bonny.gen.controller` to create the controller, `add/1` and `modify/1` are delegated to a function `apply/1`. Feel free to change this default behaviour.
 
@@ -260,6 +260,9 @@ defmodule Plum do
 
   @impl true
   def delete(resource), do: IO.inspect(resource)
+
+  @impl true
+  def reconcile(resource), do: IO.inspect(resource)
 end
 
 Plum.crd() |> Bonny.CRDV2.to_manifest()
@@ -267,5 +270,6 @@ Plum.crd() |> Bonny.CRDV2.to_manifest()
 
 ### Some important remarks
 
-* If you enable skipping observed generations, you MUST re-generate the manifest using `mix bonny.gen.manifest`.
-* Your `add` and `modify` callbacks are not called if you change the metadata of a resource, e.g. labels or annotations (since only changing the spec increments the generation).
+- When enabling skipping of observed generations, you MUST re-generate the manifest using `mix bonny.gen.manifest`.
+- Your `apply/1` (and/or `add/1` and `modify/1`) callbacks are not called if you change the metadata of a resource, e.g. labels or annotations (since only changing the spec increments the generation).
+- The `reconcile/1` action is meant to "fix" deviated states. Therefore it is always called, even if the reconciled generation has already been observed.
