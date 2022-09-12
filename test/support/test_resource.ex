@@ -21,7 +21,7 @@ defmodule TestResource do
   def conn(), do: Bonny.Test.IntegrationHelper.conn()
 
   @impl true
-  def add(resource), do: respond(resource, :created)
+  def add(resource), do: respond(resource, :added)
   @impl true
   def modify(resource), do: respond(resource, :modified)
   @impl true

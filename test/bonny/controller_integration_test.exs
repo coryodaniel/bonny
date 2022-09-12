@@ -51,7 +51,7 @@ defmodule Bonny.ControllerIntegrationTest do
     resource = IntegrationHelper.create_test_resource(resource_name, :v1, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
-    assert_receive({^ref, :created, ^resource_name}, timeout)
+    assert_receive({^ref, :added, ^resource_name}, timeout)
   end
 
   @tag :integration
@@ -64,7 +64,7 @@ defmodule Bonny.ControllerIntegrationTest do
     resource = IntegrationHelper.create_test_resource(resource_name, :v1, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
-    assert_receive({^ref, :created, ^resource_name}, timeout)
+    assert_receive({^ref, :added, ^resource_name}, timeout)
 
     apply_op =
       resource
@@ -85,7 +85,7 @@ defmodule Bonny.ControllerIntegrationTest do
     resource = IntegrationHelper.create_test_resource(resource_name, :v1, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
-    assert_receive({^ref, :created, ^resource_name}, timeout)
+    assert_receive({^ref, :added, ^resource_name}, timeout)
 
     delete_op = K8s.Client.delete(resource)
     {:ok, _} = K8s.Client.run(conn, delete_op)

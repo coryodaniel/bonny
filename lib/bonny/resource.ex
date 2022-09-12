@@ -43,9 +43,6 @@ defmodule Bonny.Resource do
         }
       }
   """
-
-  @type t :: map()
-
   @spec add_owner_reference(t(), map(), keyword(boolean)) :: t()
   def add_owner_reference(resource, owner, opts \\ [])
 

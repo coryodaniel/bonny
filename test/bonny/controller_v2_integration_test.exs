@@ -59,7 +59,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     {:ok, _} = K8s.Client.run(conn, create_op)
 
     assert_receive(
-      {^ref, :created, ^resource_name},
+      {^ref, :added, ^resource_name},
       timeout
     )
   end
@@ -76,7 +76,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     {:ok, _} = K8s.Client.run(conn, create_op)
 
     assert_receive(
-      {^ref, :created, ^resource_name},
+      {^ref, :added, ^resource_name},
       timeout
     )
 
@@ -105,7 +105,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     {:ok, _} = K8s.Client.run(conn, create_op)
 
     assert_receive(
-      {^ref, :created, ^resource_name},
+      {^ref, :added, ^resource_name},
       timeout
     )
 
@@ -158,10 +158,10 @@ defmodule Bonny.ControllerV2IntegrationTest do
 
     # create
     create_op = K8s.Client.create(resource)
-    {:ok, created_resource} = K8s.Client.run(conn, create_op)
+    {:ok, added_resource} = K8s.Client.run(conn, create_op)
 
     assert_receive(
-      {^ref, :created, ^resource_name},
+      {^ref, :added, ^resource_name},
       timeout
     )
 
@@ -170,7 +170,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     {:ok, _} =
       K8s.Client.wait_until(conn, get_op,
         find: ["status", "observedGeneration"],
-        eval: created_resource["metadata"]["generation"],
+        eval: added_resource["metadata"]["generation"],
         timeout: timeout
       )
 
@@ -187,7 +187,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
       timeout
     )
 
-    assert updated_resource["metadata"]["generation"] > created_resource["metadata"]["generation"]
+    assert updated_resource["metadata"]["generation"] > added_resource["metadata"]["generation"]
 
     {:ok, _} =
       K8s.Client.wait_until(conn, get_op,
@@ -210,7 +210,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
       )
 
     create_op = K8s.Client.create(resource)
-    {:ok, created_reource} = K8s.Client.run(conn, create_op)
+    {:ok, added_reource} = K8s.Client.run(conn, create_op)
 
     start_supervised(TestResourceV32)
 
@@ -224,7 +224,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     {:ok, _} =
       K8s.Client.wait_until(conn, get_op,
         find: ["status", "observedGeneration"],
-        eval: created_reource["metadata"]["generation"],
+        eval: added_reource["metadata"]["generation"],
         timeout: timeout
       )
   end
@@ -242,10 +242,10 @@ defmodule Bonny.ControllerV2IntegrationTest do
       )
 
     create_op = K8s.Client.create(resource)
-    {:ok, created_resource} = K8s.Client.run(conn, create_op)
+    {:ok, added_resource} = K8s.Client.run(conn, create_op)
 
     assert_receive(
-      {^ref, :created, ^resource_name},
+      {^ref, :added, ^resource_name},
       timeout
     )
 
@@ -254,7 +254,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     {:ok, _} =
       K8s.Client.wait_until(conn, get_op,
         find: ["status", "observedGeneration"],
-        eval: created_resource["metadata"]["generation"],
+        eval: added_resource["metadata"]["generation"],
         timeout: timeout
       )
 
@@ -299,7 +299,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
       {:ok, _} = K8s.Client.run(conn, create_op)
 
       assert_receive(
-        {^ref, :created, ^resource_name},
+        {^ref, :added, ^resource_name},
         timeout
       )
     end)

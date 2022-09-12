@@ -6,7 +6,7 @@ defmodule TestResourceV3 do
   use Bonny.ControllerV2,
     skip_observed_generations: true
 
-  @impl true
+  @impl Bonny.ControllerV2
   @spec conn() :: K8s.Conn.t()
   def conn(), do: Bonny.Test.IntegrationHelper.conn()
 
@@ -17,7 +17,7 @@ defmodule TestResourceV3 do
     |> K8s.Operation.put_label_selector(K8s.Selector.label({"version", "3.1"}))
   end
 
-  @impl true
+  @impl Bonny.ControllerV2
   @spec customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
   def customize_crd(crd) do
     struct!(
@@ -54,19 +54,16 @@ defmodule TestResourceV3 do
     )
   end
 
-  @impl true
-  def apply(resource), do: respond(resource, :applied)
+  @impl Bonny.ControllerV2
+  def add(resource), do: respond(resource, :added)
 
-  @impl true
-  def delete(resource), do: respond(resource, :deleted)
-
-  @spec add(map()) :: :ok | :error
-  def add(resource), do: respond(resource, :created)
-
-  @spec modify(map()) :: :ok | :error
+  @impl Bonny.ControllerV2
   def modify(resource), do: respond(resource, :modified)
 
-  @spec reconcile(map()) :: :ok | :error
+  @impl Bonny.ControllerV2
+  def delete(resource), do: respond(resource, :deleted)
+
+  @impl Bonny.ControllerV2
   def reconcile(resource), do: respond(resource, :reconciled)
 
   defp parse_pid(pid), do: pid |> String.to_charlist() |> :erlang.list_to_pid()

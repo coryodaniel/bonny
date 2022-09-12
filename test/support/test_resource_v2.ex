@@ -43,7 +43,7 @@ defmodule TestResourceV2 do
   end
 
   @impl true
-  def add(resource), do: respond(resource, :created)
+  def add(resource), do: respond(resource, :added)
 
   @impl true
   def modify(resource), do: respond(resource, :modified)
