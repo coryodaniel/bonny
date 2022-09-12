@@ -78,22 +78,40 @@ defmodule <%= app_name %>.Controller.<%= mod_name %> do
     # rbac_rule: {"", ["pods", "secrets"], ["*"]}
 
   @doc """
-  Handles an `ADDED` or `MODIFIED` event.
-  It is also called periodically for each existing CustomResource to allow for reconciliation.
+  Handles a `ADDED` event
   """
-  @spec apply(map()) :: :ok | :error
   @impl Bonny.ControllerV2
-  def apply(%{} = resource) do
+  @spec add(Bonny.Resource.t()) :: :ok | :error
+  def add(%{} = resource), do: apply(resource)
+
+  @doc """
+  Handles a `MODIFIED` event
+  """
+  @impl Bonny.ControllerV2
+  @spec modify(Bonny.Resource.t()) :: :ok | :error
+  def modify(%{} = resource), do: apply(resource)
+
+  @doc """
+  Handles a `DELETED` event
+  """
+  @impl Bonny.ControllerV2
+  @spec delete(Bonny.Resource.t()) :: :ok | :error
+  def delete(%{} = resource) do
     IO.inspect(resource)
     :ok
   end
 
   @doc """
-  Handles a `DELETED` event
+  Called periodically for each existing CustomResource to allow for reconciliation.
   """
-  @spec delete(map()) :: :ok | :error
   @impl Bonny.ControllerV2
-  def delete(%{} = resource) do
+  @spec reconcile(Bonny.Resource.t()) :: :ok | :error
+  def reconcile(%{} = resource) do
+    IO.inspect(resource)
+    :ok
+  end
+
+  defp apply(resource) do
     IO.inspect(resource)
     :ok
   end

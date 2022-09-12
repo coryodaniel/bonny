@@ -1,7 +1,7 @@
 # Controllers
 
 ```elixir
-Mix.install([:bonny])
+Mix.install([{:bonny, path: "/Users/mruoss/src/community/bonny"}])
 
 Application.put_env(:bonny, :group, "example.com")
 Application.put_env(:bonny, :operator_name, "livebook-operator")
@@ -11,35 +11,88 @@ Application.put_env(:bonny, :operator_name, "livebook-operator")
 
 Use `mix bonny.gen.controller KindOfYourResource` to create a controller.
 
-Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It therefore has to implement the callbacks to handle the events. Per default there are two functions to implement:
-
-* `apply/1` - Called upon the resource's creation, modification or reconciliation.
-* `delete/1` - Called upon the resource's deletion.
-* `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
-
-If you want more fine-graned control over the four actions, you can implement all the action callbacks:
+Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It therefore has to implement the following action callbacks to handle the events:
 
 * `add/1` - Called upon the resource's creation.
 * `delete/1` - Called upon the resource's deletion.
 * `modify/1` - Called upon the resource's modification.
 * `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
 
-Per default, `add/1` and`modify/1` are all delegated to `apply/1`.
+If you used `mix bonny.gen.controller` to create the controller, `add/1` and `modify/1` are delegated to a function `apply/1`. Feel free to change this default behaviour.
 
 ```elixir
 defmodule Apple do
   use Bonny.ControllerV2
 
   @impl true
-  def apply(resource),
-    # Create subresources or so...
+  def add(resource),
+    # Do your work (e.g. create further resources)
+    do: IO.inspect(resource)
+
+  @impl true
+  def modify(resource),
+    # Do your work (e.g. create further resources)
     do: IO.inspect(resource)
 
   @impl true
   def delete(resource),
     #  Clean up
     do: IO.inspect(resource)
+
+  @impl true
+  def reconcile(resource),
+    # fix deviated state
+    do: IO.inspect(resource)
 end
+```
+
+### Features when creating further resources
+
+If your controller creates other resources for your custom resource (e.g. pods, services,...), it is best practice to reference the owner(s). In kubernetes, you do this by adding an entry to `.metadata.ownerReferences`. In your controller's action callbacks, you can use `add_owner_reference/2` for this:
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Orange do
+  use Bonny.ControllerV2
+
+  @impl true
+  def add(resource) do
+    %{
+      "apiVersion" => "v1",
+      "kind" => "Pod",
+      "metadata" => %{"name" => "nginx", "namespace" => "default"}
+      #  ...
+    }
+    |> add_owner_reference(resource)
+
+    # |> K8s.Client.create()
+    # |> then(&(K8s.Client.run(conn(), &1))
+  end
+
+  @impl true
+  def modify(resource), do: IO.inspect(resource)
+
+  @impl true
+  def delete(resource), do: IO.inspect(resource)
+
+  @impl true
+  def reconcile(resource), do: IO.inspect(resource)
+end
+```
+
+Let's see the resulting resource:
+
+```elixir
+Orange.add(%{
+  "apiVersion" => "example.com/v1",
+  "kind" => "Orange",
+  "metadata" => %{
+    "name" => "golden",
+    "namespace" => "default",
+    "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
+  }
+})
 ```
 
 ## RBAC Rules
@@ -55,16 +108,16 @@ defmodule Pear do
     rbac_rule: {"v1", ["pods"], ["get", "watch", "list"]}
 
   @impl true
-  def apply(resource),
-    do: IO.inspect(resource)
+  def add(resource), do: IO.inspect(resource)
 
   @impl true
-  def delete(resource),
-    do: IO.inspect(resource)
+  def modify(resource), do: IO.inspect(resource)
 
   @impl true
-  def reconcile(resource),
-    do: IO.inspect(resource)
+  def delete(resource), do: IO.inspect(resource)
+
+  @impl true
+  def reconcile(resource), do: IO.inspect(resource)
 end
 
 # When generating the manifest, an auto-generated function `rules/0` is called.
@@ -90,7 +143,10 @@ defmodule Peach do
   use Bonny.ControllerV2
 
   @impl true
-  def apply(resource), do: IO.inspect(resource)
+  def add(resource), do: IO.inspect(resource)
+
+  @impl true
+  def modify(resource), do: IO.inspect(resource)
 
   @impl true
   def delete(resource), do: IO.inspect(resource)
@@ -129,7 +185,10 @@ defmodule DatabaseUser do
   use Bonny.ControllerV2
 
   @impl true
-  def apply(resource), do: IO.inspect(resource)
+  def add(resource), do: IO.inspect(resource)
+
+  @impl true
+  def modify(resource), do: IO.inspect(resource)
 
   @impl true
   def delete(resource), do: IO.inspect(resource)

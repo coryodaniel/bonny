@@ -10,7 +10,10 @@ defmodule Bonny.ControllerV2Test do
       rbac_rule: {"v1", ["pods"], ["get", "watch", "list"]}
 
     @impl true
-    def apply(_resource), do: :ok
+    def add(_resource), do: :ok
+
+    @impl true
+    def modify(_resource), do: :ok
 
     @impl true
     def delete(_resource), do: :ok

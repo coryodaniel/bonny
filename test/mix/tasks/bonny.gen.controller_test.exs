@@ -20,8 +20,11 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
           Controller.run(["Memcached", "--out", "-"])
         end)
 
-      assert output =~ "def apply(%{} = resource) do"
+      assert output =~ "def add(%{} = resource), do: apply(resource)"
+      assert output =~ "def modify(%{} = resource), do: apply(resource)"
       assert output =~ "def delete(%{} = resource) do"
+      assert output =~ "def delete(%{} = resource) do"
+      assert output =~ "defp apply(resource) do"
     end
 
     test "generates a test file" do

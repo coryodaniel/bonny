@@ -3,6 +3,8 @@ defmodule Bonny.Resource do
   Helper functions for dealing with kubernetes resources.
   """
 
+  @type t :: map()
+
   @doc """
   Add an owner reference to the given resource.
   """
