@@ -135,17 +135,21 @@ defmodule Bonny.ControllerV2 do
       group: Bonny.Config.group(),
       version: Bonny.CRD.Version.new!(name: "v1")
     )
-    |> then(fn crd ->
-      if function_exported?(controller, :customize_crd, 1),
-        do: controller.customize_crd(crd),
-        else: crd
-    end)
-    |> then(fn crd ->
-      if function_exported?(controller, :skip_observed_generations, 0) &&
-           controller.skip_observed_generations(),
-         do: add_obseved_generation_status(crd),
-         else: crd
-    end)
+    |> maybe_cutomize_crd(controller)
+    |> maybe_add_obseved_generation_status(controller)
+  end
+
+  defp maybe_cutomize_crd(crd, controller) do
+    if function_exported?(controller, :customize_crd, 1),
+      do: controller.customize_crd(crd),
+      else: crd
+  end
+
+  defp maybe_add_obseved_generation_status(crd, controller) do
+    if function_exported?(controller, :skip_observed_generations, 0) &&
+         controller.skip_observed_generations(),
+       do: add_obseved_generation_status(crd),
+       else: crd
   end
 
   @spec list_operation(module()) :: K8s.Operation.t()
