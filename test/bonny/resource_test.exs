@@ -4,6 +4,8 @@ defmodule Bonny.ResourceTest do
 
   alias Bonny.Resource, as: MUT
 
+  doctest MUT
+
   describe "add_owner_reference/3" do
     setup do
       resource = %{

@@ -28,9 +28,9 @@ defmodule Bonny.ControllerV2 do
   @callback conn() :: K8s.Conn.t()
 
   @doc """
-  This is an optional callback which can be implemented by the using module in order
-  to customize the auto-generated CRD. Implement this e.g. to add your OpenAPIV3Schema
-  to the resulting CRD in your manifest.
+  Bonny auto-generates a CRD for every controller. Use this (optional) callback to
+  override that CRD. You can use it to add versions, specify the OpenAPIV3Schema for them,
+  change the resource's scope, and more.
   """
   @callback customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
 

@@ -45,6 +45,10 @@ defmodule Bonny.CRDV2 do
     scope: :Namespaced
   ]
 
+  @doc """
+  Creates a new %Bonny.CRDV2{} struct from the given values. `:scope` is
+  optional and defaults to `:Namespaced`.
+  """
   @spec new!(keyword()) :: __MODULE__.t()
   def new!(fields) do
     fields =
@@ -55,6 +59,9 @@ defmodule Bonny.CRDV2 do
     struct!(__MODULE__, fields)
   end
 
+  @doc """
+  Changes the internally used structure into a map representing a kubernetes CRD manifest
+  """
   @spec to_manifest(__MODULE__.t()) :: map()
   def to_manifest(%__MODULE__{} = crd) do
     check_single_storage!(crd)
@@ -70,6 +77,25 @@ defmodule Bonny.CRDV2 do
     }
   end
 
+  @doc """
+  Build a map of names form the given kind.
+
+  ### Examples
+
+      iex> Bonny.CRDV2.kind_to_names("SomeKind")
+      %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []}
+
+    The `:inflex` library is used to generate the plural form.
+
+      iex> Bonny.CRDV2.kind_to_names("Hero")
+      %{singular: "hero", plural: "heroes", kind: "Hero", shortNames: []}
+
+    Accepts an optional list of abbreviations as second argument.
+
+      iex> Bonny.CRDV2.kind_to_names("SomeKind", ["sk", "some"])
+      %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: ["sk", "some"]}
+
+  """
   @spec kind_to_names(binary(), list(binary())) :: names_t()
   def kind_to_names(kind, short_names \\ []) do
     singular = String.downcase(kind)

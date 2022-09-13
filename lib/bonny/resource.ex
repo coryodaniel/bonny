@@ -7,6 +7,41 @@ defmodule Bonny.Resource do
 
   @doc """
   Add an owner reference to the given resource.
+
+  ### Example
+
+      iex> owner = %{
+      ...>   "apiVersion" => "example.com/v1",
+      ...>   "kind" => "Orange",
+      ...>   "metadata" => %{
+      ...>     "name" => "annoying",
+      ...>     "namespace" => "default",
+      ...>     "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
+      ...>   }
+      ...> }
+      ...> resource = %{
+      ...>   "apiVersion" => "v1",
+      ...>   "kind" => "Pod",
+      ...>   "metadata" => %{"name" => "nginx", "namespace" => "default"}
+      ...>   # spec
+      ...> }
+      ...> Bonny.Resource.add_owner_reference(resource, owner)
+      %{
+        "apiVersion" => "v1",
+        "kind" => "Pod",
+        "metadata" => %{
+          "name" => "nginx",
+          "namespace" => "default",
+          "ownerReferences" => [%{
+            "apiVersion" => "example.com/v1",
+            "blockOwnerDeletion" => false,
+            "controller" => true,
+            "kind" => "Orange",
+            "name" => "annoying",
+            "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
+          }]
+        }
+      }
   """
   @spec add_owner_reference(map(), map(), keyword(boolean)) :: map()
   def add_owner_reference(resource, owner, opts \\ [])
