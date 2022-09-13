@@ -3,10 +3,26 @@ defmodule <%= app_name %>.Controller.<%= mod_name %>Test do
   use ExUnit.Case, async: false
   alias <%= app_name %>.Controller.<%= mod_name %>
 
-  describe "apply/1" do
+  describe "add/1" do
     test "returns :ok" do
       event = %{}
-      result = <%= mod_name %>.apply(event)
+      result = <%= mod_name %>.add(event)
+      assert result == :ok
+    end
+  end
+
+  describe "modify/1" do
+    test "returns :ok" do
+      event = %{}
+      result = <%= mod_name %>.modify(event)
+      assert result == :ok
+    end
+  end
+
+  describe "reconcile/1" do
+    test "returns :ok" do
+      event = %{}
+      result = <%= mod_name %>.reconcile(event)
       assert result == :ok
     end
   end
