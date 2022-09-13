@@ -78,7 +78,7 @@ defmodule <%= app_name %>.Controller.<%= mod_name %> do
     # rbac_rule: {"", ["pods", "secrets"], ["*"]}
 
   @doc """
-  Handles a `ADDED` event
+  Handles a `ADDED` event.
   """
   @impl Bonny.ControllerV2
   @spec add(Bonny.Resource.t()) :: :ok | :error
@@ -111,6 +111,10 @@ defmodule <%= app_name %>.Controller.<%= mod_name %> do
     :ok
   end
 
+  # We suggest you create a declarative operator where `add/1` and `modify/1`
+  # both perform the same operation, i.e. enforce the state requested
+  # by the created/modified resource.
+  # Feel free to change this behaviour if it doesn't fit your purpose.
   defp apply(resource) do
     IO.inspect(resource)
     :ok
