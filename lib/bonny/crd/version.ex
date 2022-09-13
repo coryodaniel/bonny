@@ -88,4 +88,46 @@ defmodule Bonny.CRD.Version do
   def new!(fields) do
     struct!(__MODULE__, fields)
   end
+
+  @doc """
+  Adds the status subresource if it hasn't been added before
+  and adds a field .status.observedGeneration of type integer
+  to the OpenAPIV3Schema.
+
+  ### Example
+
+      iex> Bonny.CRD.Version.add_observed_generation_status(%{})
+      %{
+        subresources: %{status: %{}},
+        schema: %{
+          openAPIV3Schema: %{
+            type: :object,
+            properties: %{
+              status: %{
+                type: :object,
+                properties: %{
+                  observedGeneration: %{type: :integer}
+                }
+              }
+            }
+          }
+        }
+      }
+  """
+  @spec add_observed_generation_status(t()) :: t()
+  def add_observed_generation_status(version) do
+    version
+    |> put_in([Access.key(:subresources, %{}), :status], %{})
+    |> put_in(
+      [
+        Access.key(:schema, %{}),
+        Access.key(:openAPIV3Schema, %{type: :object}),
+        Access.key(:properties, %{}),
+        Access.key(:status, %{type: :object, properties: %{}}),
+        Access.key(:properties, %{}),
+        :observedGeneration
+      ],
+      %{type: :integer}
+    )
+  end
 end

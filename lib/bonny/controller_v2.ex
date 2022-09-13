@@ -57,7 +57,10 @@ defmodule Bonny.ControllerV2 do
         end)
         |> Macro.escape()
 
-      skip_observed_generations = Keyword.get(opts, :skip_observed_generations, false)
+      skip_observed_generations =
+        opts
+        |> Keyword.get(:skip_observed_generations, false)
+        |> Macro.escape()
 
       use Supervisor
 
@@ -78,22 +81,28 @@ defmodule Bonny.ControllerV2 do
         conn = conn()
         list_operation = list_operation()
 
+        watcher_stream =
+          __MODULE__
+          |> Bonny.Server.Watcher.get_stream(conn, list_operation,
+            skip_observed_generations: unquote(skip_observed_generations)
+          )
+          |> Stream.map(&post_process_resource/1)
+
+        reconciler_stream =
+          __MODULE__
+          |> Bonny.Server.Reconciler.get_stream(conn, list_operation)
+          |> Task.async_stream(&post_process_resource/1)
+
         children = [
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.WatchServer,
            name: __MODULE__.WatchServer,
-           stream:
-             Bonny.Server.Watcher.get_stream(__MODULE__, conn, list_operation,
-               skip_observed_generations: unquote(skip_observed_generations)
-             ),
+           stream: watcher_stream,
            termination_delay: 5_000},
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.ReconcileServer,
            name: __MODULE__.ReconcileServer,
-           stream:
-             Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation,
-               skip_observed_generations: unquote(skip_observed_generations)
-             ),
+           stream: reconciler_stream,
            termination_delay: 30_000}
         ]
 
@@ -105,8 +114,27 @@ defmodule Bonny.ControllerV2 do
         )
       end
 
-      @spec skip_observed_generations() :: boolean
-      def skip_observed_generations(), do: unquote(skip_observed_generations)
+      defp post_process_resource(resource) do
+        resource
+        |> maybe_set_observed_generation()
+        |> Bonny.Resource.apply_status(crd().names.plural, conn())
+      end
+
+      if skip_observed_generations do
+        defp maybe_set_observed_generation(resource),
+          do: Bonny.Resource.set_observed_generation(resource)
+
+        defp maybe_add_obseved_generation_status(crd),
+          do:
+            Bonny.CRDV2.update_versions(
+              crd,
+              & &1.storage,
+              &Bonny.CRD.Version.add_observed_generation_status/1
+            )
+      else
+        defp maybe_set_observed_generation(resource), do: resource
+        defp maybe_add_obseved_generation_status(crd), do: crd
+      end
 
       @impl Bonny.ControllerV2
       def list_operation(), do: Bonny.ControllerV2.list_operation(__MODULE__)
@@ -114,7 +142,11 @@ defmodule Bonny.ControllerV2 do
       @impl Bonny.ControllerV2
       defdelegate conn(), to: Bonny.Config
 
-      def crd(), do: Bonny.ControllerV2.crd(__MODULE__)
+      def crd() do
+        __MODULE__
+        |> Bonny.ControllerV2.crd()
+        |> maybe_add_obseved_generation_status()
+      end
 
       defoverridable list_operation: 0, conn: 0
     end
@@ -136,20 +168,12 @@ defmodule Bonny.ControllerV2 do
       version: Bonny.CRD.Version.new!(name: "v1")
     )
     |> maybe_cutomize_crd(controller)
-    |> maybe_add_obseved_generation_status(controller)
   end
 
   defp maybe_cutomize_crd(crd, controller) do
     if function_exported?(controller, :customize_crd, 1),
       do: controller.customize_crd(crd),
       else: crd
-  end
-
-  defp maybe_add_obseved_generation_status(crd, controller) do
-    if function_exported?(controller, :skip_observed_generations, 0) &&
-         controller.skip_observed_generations(),
-       do: add_obseved_generation_status(crd),
-       else: crd
   end
 
   @spec list_operation(module()) :: K8s.Operation.t()
@@ -162,30 +186,5 @@ defmodule Bonny.ControllerV2 do
       :Namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
       _ -> K8s.Client.list(api_version, kind)
     end
-  end
-
-  defp add_obseved_generation_status(crd) do
-    crd
-    |> update_in(
-      [
-        Access.key(:versions),
-        Access.filter(& &1.storage)
-      ],
-      fn version ->
-        version
-        |> put_in([Access.key(:subresources, %{}), :status], %{})
-        |> put_in(
-          [
-            Access.key(:schema, %{}),
-            Access.key(:openAPIV3Schema, %{type: :object}),
-            Access.key(:properties, %{}),
-            Access.key(:status, %{type: :object, properties: %{}}),
-            Access.key(:properties, %{}),
-            :observedGeneration
-          ],
-          %{type: :integer}
-        )
-      end
-    )
   end
 end

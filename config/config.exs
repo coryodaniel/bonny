@@ -32,5 +32,5 @@ if Mix.env() == :dev do
       TestScheduler
     ]
 
-  config :elixir, :dbg_callback, {Macro, :dbg, []}
+  # config :elixir, :dbg_callback, {Macro, :dbg, []}
 end

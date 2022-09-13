@@ -167,10 +167,9 @@ defmodule Peach do
       }
     ]
 
-    put_in(
+    Bonny.CRDV2.update_versions(
       crd,
-      [Access.key(:versions), Access.at(0), Access.key(:additionalPrinterColumns)],
-      additional_printer_columns
+      fn version -> struct!(version, additionalPrinterColumns: additional_printer_columns) end
     )
   end
 end

@@ -21,26 +21,20 @@ defmodule Bonny.Server.Reconciler do
 
   @callback reconcile(map()) :: :ok | {:ok, any()} | {:error, any()}
 
-  @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), keyword()) :: Enumerable.t()
+  @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), keyword()) ::
+          Enumerable.t(Bonny.Resource.t())
   def get_stream(controller, conn, reconcile_operation, opts \\ []) do
-    {skip_observed_generations, opts} = Keyword.pop(opts, :skip_observed_generations, false)
-    plural = Bonny.ControllerV2.crd(controller).names.plural
     {:ok, reconciliation_stream} = K8s.Client.stream(conn, reconcile_operation, opts)
 
     reconciliation_stream
     |> reconcile_all(controller)
     |> Stream.filter(&match?({:ok, {:ok, _}}, &1))
-    |> Stream.map(fn {:ok, {:ok, resource}} ->
-      if skip_observed_generations,
-        do: Bonny.Resource.set_observed_generation(resource),
-        else: resource
-    end)
-    |> Stream.map(&Bonny.Resource.apply_status(&1, plural, conn))
+    |> Stream.map(fn {:ok, {:ok, resource}} -> resource end)
   end
 
   defp reconcile_all(resource_stream, controller) do
-    Task.async_stream(
-      resource_stream,
+    resource_stream
+    |> Task.async_stream(
       fn
         resource when is_map(resource) ->
           metadata = %{module: controller}
@@ -51,7 +45,7 @@ defmodule Bonny.Server.Reconciler do
           metadata = %{module: controller, error: error}
           Logger.debug("Reconciler fetch failed", metadata)
 
-          :error
+          error
       end,
       ordered: false
     )
