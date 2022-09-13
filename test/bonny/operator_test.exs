@@ -19,9 +19,11 @@ defmodule Bonny.OperatorTest do
         %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
-        %{apiGroups: ["example.com"], resources: ["test-resource"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["testresources"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["testresourcev2s"], verbs: ["*"]},
         %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
-        %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
+        %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
+        %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]}
       ]
     }
 
@@ -40,9 +42,11 @@ defmodule Bonny.OperatorTest do
       %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
       %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
       %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
-      %{apiGroups: ["example.com"], resources: ["test-resource"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["testresources"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["testresourcev2s"], verbs: ["*"]},
       %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
-      %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]}
+      %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
+      %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]}
     ]
 
     assert manifest == expected
@@ -139,14 +143,14 @@ defmodule Bonny.OperatorTest do
       %{
         apiVersion: "apiextensions.k8s.io/v1",
         kind: "CustomResourceDefinition",
-        metadata: %{labels: %{"k8s-app" => "bonny"}, name: "test-resource.example.com"},
+        metadata: %{labels: %{"k8s-app" => "bonny"}, name: "testresources.example.com"},
         spec: %{
           group: "example.com",
           names: %{
             kind: "TestResource",
-            plural: "test-resource",
+            plural: "testresources",
             shortNames: nil,
-            singular: "test-resource"
+            singular: "testresource"
           },
           scope: "Namespaced",
           versions: [
@@ -158,6 +162,42 @@ defmodule Bonny.OperatorTest do
               },
               served: true,
               storage: true
+            }
+          ]
+        }
+      },
+      %{
+        apiVersion: "apiextensions.k8s.io/v1",
+        kind: "CustomResourceDefinition",
+        metadata: %{labels: %{"k8s-app" => "bonny"}, name: "testresourcev2s.example.com"},
+        spec: %{
+          group: "example.com",
+          names: %{
+            kind: "TestResourceV2",
+            plural: "testresourcev2s",
+            shortNames: [],
+            singular: "testresourcev2"
+          },
+          scope: :Namespaced,
+          versions: [
+            %Bonny.CRD.Version{
+              name: "v1",
+              served: true,
+              storage: true,
+              deprecated: false,
+              deprecationWarning: nil,
+              schema: %{
+                openAPIV3Schema: %{
+                  type: :object,
+                  properties: %{
+                    spec: %{
+                      properties: %{pid: %{type: :string}, ref: %{type: :string}},
+                      type: :object
+                    }
+                  }
+                }
+              },
+              additionalPrinterColumns: []
             }
           ]
         }

@@ -70,9 +70,9 @@ config :bonny,
   # Add each CRD Controller module for this operator to load here
   # Defaults to none. This *must* be set.
   controllers: [
-    MyApp.Controllers.V1.WebServer,
-    MyApp.Controllers.V1.Database,
-    MyApp.Controllers.V1.Memcached
+    MyApp.Controllers.WebServer,
+    MyApp.Controllers.Database,
+    MyApp.Controllers.Memcached
   ],
 
   # Function to call to get a K8s.Conn object.
@@ -154,24 +154,13 @@ There are a number of generators to help create a Kubernetes operator.
 
 An operator can have multiple controllers. Each controller handles the lifecycle of a custom resource.
 
-By default controllers are generated in the `V1` version scope.
-
 ```shell
-mix bonny.gen.controller Widget widgets
+mix bonny.gen.controller Widget
 ```
-
-You can specify the version flag to create a new version of a controller. Bonny will dispatch the controller for the given version. So old versions of resources can live alongside new versions.
-
-```shell
-mix bonny.gen.controller Widget widgets --version v2alpha1
-```
-
-_Note:_ The one restriction with versions is that they will be camelized into a module name.
 
 Open up your controller and add functionality for your resource's lifecycles:
 
-- Add
-- Modify
+- Apply (or Add/Modify)
 - Delete
 - Reconcile; periodically called with each every instance of a CRD's resources
 
@@ -181,10 +170,7 @@ For example, a _todo app_ controller could deploy a `Deployment` and a `Service`
 
 Your operator can also have multiple controllers if you want to support multiple resources in your operator!
 
-Check out the two test controllers:
-
-- [Cog](./test/support/cog.ex)
-- [Widget](./test/support/widget.ex)
+Check out the [guide](./guides/controllers.livemd):
 
 ### Generating a dockerfile
 
@@ -235,13 +221,6 @@ _Alternatively you can apply it directly to kubectl_:
 mix bonny.gen.manifest --out - -n test | kubectl apply -f - -n test
 ```
 
-### Generating a resource
-
-TODO: Need to support validation / OpenAPI.
-
-- https://github.com/coryodaniel/bonny/issues/9
-- https://github.com/coryodaniel/bonny/issues/10
-
 ## Telemetry
 
 Bonny uses the `telemetry` to emit event metrics.
@@ -285,9 +264,7 @@ A set of application specific controllers deployed on Kubernetes and managed via
 
 ## Testing
 
-```elixir
-mix test
-```
+Check the guide about testing
 
 ## Operator Blog Posts
 

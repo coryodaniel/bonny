@@ -1,119 +1,122 @@
-defmodule <%= app_name %>.Controller.<%= version %>.<%= mod_name %> do
+defmodule <%= app_name %>.Controller.<%= mod_name %> do
   @moduledoc """
   <%= app_name %>: <%= mod_name %> CRD.
 
   ## Kubernetes CRD Spec
 
-  By default all CRD specs are assumed from the module name, you can override them using attributes.
-
-  ### Examples
-  ```
-  # Kubernetes API version of this CRD, defaults to value in module name
-  @version "v2alpha1"
-
-  # Kubernetes API group of this CRD, defaults to "<%= Bonny.Config.group() %>"
-  @group "kewl.example.io"
-
-  The scope of the CRD. Defaults to `:namespaced`
-  @scope :cluster
-
-  CRD names used by kubectl and the kubernetes API
-  @names %{
-    plural: "foos",
-    singular: "foo",
-    kind: "Foo",
-    shortNames: ["f", "fo"]
-  }
-  ```
-
-  ## Declare RBAC permissions used by this module
-
-  RBAC rules can be declared using `@rule` attribute and generated using `mix bonny.manifest`
-
-  This `@rule` attribute is cumulative, and can be declared once for each Kubernetes API Group.
+  creates a default CRD from the information it's got, i.e. the module name
+  and some variables defined in `config.exs`. You can customize them by
+  implementing the  `customize_crd/1` callback:
 
   ### Examples
 
-  ```
-  @rule {apiGroup, resources_list, verbs_list}
+  The crd you get as an argument to `customize_crd/1 is already a valid CRD.
+  This means you don't have to pass all the fields to `struct!()`, just the
+  ones you want to override.
 
-  @rule {"", ["pods", "secrets"], ["*"]}
-  @rule {"apiextensions.k8s.io", ["foo"], ["*"]}
+  ```
+  @impl Bonny.ControllerV2
+  def customize_crd(crd) do
+    struct!(
+      crd,
+
+      # Customizing the group (defaults to what's defined  in config.exs):
+      group: "kewl.example.io"
+
+      # Customizing the scope (defaults to :Namespaced):
+      scope: :Cluster
+
+      # Customizing the names (defaults to Bonny.CRDV2.kind_to_names("<%= mod_name %>"))
+      names: Bonny.CRDV2.kind_to_names("Wheel", ["w]) # => %{singular: "wheel", plural: "wheels", kind: "Wheel", shortNames: ["w"]}
+
+      # Define your own versions (defaults to an auto-generated "v1" version)
+      versions: [
+        Bonny.CRD.Version.new!(
+          name: "v1beta2",
+          served: true,
+          storage: true,
+          schema: %{openAPIV3Schema: %{...}}
+        )
+      ]
+    )
+  end
   ```
 
   ## Add additional printer columns
 
-  Kubectl uses server-side printing. Columns can be declared using `@additional_printer_columns` and generated using `mix bonny.manifest`
+  In version 1 of this controller, you could define additional printer columns
+  as module attributes. Now they are part of your versions array and are defined
+  withing the `customize_crd/1` callback.
 
-  [Additional Printer Columns docs](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#additional-printer-columns)
+  ```
+  @impl Bonny.ControllerV2
+  def customize_crd(crd) do
+    additional_printer_columns = [
+      %{name: "username", type: "string", jsonPath: ".spec.username"},
+      %{name: "connections", type: "integer", jsonPath: ".spec.max_conn", description: "Maximum of simultaneos connections allowed for this user."
+      }
+    ]
+    put_in(crd, [Access.key(:versions), Access.at(0), Access.key(:additionalPrinterColumns)], additional_printer_columns)
+  end
+
+  ```
+
+  ## Declare RBAC permissions used by this module
+
+  RBAC rules can be declared by passing them as options to the `use` statement and generated using `mix bonny.manifest`.
 
   ### Examples
-  
+
   ```
-  @additional_printer_columns [
-    %{
-      name: "test",
-      type: "string",
-      description: "test",
-      JSONPath: ".spec.test"
-    }
-  ]
-  ```
-  
+  use Bonny.ControllerV2,
+    # rbac_rule: {apiGroup, resources_list, verbs_list}
+    rbac_rule: {"", ["pods", "secrets"], ["*"]},
+    rbac_rule: {"apiextensions.k8s.io", ["foo"], ["*"]}
   """
-  use Bonny.Controller
 
-  # @group "your-operator.your-domain.com"
-  # @version "v1"
-
-  @scope :namespaced
-  @names %{
-    plural: "<%= plural %>",
-    singular: "<%= singular %>",
-    kind: "<%= mod_name %>",
-    shortNames: []
-  }
-
-  # @rule {"", ["pods", "configmap"], ["*"]}
-  # @rule {"", ["secrets"], ["create"]}
+  use Bonny.ControllerV2
+    # rbac_rule: {"", ["pods", "secrets"], ["*"]}
 
   @doc """
-  Handles an `ADDED` event
+  Handles a `ADDED` event.
   """
-  @spec add(map()) :: :ok | :error
-  @impl Bonny.Controller
-  def add(%{} = <%= singular %>) do
-    IO.inspect(<%= singular %>)
-    :ok
-  end
+  @impl Bonny.ControllerV2
+  @spec add(Bonny.Resource.t()) :: :ok | :error
+  def add(%{} = resource), do: apply(resource)
 
   @doc """
   Handles a `MODIFIED` event
   """
-  @spec modify(map()) :: :ok | :error
-  @impl Bonny.Controller
-  def modify(%{} = <%= singular %>) do
-    IO.inspect(<%= singular %>)
-    :ok
-  end
+  @impl Bonny.ControllerV2
+  @spec modify(Bonny.Resource.t()) :: :ok | :error
+  def modify(%{} = resource), do: apply(resource)
 
   @doc """
   Handles a `DELETED` event
   """
-  @spec delete(map()) :: :ok | :error
-  @impl Bonny.Controller
-  def delete(%{} = <%= singular %>) do
-    IO.inspect(<%= singular %>)
+  @impl Bonny.ControllerV2
+  @spec delete(Bonny.Resource.t()) :: :ok | :error
+  def delete(%{} = resource) do
+    IO.inspect(resource)
     :ok
   end
 
   @doc """
   Called periodically for each existing CustomResource to allow for reconciliation.
   """
-  @spec reconcile(map()) :: :ok | :error
-  @impl Bonny.Controller
-  def reconcile(%{} = <%= singular %>) do
-    IO.inspect(<%= singular %>)
+  @impl Bonny.ControllerV2
+  @spec reconcile(Bonny.Resource.t()) :: :ok | :error
+  def reconcile(%{} = resource) do
+    IO.inspect(resource)
+    :ok
+  end
+
+  # We suggest you create a declarative operator where `add/1` and `modify/1`
+  # both perform the same operation, i.e. enforce the state requested
+  # by the created/modified resource.
+  # Feel free to change this behaviour if it doesn't fit your purpose.
+  defp apply(resource) do
+    IO.inspect(resource)
     :ok
   end
 end

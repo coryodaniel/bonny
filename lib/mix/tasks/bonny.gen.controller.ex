@@ -4,25 +4,16 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
 
   An operator can have multiple controllers. Each controller handles the lifecycle of a custom resource.
 
-  By default controllers are generated in the `V1` version scope.
-
   ```shell
-  mix bonny.gen.controller Widget widget
+  mix bonny.gen.controller Widget
   ```
-
-  You can specify the version flag to create a new version of a controller. Bonny will dispatch the controller for the given version. So old versions of resources can live alongside new versions.
-
-  ```shell
-  mix bonny.gen.controller Widget widget --version v2alpha1
-  ```
-
-  *Note:* The one restriction with versions is that they will be camelized into a module name.
-
   Open up your controller and add functionality for your resources lifecycle:
 
-  * Add
-  * Modify
+  * Apply
   * Delete
+
+  Optionally implement `customize_crd/1` in your generated controller e.g. to define an OpenAPIV3Schema
+  or define additional printer columns.
 
   Each controller can create multiple resources.
 
@@ -31,27 +22,23 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
 
   use Mix.Task
 
-  @switches [version: :string, out: :string]
-  @default_opts [version: "v1"]
-  @aliases [o: :out, v: :version]
+  @switches [out: :string]
+  @aliases [o: :out]
 
   @shortdoc "Generate a new CRD Controller for this operator"
   @spec run([binary()]) :: nil | :ok
   def run(args) do
     Mix.Bonny.no_umbrella!()
 
-    {mod_name, file_name, singular, plural, version, opts} = build(args)
+    {mod_name, file_name, opts} = build(args)
 
     binding = [
       mod_name: mod_name,
-      singular: singular,
-      version: version,
-      plural: plural,
       app_name: Mix.Bonny.app_name()
     ]
 
-    controller_out = opts[:out] || controller_path(opts[:version], file_name)
-    test_out = opts[:out] || test_path(opts[:version], file_name)
+    controller_out = opts[:out] || controller_path(file_name)
+    test_out = opts[:out] || test_path(file_name)
 
     "controller.ex"
     |> Mix.Bonny.template()
@@ -64,37 +51,30 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     |> Mix.Bonny.render(test_out)
   end
 
-  defp controller_path(version, file_name) do
-    Path.join(["lib", Mix.Bonny.app_dir_name(), "controllers", version, "#{file_name}.ex"])
+  defp controller_path(file_name) do
+    Path.join(["lib", Mix.Bonny.app_dir_name(), "controllers", "#{file_name}.ex"])
   end
 
-  defp test_path(version, file_name) do
-    Path.join(["test", Mix.Bonny.app_dir_name(), "controllers", version, "#{file_name}_test.exs"])
+  defp test_path(file_name) do
+    Path.join(["test", Mix.Bonny.app_dir_name(), "controllers", "#{file_name}_test.exs"])
   end
 
   defp build(args) do
-    {opts, parsed, _} =
-      Mix.Bonny.parse_args(args, @default_opts, switches: @switches, aliases: @aliases)
+    {opts, parsed, _} = Mix.Bonny.parse_args(args, [], switches: @switches, aliases: @aliases)
 
-    [mod_name, plural | _] = validate_args!(parsed)
+    [mod_name | _] = validate_args!(parsed)
 
-    version = Macro.camelize(opts[:version])
     file_name = Macro.underscore(mod_name)
-    singular = String.downcase(mod_name)
 
-    {mod_name, file_name, singular, plural, version, opts}
+    {mod_name, file_name, opts}
   end
 
-  defp validate_args!([mod_name, _plural | _] = args) do
+  defp validate_args!([mod_name | _] = args) do
     if mod_name =~ ~r/^[A-Z]\w*(\.[A-Z]\w*)*$/ do
       args
     else
       raise_with_help("Expected the controller #{inspect(mod_name)} to be a valid module name")
     end
-  end
-
-  defp validate_args!([_mod_name]) do
-    raise_with_help("Expected a controller module name followed by the plural form")
   end
 
   defp validate_args!(_) do
@@ -107,12 +87,11 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     Mix.raise("""
     #{msg}
 
-    mix bonny.gen.controller expects a module name followed by the plural name of the resource.
+    mix bonny.gen.controller expects a module name representing the resource's "Kind".
 
     For example:
-       mix bonny.gen.controller Webhook webhooks
-       mix bonny.gen.controller Memcached memcached
-       mix bonny.gen.controller Memcached memcached --version v1alpha1
+       mix bonny.gen.controller Webhook
+       mix bonny.gen.controller Memcached
     """)
   end
 end

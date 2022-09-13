@@ -31,17 +31,12 @@ defmodule Bonny.Operator do
     crd_rules =
       Enum.map(Bonny.Config.controllers(), fn controller ->
         crd = controller.crd()
-        group = crd.group
-        kind = Bonny.CRD.kind(crd)
-        %{apiGroups: [group], resources: [kind], verbs: ["*"]}
+        %{apiGroups: [crd.group], resources: [crd.names.plural], verbs: ["*"]}
       end)
 
-    controller_rules =
-      Enum.reduce(Bonny.Config.controllers(), [], fn controller, acc ->
-        acc ++ controller.rules()
-      end)
+    controller_rules = Enum.flat_map(Bonny.Config.controllers(), & &1.rules())
 
-    base_rules ++ crd_rules ++ controller_rules
+    Enum.uniq(base_rules ++ crd_rules ++ controller_rules)
   end
 
   @doc "ServiceAccount manifest"
@@ -62,7 +57,15 @@ defmodule Bonny.Operator do
   @spec crds() :: list(map())
   def crds() do
     Enum.map(Bonny.Config.controllers(), fn controller ->
-      Bonny.CRD.to_manifest(controller.crd(), Bonny.Config.api_version())
+      attributes = controller.module_info(:attributes)
+
+      cond do
+        Enum.member?(attributes, {:behaviour, [Bonny.Controller]}) ->
+          Bonny.CRD.to_manifest(controller.crd(), Bonny.Config.api_version())
+
+        Enum.member?(attributes, {:behaviour, [Bonny.ControllerV2]}) ->
+          Bonny.CRDV2.to_manifest(controller.crd())
+      end
     end)
   end
 

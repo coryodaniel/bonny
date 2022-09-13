@@ -1,4 +1,4 @@
-defmodule Bonny.ControllerIntegrationTest do
+defmodule Bonny.ControllerV2IntegrationTest do
   @moduledoc """
   The idea is for the test to create a resources with pid and ref in its spec
   and send this to kubernetes. The controller (under test) can then read those
@@ -11,7 +11,7 @@ defmodule Bonny.ControllerIntegrationTest do
   alias Bonny.Test.IntegrationHelper
 
   setup_all do
-    Supervisor.start_link([TestResource], strategy: :one_for_one)
+    Supervisor.start_link([TestResourceV2], strategy: :one_for_one)
     :ok
   end
 
@@ -28,7 +28,7 @@ defmodule Bonny.ControllerIntegrationTest do
     cleanup = fn ->
       delete_op =
         resource_name
-        |> IntegrationHelper.delete_test_resource()
+        |> IntegrationHelper.delete_test_resource_v2()
         |> K8s.Client.delete()
 
       {:ok, _} = K8s.Client.run(conn, delete_op)
@@ -46,7 +46,7 @@ defmodule Bonny.ControllerIntegrationTest do
     ref: ref,
     cleanup: cleanup
   } do
-    resource = IntegrationHelper.create_test_resource(resource_name, self(), ref)
+    resource = IntegrationHelper.create_test_resource_v2(resource_name, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
     assert_receive({^ref, :created, ^resource_name}, timeout)
@@ -62,7 +62,7 @@ defmodule Bonny.ControllerIntegrationTest do
     ref: ref,
     cleanup: cleanup
   } do
-    resource = IntegrationHelper.create_test_resource(resource_name, self(), ref)
+    resource = IntegrationHelper.create_test_resource_v2(resource_name, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
     assert_receive({^ref, :created, ^resource_name}, timeout)
@@ -86,7 +86,7 @@ defmodule Bonny.ControllerIntegrationTest do
     ref: ref,
     cleanup: cleanup
   } do
-    resource = IntegrationHelper.create_test_resource(resource_name, self(), ref)
+    resource = IntegrationHelper.create_test_resource_v2(resource_name, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
     assert_receive({^ref, :created, ^resource_name}, timeout)

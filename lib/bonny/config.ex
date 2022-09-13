@@ -8,8 +8,7 @@ defmodule Bonny.Config do
   """
   @spec group() :: binary
   def group() do
-    default = "#{project_name()}.example.com"
-    Application.get_env(:bonny, :group, default)
+    Application.get_env(:bonny, :group) || "#{project_name()}.example.com"
   end
 
   @doc """
@@ -21,9 +20,7 @@ defmodule Bonny.Config do
   """
   @spec name() :: binary
   def name() do
-    :bonny
-    |> Application.get_env(:operator_name, project_name())
-    |> dns_safe_name
+    dns_safe_name(Application.get_env(:bonny, :operator_name) || project_name())
   end
 
   @doc """

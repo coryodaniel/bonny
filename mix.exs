@@ -54,6 +54,7 @@ defmodule Bonny.MixProject do
 
   defp deps do
     [
+      {:inflex, "~> 2.0"},
       {:jason, "~> 1.1"},
       {:k8s, "~> 1.1"},
       {:telemetry, "~> 1.0"},
@@ -75,7 +76,7 @@ defmodule Bonny.MixProject do
   defp package do
     [
       name: :bonny,
-      maintainers: ["Cory O'Daniel"],
+      maintainers: ["Cory O'Daniel", "Michael Ruoss"],
       licenses: ["MIT"],
       links: %{
         "Changelog" => "#{@source_url}/blob/master/CHANGELOG.md",
@@ -96,7 +97,8 @@ defmodule Bonny.MixProject do
         "README.md",
         "CHANGELOG.md",
         "guides/migrations.md",
-        "guides/testing.md"
+        "guides/testing.md",
+        "guides/controllers.livemd"
       ],
       groups_for_extras: [
         Guides: Path.wildcard("guides/*.md")

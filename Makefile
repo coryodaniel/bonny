@@ -17,6 +17,7 @@ integration.yaml: ## Create a k3d cluster
 .PHONY: test.integration
 test.integration: integration.yaml
 test.integration: ## Run integration tests using k3d `make cluster`
+	MIX_ENV=test mix compile
 	MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
 	kubectl config use-context k3d-${CLUSTER_NAME}
 	TEST_KUBECONFIG=${K3D_KUBECONFIG_PATH} mix test --only integration
