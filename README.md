@@ -160,8 +160,9 @@ mix bonny.gen.controller Widget
 
 Open up your controller and add functionality for your resource's lifecycles:
 
-- Apply; handles ADD and MODIFY events and is called periodically with each every instance of a CRD's resources
+- Apply (or Add/Modify)
 - Delete
+- Reconcile; periodically called with each every instance of a CRD's resources
 
 Each controller can create multiple resources.
 
