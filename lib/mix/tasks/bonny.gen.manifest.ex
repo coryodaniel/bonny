@@ -32,6 +32,8 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
   """
 
   use Mix.Task
+  @requirements ["app.start"]
+
   alias Bonny.Operator
 
   @default_opts [namespace: "default", local: false]
