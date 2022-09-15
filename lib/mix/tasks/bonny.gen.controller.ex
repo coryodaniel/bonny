@@ -51,6 +51,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     |> Mix.Bonny.render(test_out)
   end
 
+  # coveralls-ignore-start trivial code and we use stdout in tests
   defp controller_path(file_name) do
     Path.join(["lib", Mix.Bonny.app_dir_name(), "controllers", "#{file_name}.ex"])
   end
@@ -58,6 +59,8 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
   defp test_path(file_name) do
     Path.join(["test", Mix.Bonny.app_dir_name(), "controllers", "#{file_name}_test.exs"])
   end
+
+  # coveralls-ignore-stop
 
   defp build(args) do
     {opts, parsed, _} = Mix.Bonny.parse_args(args, [], switches: @switches, aliases: @aliases)

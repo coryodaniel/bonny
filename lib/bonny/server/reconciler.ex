@@ -27,28 +27,20 @@ defmodule Bonny.Server.Reconciler do
     {:ok, reconciliation_stream} = K8s.Client.stream(conn, reconcile_operation, opts)
 
     reconciliation_stream
-    |> reconcile_all(controller)
+    |> Stream.filter(&fetch_succeeded?/1)
+    |> Task.async_stream(&reconcile_single_resource(&1, controller))
     |> Stream.filter(&match?({:ok, {:ok, _}}, &1))
     |> Stream.map(fn {:ok, {:ok, resource}} -> resource end)
   end
 
-  defp reconcile_all(resource_stream, controller) do
-    resource_stream
-    |> Task.async_stream(
-      fn
-        resource when is_map(resource) ->
-          metadata = %{module: controller}
-          Logger.debug("Reconciler fetch succeeded", metadata)
-          reconcile_single_resource(resource, controller)
+  defp fetch_succeeded?({:error, error}) do
+    Logger.debug("Reconciler fetch failed", %{error: error})
+    false
+  end
 
-        {:error, error} ->
-          metadata = %{module: controller, error: error}
-          Logger.debug("Reconciler fetch failed", metadata)
-
-          error
-      end,
-      ordered: false
-    )
+  defp fetch_succeeded?(resource) when is_map(resource) do
+    Logger.debug("Reconciler fetch succeeded")
+    true
   end
 
   defp reconcile_single_resource(resource, controller) do

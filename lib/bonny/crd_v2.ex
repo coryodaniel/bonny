@@ -77,6 +77,15 @@ defmodule Bonny.CRDV2 do
     }
   end
 
+  defp check_single_storage!(crd) do
+    no_stored_versions = Enum.count(crd.versions, &(&1.storage == true))
+
+    if no_stored_versions != 1 do
+      raise ArgumentError,
+            "Only one single version of a CRD can have the attribute \"storage\" set to true. In your CRD #{no_stored_versions} versions define `storage: true`."
+    end
+  end
+
   @doc """
   Build a map of names form the given kind.
 
@@ -149,14 +158,6 @@ defmodule Bonny.CRDV2 do
   defp api_group_prefix(%__MODULE__{group: ""}), do: ""
   defp api_group_prefix(%__MODULE__{group: nil}), do: ""
   defp api_group_prefix(%__MODULE__{group: g}), do: "#{g}/"
-
-  defp check_single_storage!(crd) do
-    no_stored_versions = Enum.count(crd.versions, &(&1.storage == true))
-
-    if no_stored_versions != 1 do
-      raise "Only one single version of a CRD can have the attribute \"storage\" set to true. In your CRD #{no_stored_versions} versions define `storage: true`."
-    end
-  end
 
   @doc """
   Calls updates all versions of the given CRD by calling `fun`.

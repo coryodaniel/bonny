@@ -59,5 +59,23 @@ defmodule Bonny.CRDV2Test do
       actual = MUT.to_manifest(crd)
       assert expected == actual
     end
+
+    test "raises if no version with storage flag set to true" do
+      crd =
+        MUT.new!(
+          names: %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []},
+          group: "example.xom",
+          scope: :Namespaced
+        )
+        |> MUT.update_versions(&struct!(&1, storage: false))
+
+      assert_raise(
+        ArgumentError,
+        ~r/Only one single version of a CRD can have the attribute "storage" set to true./,
+        fn ->
+          MUT.to_manifest(crd)
+        end
+      )
+    end
   end
 end
