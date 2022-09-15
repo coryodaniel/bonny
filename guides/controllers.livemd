@@ -167,10 +167,9 @@ defmodule Peach do
       }
     ]
 
-    put_in(
+    Bonny.CRDV2.update_versions(
       crd,
-      [Access.key(:versions), Access.at(0), Access.key(:additionalPrinterColumns)],
-      additional_printer_columns
+      fn version -> struct!(version, additionalPrinterColumns: additional_printer_columns) end
     )
   end
 end
@@ -241,3 +240,38 @@ end
 
 DatabaseUser.crd() |> Bonny.CRDV2.to_manifest()
 ```
+
+## Skipping Observed Generations
+
+One of the kubernetes operator best practices is observing generations. [This blog post explains it really well.](https://alenkacz.medium.com/kubernetes-operator-best-practices-implementing-observedgeneration-250728868792). It is extremly useful especially when you work with status subresources to not get another `modify` event for updating the status.
+
+Bonny supports skipping observed generations of you set the `skip_observed_generations` option to true (see below). If you do this, `add` and `modify` callbacks are not called if a generation has already been observed before.
+
+Behind the scenes, if you set `skip_observed_generations: true`, Bonny adds the status subresource and a field `.status.observedGeneration` to the stored version in your CRD. At runtime, whenever your action callbacks return `:ok`, Bonny updates the status subresource and sets that field to equal `.metadata.generation`.
+
+```elixir
+defmodule Plum do
+  use Bonny.ControllerV2,
+    skip_observed_generations: true
+
+  @impl true
+  def add(resource), do: IO.inspect(resource)
+
+  @impl true
+  def modify(resource), do: IO.inspect(resource)
+
+  @impl true
+  def delete(resource), do: IO.inspect(resource)
+
+  @impl true
+  def reconcile(resource), do: IO.inspect(resource)
+end
+
+Plum.crd() |> Bonny.CRDV2.to_manifest()
+```
+
+### Some important remarks
+
+* When enabling skipping of observed generations, you MUST re-generate the manifest using `mix bonny.gen.manifest`.
+* Your `apply/1` (and/or `add/1` and `modify/1`) callbacks are not called if you change the metadata of a resource, e.g. labels or annotations (since only changing the spec increments the generation).
+* The `reconcile/1` action is meant to "fix" deviated states. Therefore it is always called, even if the reconciled generation has already been observed.

@@ -45,5 +45,15 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
                      end)
                    end
     end
+
+    test "raises if wrong number of args" do
+      assert_raise Mix.Error,
+                   ~r/Invalid arguments./,
+                   fn ->
+                     capture_io(fn ->
+                       Controller.run([])
+                     end)
+                   end
+    end
   end
 end

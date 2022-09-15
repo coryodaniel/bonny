@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Bonny.ResourceTest do
   @moduledoc false
   use ExUnit.Case, async: true
@@ -5,6 +6,38 @@ defmodule Bonny.ResourceTest do
   alias Bonny.Resource, as: MUT
 
   doctest MUT
+
+  defmodule K8sMock do
+    require Logger
+
+    import K8s.Test.HTTPHelper
+
+    def conn(), do: Bonny.K8sMock.conn(__MODULE__)
+
+    def request(
+          :patch,
+          "apis/example.com/v1/namespaces/default/widgets/foo/status",
+          body,
+          _headers,
+          _opts
+        ) do
+      ref =
+        body
+        |> Jason.decode!()
+        |> get_in(~w(status ref))
+        |> String.to_charlist()
+        |> :erlang.list_to_ref()
+
+      send(self(), {ref, "status applied"})
+
+      render(%{})
+    end
+
+    def request(_method, _url, _body, _headers, _opts) do
+      Logger.error("Call to #{__MODULE__}.request/5 not handled: #{inspect(binding())}")
+      {:error, %HTTPoison.Error{reason: "request not mocked"}}
+    end
+  end
 
   describe "add_owner_reference/3" do
     setup do
@@ -87,6 +120,78 @@ defmodule Bonny.ResourceTest do
              |> get_in(["metadata", "ownerReferences"])
              |> hd()
              |> Map.get("blockOwnerDeletion") == true
+    end
+  end
+
+  describe "set_observed_generation/1" do
+    test "sets .status.observedGeneration to whatever is in .metadata.generation" do
+      res = MUT.set_observed_generation(%{"metadata" => %{"generation" => "some-value"}})
+
+      assert res["status"]["observedGeneration"] == "some-value"
+    end
+
+    test "does not modify or remove other status values" do
+      res =
+        MUT.set_observed_generation(%{
+          "metadata" => %{"generation" => "some-value"},
+          "status" => %{"preserved" => "field"}
+        })
+
+      assert res["status"]["preserved"] == "field"
+    end
+  end
+
+  describe "drop_managed_fields/1" do
+    test "drop .metadata.managedFields when present" do
+      res = MUT.drop_managed_fields(%{"metadata" => %{"managedFields" => "present"}})
+
+      refute Map.has_key?(res["metadata"], "managedFields")
+    end
+
+    test "noop if no such fields" do
+      res = %{"metadata" => %{"other" => "field"}}
+      updated_res = MUT.drop_managed_fields(res)
+
+      assert res == updated_res
+    end
+  end
+
+  describe "apply_status/3" do
+    setup do
+      conn = __MODULE__.K8sMock.conn()
+      ref = make_ref()
+
+      resource = %{
+        "apiVersion" => "example.com/v1",
+        "metadata" => %{
+          "name" => "foo",
+          "namespace" => "default"
+        }
+      }
+
+      [conn: conn, ref: ref, resource: resource]
+    end
+
+    test "calls k8s library to apply status when present", %{
+      conn: conn,
+      ref: ref,
+      resource: resource
+    } do
+      resource =
+        Map.put(resource, "status", %{
+          "some" => "field",
+          "ref" => ref |> :erlang.ref_to_list() |> List.to_string()
+        })
+
+      assert {:ok, _} = MUT.apply_status(resource, "widgets", conn)
+      assert_receive {^ref, "status applied"}
+    end
+
+    test "noop if no status in resource", %{
+      conn: conn,
+      resource: resource
+    } do
+      assert :noop == MUT.apply_status(resource, "widgets", conn)
     end
   end
 end

@@ -57,7 +57,14 @@ defmodule Bonny.ControllerV2 do
         end)
         |> Macro.escape()
 
+      skip_observed_generations =
+        opts
+        |> Keyword.get(:skip_observed_generations, false)
+        |> Macro.escape()
+
       use Supervisor
+
+      import Bonny.Resource, only: [add_owner_reference: 2]
 
       @behaviour Bonny.ControllerV2
 
@@ -74,16 +81,28 @@ defmodule Bonny.ControllerV2 do
         conn = conn()
         list_operation = list_operation()
 
+        watcher_stream =
+          __MODULE__
+          |> Bonny.Server.Watcher.get_stream(conn, list_operation,
+            skip_observed_generations: unquote(skip_observed_generations)
+          )
+          |> Stream.map(&post_process_resource/1)
+
+        reconciler_stream =
+          __MODULE__
+          |> Bonny.Server.Reconciler.get_stream(conn, list_operation)
+          |> Task.async_stream(&post_process_resource/1)
+
         children = [
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.WatchServer,
            name: __MODULE__.WatchServer,
-           stream: Bonny.Server.Watcher.get_stream(__MODULE__, conn, list_operation),
+           stream: watcher_stream,
            termination_delay: 5_000},
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.ReconcileServer,
            name: __MODULE__.ReconcileServer,
-           stream: Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation),
+           stream: reconciler_stream,
            termination_delay: 30_000}
         ]
 
@@ -95,15 +114,39 @@ defmodule Bonny.ControllerV2 do
         )
       end
 
+      defp post_process_resource(resource) do
+        resource
+        |> maybe_set_observed_generation()
+        |> Bonny.Resource.apply_status(crd().names.plural, conn())
+      end
+
+      if skip_observed_generations do
+        defp maybe_set_observed_generation(resource),
+          do: Bonny.Resource.set_observed_generation(resource)
+
+        defp maybe_add_obseved_generation_status(crd),
+          do:
+            Bonny.CRDV2.update_versions(
+              crd,
+              & &1.storage,
+              &Bonny.CRD.Version.add_observed_generation_status/1
+            )
+      else
+        defp maybe_set_observed_generation(resource), do: resource
+        defp maybe_add_obseved_generation_status(crd), do: crd
+      end
+
       @impl Bonny.ControllerV2
       def list_operation(), do: Bonny.ControllerV2.list_operation(__MODULE__)
 
       @impl Bonny.ControllerV2
       defdelegate conn(), to: Bonny.Config
 
-      defdelegate add_owner_reference(resource, owner, opts \\ []), to: Bonny.Resource
-
-      def crd(), do: Bonny.ControllerV2.crd(__MODULE__)
+      def crd() do
+        __MODULE__
+        |> Bonny.ControllerV2.crd()
+        |> maybe_add_obseved_generation_status()
+      end
 
       defoverridable list_operation: 0, conn: 0
     end
@@ -119,18 +162,18 @@ defmodule Bonny.ControllerV2 do
       |> hd()
       |> CRD.kind_to_names()
 
-    crd =
-      CRD.new!(
-        names: names,
-        group: Bonny.Config.group(),
-        version: Bonny.CRD.Version.new!(name: "v1")
-      )
+    CRD.new!(
+      names: names,
+      group: Bonny.Config.group(),
+      version: Bonny.CRD.Version.new!(name: "v1")
+    )
+    |> maybe_cutomize_crd(controller)
+  end
 
-    if function_exported?(controller, :customize_crd, 1) do
-      controller.customize_crd(crd)
-    else
-      crd
-    end
+  defp maybe_cutomize_crd(crd, controller) do
+    if function_exported?(controller, :customize_crd, 1),
+      do: controller.customize_crd(crd),
+      else: crd
   end
 
   @spec list_operation(module()) :: K8s.Operation.t()

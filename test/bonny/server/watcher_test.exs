@@ -22,16 +22,7 @@ defmodule Bonny.Server.WatcherTest do
             "object" => %{
               "apiVersion" => "v1",
               "kind" => "Namespace",
-              "metadata" => %{"name" => "foo", "resourceVersion" => "11"}
-            }
-          })
-
-          send_object(pid, %{
-            "type" => "ADDED",
-            "object" => %{
-              "apiVersion" => "v1",
-              "kind" => "Namespace",
-              "metadata" => %{"name" => "bar", "resourceVersion" => "12"}
+              "metadata" => %{"name" => "foo", "resourceVersion" => "11", "generation" => 1}
             }
           })
 
@@ -40,7 +31,18 @@ defmodule Bonny.Server.WatcherTest do
             "object" => %{
               "apiVersion" => "v1",
               "kind" => "Namespace",
-              "metadata" => %{"name" => "foo", "resourceVersion" => "13"}
+              "metadata" => %{"name" => "bar", "resourceVersion" => "12", "generation" => 2},
+              "status" => %{"observedGeneration" => 1}
+            }
+          })
+
+          send_object(pid, %{
+            "type" => "MODIFIED",
+            "object" => %{
+              "apiVersion" => "v1",
+              "kind" => "Namespace",
+              "metadata" => %{"name" => "foo", "resourceVersion" => "13", "generation" => 2},
+              "status" => %{"observedGeneration" => 2}
             }
           })
 
@@ -49,7 +51,8 @@ defmodule Bonny.Server.WatcherTest do
             "object" => %{
               "apiVersion" => "v1",
               "kind" => "Namespace",
-              "metadata" => %{"name" => "foo", "resourceVersion" => "14"}
+              "metadata" => %{"name" => "foo", "resourceVersion" => "14", "generation" => 2},
+              "status" => %{"observedGeneration" => 2}
             }
           })
 
@@ -103,8 +106,29 @@ defmodule Bonny.Server.WatcherTest do
     |> Task.await()
 
     assert_received {:add, "foo"}
-    assert_received {:add, "bar"}
+    assert_received {:modify, "bar"}
     assert_received {:modify, "foo"}
+    assert_received {:delete, "foo"}
+  end
+
+  test "watcher skips modify events of observed generations if skip_observed_generations is set",
+       %{conn: conn} do
+    Process.register(self(), __MODULE__)
+
+    operation = K8s.Client.list("example.com/v1", :widgets)
+
+    stream =
+      MUT.get_stream(__MODULE__.TestController, conn, operation, skip_observed_generations: true)
+      |> Stream.take(3)
+
+    Task.async(fn ->
+      Stream.run(stream)
+    end)
+    |> Task.await()
+
+    assert_received {:add, "foo"}
+    assert_received {:modify, "bar"}
+    refute_received {:modify, "foo"}
     assert_received {:delete, "foo"}
   end
 end

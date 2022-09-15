@@ -1,32 +1,37 @@
-defmodule TestResource do
+defmodule TestResourceV32 do
   @moduledoc """
-  This controller gets the pid and reference from the resource's spec.
-  It then sends a message including that reference, the action and the resource
-  name to the pid from the resource.
-
-  A test can therefore create a resource with its own pid (self()), send it
-  to kubernetes and wait to receive the message from this controller.
+  Like TestResourceV2 but observed generations are rejected.
   """
 
-  use Bonny.Controller
+  use Bonny.ControllerV2,
+    skip_observed_generations: true
 
-  @names %{
-    plural: "testresources",
-    singular: "testresource",
-    kind: "TestResource",
-    shortNames: nil
-  }
-
+  @impl Bonny.ControllerV2
   @spec conn() :: K8s.Conn.t()
   def conn(), do: Bonny.Test.IntegrationHelper.conn()
 
-  @impl true
+  @impl Bonny.ControllerV2
+  def list_operation() do
+    __MODULE__
+    |> Bonny.ControllerV2.list_operation()
+    |> K8s.Operation.put_label_selector(K8s.Selector.label({"version", "3.2"}))
+  end
+
+  @impl Bonny.ControllerV2
+  def customize_crd(crd) do
+    struct!(crd, names: Bonny.CRDV2.kind_to_names("TestResourceV3"))
+  end
+
+  @impl Bonny.ControllerV2
   def add(resource), do: respond(resource, :added)
-  @impl true
+
+  @impl Bonny.ControllerV2
   def modify(resource), do: respond(resource, :modified)
-  @impl true
+
+  @impl Bonny.ControllerV2
   def delete(resource), do: respond(resource, :deleted)
-  @impl true
+
+  @impl Bonny.ControllerV2
   def reconcile(resource), do: respond(resource, :reconciled)
 
   defp parse_pid(pid), do: pid |> String.to_charlist() |> :erlang.list_to_pid()

@@ -31,14 +31,6 @@ defmodule Bonny.CRD.Version do
               },
               optional(:additionalProperties) => schema_t() | boolean(),
               optional(:items) => schema_t(),
-              optional(:subresources) => %{
-                optional(:status) => %{},
-                optional(:scale) => %{
-                  required(:specReplicasPath) => binary(),
-                  required(:statusReplicasPath) => binary(),
-                  required(:labelSelectorPath) => binary()
-                }
-              },
               optional(:"x-kubernetes-preserve-unknown-fields") => boolean(),
               optional(:"x-kubernetes-int-or-string") => boolean(),
               optional(:"x-kubernetes-embedded-resource") => boolean(),
@@ -60,6 +52,16 @@ defmodule Bonny.CRD.Version do
   @typedoc """
   Defines a version of a custom resource. Refer to the [CRD versioning documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/)
   """
+
+  @type subresources_t :: %{
+          optional(:status) => %{},
+          optional(:scale) => %{
+            required(:specReplicasPath) => binary(),
+            required(:statusReplicasPath) => binary(),
+            required(:labelSelectorPath) => binary()
+          }
+        }
+
   @type t :: %__MODULE__{
           name: binary(),
           served: boolean(),
@@ -67,7 +69,8 @@ defmodule Bonny.CRD.Version do
           deprecated: boolean(),
           deprecationWarning: nil | binary(),
           schema: schema_t(),
-          additionalPrinterColumns: list(printer_column_t())
+          additionalPrinterColumns: list(printer_column_t()),
+          subresources: subresources_t()
         }
 
   defstruct [
@@ -77,11 +80,54 @@ defmodule Bonny.CRD.Version do
     deprecated: false,
     deprecationWarning: nil,
     schema: %{openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}},
-    additionalPrinterColumns: []
+    additionalPrinterColumns: [],
+    subresources: %{}
   ]
 
   @spec new!(keyword()) :: __MODULE__.t()
   def new!(fields) do
     struct!(__MODULE__, fields)
+  end
+
+  @doc """
+  Adds the status subresource if it hasn't been added before
+  and adds a field .status.observedGeneration of type integer
+  to the OpenAPIV3Schema.
+
+  ### Example
+
+      iex> Bonny.CRD.Version.add_observed_generation_status(%{})
+      %{
+        subresources: %{status: %{}},
+        schema: %{
+          openAPIV3Schema: %{
+            type: :object,
+            properties: %{
+              status: %{
+                type: :object,
+                properties: %{
+                  observedGeneration: %{type: :integer}
+                }
+              }
+            }
+          }
+        }
+      }
+  """
+  @spec add_observed_generation_status(t()) :: t()
+  def add_observed_generation_status(version) do
+    version
+    |> put_in([Access.key(:subresources, %{}), :status], %{})
+    |> put_in(
+      [
+        Access.key(:schema, %{}),
+        Access.key(:openAPIV3Schema, %{type: :object}),
+        Access.key(:properties, %{}),
+        Access.key(:status, %{type: :object, properties: %{}}),
+        Access.key(:properties, %{}),
+        :observedGeneration
+      ],
+      %{type: :integer}
+    )
   end
 end

@@ -21,31 +21,26 @@ defmodule Bonny.Server.Reconciler do
 
   @callback reconcile(map()) :: :ok | {:ok, any()} | {:error, any()}
 
-  @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), keyword()) :: Enumerable.t()
+  @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), keyword()) ::
+          Enumerable.t(Bonny.Resource.t())
   def get_stream(controller, conn, reconcile_operation, opts \\ []) do
     {:ok, reconciliation_stream} = K8s.Client.stream(conn, reconcile_operation, opts)
-    reconcile_all(reconciliation_stream, controller)
+
+    reconciliation_stream
+    |> Stream.filter(&fetch_succeeded?/1)
+    |> Task.async_stream(&reconcile_single_resource(&1, controller))
+    |> Stream.filter(&match?({:ok, {:ok, _}}, &1))
+    |> Stream.map(fn {:ok, {:ok, resource}} -> resource end)
   end
 
-  defp reconcile_all(resource_stream, controller) do
-    resource_stream
-    |> Task.async_stream(
-      fn
-        resource when is_map(resource) ->
-          reconcile_single_resource(resource, controller)
-          metadata = %{module: controller}
-          Logger.debug("Reconciler fetch succeeded", metadata)
+  defp fetch_succeeded?({:error, error}) do
+    Logger.debug("Reconciler fetch failed", %{error: error})
+    false
+  end
 
-          resource
-
-        {:error, error} ->
-          metadata = %{module: controller, error: error}
-          Logger.debug("Reconciler fetch failed", metadata)
-
-          error
-      end,
-      ordered: false
-    )
+  defp fetch_succeeded?(resource) when is_map(resource) do
+    Logger.debug("Reconciler fetch succeeded")
+    true
   end
 
   defp reconcile_single_resource(resource, controller) do
@@ -61,11 +56,11 @@ defmodule Bonny.Server.Reconciler do
       case controller.reconcile(resource) do
         :ok ->
           Logger.debug("Reconciler reconciliation succeeded", metadata)
-          {:ok, metadata}
+          {{:ok, resource}, metadata}
 
         {:ok, _} ->
           Logger.debug("Reconciler reconciliation succeeded", metadata)
-          {:ok, metadata}
+          {{:ok, resource}, metadata}
 
         {:error, error} ->
           metadata = Map.put(metadata, :error, error)

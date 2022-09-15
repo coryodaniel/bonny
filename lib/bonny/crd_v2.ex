@@ -77,6 +77,15 @@ defmodule Bonny.CRDV2 do
     }
   end
 
+  defp check_single_storage!(crd) do
+    no_stored_versions = Enum.count(crd.versions, &(&1.storage == true))
+
+    if no_stored_versions != 1 do
+      raise ArgumentError,
+            "Only one single version of a CRD can have the attribute \"storage\" set to true. In your CRD #{no_stored_versions} versions define `storage: true`."
+    end
+  end
+
   @doc """
   Build a map of names form the given kind.
 
@@ -150,11 +159,76 @@ defmodule Bonny.CRDV2 do
   defp api_group_prefix(%__MODULE__{group: nil}), do: ""
   defp api_group_prefix(%__MODULE__{group: g}), do: "#{g}/"
 
-  defp check_single_storage!(crd) do
-    no_stored_versions = Enum.count(crd.versions, &(&1.storage == true))
+  @doc """
+  Calls updates all versions of the given CRD by calling `fun`.
 
-    if no_stored_versions != 1 do
-      raise "Only one single version of a CRD can have the attribute \"storage\" set to true. In your CRD #{no_stored_versions} versions define `storage: true`."
-    end
+  ### Examples
+
+      iex> crd = Bonny.CRDV2.new!(versions: [Bonny.CRD.Version.new!(name: "v1")], group: "", names: [])
+      ...> Bonny.CRDV2.update_versions(crd, & struct!(&1, name: "v1beta1"))
+      %Bonny.CRDV2{
+              group: "",
+              names: [],
+              scope: :Namespaced,
+              versions: [%Bonny.CRD.Version{
+                name: "v1beta1",
+                served: true,
+                storage: true,
+                deprecated: false,
+                deprecationWarning: nil,
+                schema: %{openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}},
+                additionalPrinterColumns: [],
+                subresources: %{}
+              }]
+            }
+  """
+  @spec update_versions(t(), (Bonny.CRD.Version.t() -> Bonny.CRD.Version.t())) :: t()
+  def update_versions(crd, fun) do
+    update_in(crd, [Access.key(:versions), Access.all()], fun)
+  end
+
+  @doc """
+  Calls updates all versions of the given CRD for which `filter`
+  resolves truthy, by calling `fun`.
+
+  ### Examples
+
+      iex> crd = Bonny.CRDV2.new!(versions: [Bonny.CRD.Version.new!(name: "v1beta1"), Bonny.CRD.Version.new!(name: "v1")], group: "", names: [])
+      ...> Bonny.CRDV2.update_versions(crd, & &1.name == "v1beta1", & struct!(&1, storage: false))
+      %Bonny.CRDV2{
+              group: "",
+              names: [],
+              scope: :Namespaced,
+              versions: [
+                %Bonny.CRD.Version{
+                  name: "v1beta1",
+                  served: true,
+                  storage: false,
+                  deprecated: false,
+                  deprecationWarning: nil,
+                  schema: %{openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}},
+                  additionalPrinterColumns: [],
+                  subresources: %{}
+                },
+                %Bonny.CRD.Version{
+                  name: "v1",
+                  served: true,
+                  storage: true,
+                  deprecated: false,
+                  deprecationWarning: nil,
+                  schema: %{openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}},
+                  additionalPrinterColumns: [],
+                  subresources: %{}
+                }
+              ]
+            }
+  """
+  @spec update_versions(
+          t(),
+          (Bonny.CRD.Version.t() -> boolean()),
+          (Bonny.CRD.Version.t() -> Bonny.CRD.Version.t())
+        ) :: t()
+  def update_versions(crd, filter, fun) do
+    update_in(crd, [Access.key(:versions), Access.filter(filter)], fun)
   end
 end

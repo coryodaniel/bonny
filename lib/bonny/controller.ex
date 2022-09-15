@@ -47,6 +47,8 @@ defmodule Bonny.Controller do
 
       use Supervisor
 
+      import Bonny.Resource, only: [add_owner_reference: 2]
+
       @spec start_link(term) :: {:ok, pid}
       def start_link(_) do
         Supervisor.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -83,8 +85,6 @@ defmodule Bonny.Controller do
 
       @impl Bonny.Controller
       defdelegate conn(), to: Bonny.Config
-
-      defdelegate add_owner_reference(resource, owner, opts \\ []), to: Bonny.Resource
 
       defoverridable list_operation: 0, conn: 0
     end

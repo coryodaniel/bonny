@@ -9,7 +9,7 @@ if Mix.env() == :test do
     http_provider: K8s.Client.DynamicHTTPProvider
 
   config :bonny,
-    controllers: [Widget, Cog, V1.Whizbang, TestResource, TestResourceV2],
+    controllers: [Widget, Cog, V1.Whizbang, TestResource, TestResourceV2, TestResourceV3],
     group: "example.com",
     get_conn: {Bonny.K8sMock, :conn},
     api_version: "apiextensions.k8s.io/v1"
@@ -31,4 +31,6 @@ if Mix.env() == :dev do
       DeploymentEventLogController,
       TestScheduler
     ]
+
+  # config :elixir, :dbg_callback, {Macro, :dbg, []}
 end

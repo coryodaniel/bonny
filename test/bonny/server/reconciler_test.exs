@@ -3,6 +3,8 @@ defmodule Bonny.Server.ReconcilerTest do
   @moduledoc false
   use ExUnit.Case, async: true
 
+  import ExUnit.CaptureLog
+
   alias Bonny.Server.Reconciler, as: MUT
 
   defmodule K8sMock do
@@ -17,6 +19,12 @@ defmodule Bonny.Server.ReconcilerTest do
         10 -> render(%{"items" => [%{"name" => "foo"}, %{"name" => "bar"}]})
         1 -> render(%{"metadata" => %{"resourceVersion" => "1337"}})
       end
+    end
+
+    def request(:get, "apis/example.com/v1/cogs", _, _, _) do
+      render(%{"reason" => "NotFound", "message" => "next page not found"}, 404, [
+        {"Content-Type", "application/json"}
+      ])
     end
   end
 
@@ -45,5 +53,22 @@ defmodule Bonny.Server.ReconcilerTest do
 
     assert_receive {:name, "foo"}
     assert_receive {:name, "bar"}
+  end
+
+  test "reconciler logs and rejects fetch errors", %{conn: conn} do
+    operation = K8s.Client.list("example.com/v1", :cogs)
+
+    log =
+      capture_log(fn ->
+        level_before_test = Logger.level()
+        Logger.configure(level: :debug)
+        events = MUT.get_stream(TestController, conn, operation) |> Enum.to_list()
+        #  assert event is rejected
+        assert Enum.empty?(events)
+        Logger.configure(level: level_before_test)
+      end)
+
+    # assert error is logged
+    assert log =~ "Reconciler fetch failed"
   end
 end
