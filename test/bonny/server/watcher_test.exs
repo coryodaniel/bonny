@@ -110,25 +110,4 @@ defmodule Bonny.Server.WatcherTest do
     assert_received {:modify, "foo"}
     assert_received {:delete, "foo"}
   end
-
-  test "watcher skips modify events of observed generations if skip_observed_generations is set",
-       %{conn: conn} do
-    Process.register(self(), __MODULE__)
-
-    operation = K8s.Client.list("example.com/v1", :widgets)
-
-    stream =
-      MUT.get_stream(__MODULE__.TestController, conn, operation, skip_observed_generations: true)
-      |> Stream.take(3)
-
-    Task.async(fn ->
-      Stream.run(stream)
-    end)
-    |> Task.await()
-
-    assert_received {:add, "foo"}
-    assert_received {:modify, "bar"}
-    refute_received {:modify, "foo"}
-    assert_received {:delete, "foo"}
-  end
 end

@@ -6,6 +6,41 @@ defmodule Bonny.Resource do
   @type t :: map()
 
   @doc """
+  Get a reference to the given resource
+
+  ### Example
+
+      iex> resource = %{
+      ...>   "apiVersion" => "example.com/v1",
+      ...>   "kind" => "Orange",
+      ...>   "metadata" => %{
+      ...>     "name" => "annoying",
+      ...>     "namespace" => "default",
+      ...>     "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
+      ...>   }
+      ...> }
+      ...> Bonny.Resource.resource_reference(resource)
+      %{
+        "apiVersion" => "example.com/v1",
+        "kind" => "Orange",
+        "name" => "annoying",
+        "namespace" => "default",
+        "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
+      }
+  """
+  def resource_reference(nil), do: nil
+
+  def resource_reference(resource) do
+    %{
+      "apiVersion" => K8s.Resource.FieldAccessors.api_version(resource),
+      "namespace" => K8s.Resource.FieldAccessors.namespace(resource),
+      "kind" => K8s.Resource.FieldAccessors.kind(resource),
+      "name" => K8s.Resource.FieldAccessors.name(resource),
+      "uid" => get_in(resource, ~w(metadata uid))
+    }
+  end
+
+  @doc """
   Add an owner reference to the given resource.
 
   ### Example
@@ -38,6 +73,7 @@ defmodule Bonny.Resource do
             "controller" => true,
             "kind" => "Orange",
             "name" => "annoying",
+            "namespace" => "default",
             "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
           }]
         }
@@ -75,14 +111,10 @@ defmodule Bonny.Resource do
   end
 
   defp owner_reference(resource, opts) do
-    %{
-      "apiVersion" => get_in(resource, ["apiVersion"]),
-      "kind" => get_in(resource, ["kind"]),
-      "name" => get_in(resource, ["metadata", "name"]),
-      "uid" => get_in(resource, ["metadata", "uid"]),
-      "blockOwnerDeletion" => Keyword.get(opts, :block_owner_deletion, false),
-      "controller" => true
-    }
+    resource
+    |> resource_reference()
+    |> Map.put("blockOwnerDeletion", Keyword.get(opts, :block_owner_deletion, false))
+    |> Map.put("controller", true)
   end
 
   @doc """

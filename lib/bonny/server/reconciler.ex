@@ -9,26 +9,29 @@ defmodule Bonny.Server.Reconciler do
       Task.async(fn -> Stream.run(reconciliation_stream) end)
   """
 
-  @doc """
-  Takes a controller that must define the following functions and returns a (prepared) stream.
-
-  * `conn/0` - should return a K8s.Conn.t()
-  * `reconcile_operation/0` - should return a K8s.Operation.t() list operation that produces the stream of resources
-  * `reconcile/1` - takes a map and processes it
-  """
-
   require Logger
 
   @callback reconcile(map()) :: :ok | {:ok, any()} | {:error, any()}
 
+  @doc """
+  """
+  @spec get_raw_stream(K8s.Conn.t(), K8s.Operation.t(), keyword()) :: Enumerable.t()
+  def get_raw_stream(conn, reconcile_operation, stream_opts \\ []) do
+    {:ok, reconciliation_stream} = K8s.Client.stream(conn, reconcile_operation, stream_opts)
+
+    Stream.filter(reconciliation_stream, &fetch_succeeded?/1)
+  end
+
+  @doc """
+  Prepares a stream wich maps each resoruce returned by the `reconcile_operation` to
+  a function `reconcile/1` on the given `module`. If given, the stream_opts are passed
+  to K8s.Client.stream/3
+  """
   @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), keyword()) ::
           Enumerable.t(Bonny.Resource.t())
-  def get_stream(controller, conn, reconcile_operation, opts \\ []) do
-    {:ok, reconciliation_stream} = K8s.Client.stream(conn, reconcile_operation, opts)
-
-    reconciliation_stream
-    |> Stream.filter(&fetch_succeeded?/1)
-    |> Task.async_stream(&reconcile_single_resource(&1, controller))
+  def get_stream(module, conn, reconcile_operation, stream_opts \\ []) do
+    get_raw_stream(conn, reconcile_operation, stream_opts)
+    |> Task.async_stream(&reconcile_single_resource(&1, module))
     |> Stream.filter(&match?({:ok, {:ok, _}}, &1))
     |> Stream.map(fn {:ok, {:ok, resource}} -> resource end)
   end
@@ -43,9 +46,9 @@ defmodule Bonny.Server.Reconciler do
     true
   end
 
-  defp reconcile_single_resource(resource, controller) do
+  defp reconcile_single_resource(resource, module) do
     metadata = %{
-      module: controller,
+      module: module,
       name: K8s.Resource.name(resource),
       namespace: K8s.Resource.namespace(resource),
       kind: K8s.Resource.kind(resource),
@@ -53,7 +56,7 @@ defmodule Bonny.Server.Reconciler do
     }
 
     :telemetry.span([:reconciler, :reconcile], metadata, fn ->
-      case controller.reconcile(resource) do
+      case module.reconcile(resource) do
         :ok ->
           Logger.debug("Reconciler reconciliation succeeded", metadata)
           {{:ok, resource}, metadata}

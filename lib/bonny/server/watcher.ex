@@ -13,27 +13,34 @@ defmodule Bonny.Server.Watcher do
       Task.async(fn -> Stream.run(watch_stream) end)
   """
 
+  @type action :: :add | :modify | :delete
+  @type watch_event :: {action(), Bonny.Resource.t()}
+
   @operations %{
     "ADDED" => :add,
     "MODIFIED" => :modify,
     "DELETED" => :delete
   }
 
-  @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t(), Keyword.t()) ::
-          Enumerable.t(Bonny.Resource.t())
-  def get_stream(controller, conn, watch_operation, opts \\ []) do
-    skip_observed_generations = Keyword.get(opts, :skip_observed_generations, false)
+  @spec get_raw_stream(K8s.Conn.t(), K8s.Operation.t()) :: Enumerable.t(watch_event())
+  def get_raw_stream(conn, watch_operation) do
     {:ok, watch_stream} = K8s.Client.watch_and_stream(conn, watch_operation)
 
     watch_stream
-    |> Stream.reject(&skip_resource?(&1, skip_observed_generations))
+    |> Stream.map(fn %{"type" => type, "object" => resource} -> {@operations[type], resource} end)
+  end
+
+  @spec get_stream(module(), K8s.Conn.t(), K8s.Operation.t()) ::
+          Enumerable.t(Bonny.Resource.t())
+  def get_stream(controller, conn, watch_operation) do
+    get_raw_stream(conn, watch_operation)
     |> Stream.map(&run_action_callbacks(controller, &1))
     |> Stream.reject(&(&1 == :error))
   end
 
   defp run_action_callbacks(
          controller,
-         %{"type" => type, "object" => resource}
+         {type, resource}
        ) do
     metadata = %{
       module: controller,
@@ -44,7 +51,7 @@ defmodule Bonny.Server.Watcher do
     }
 
     :telemetry.span([:watcher, :watch], metadata, fn ->
-      case apply(controller, @operations[type], [resource]) do
+      case apply(controller, type, [resource]) do
         :ok ->
           {resource, metadata}
 
@@ -55,14 +62,5 @@ defmodule Bonny.Server.Watcher do
           {:error, Map.put(metadata, :error, error)}
       end
     end)
-  end
-
-  defp skip_resource?(_, false), do: false
-  defp skip_resource?(%{"type" => "DELETED"}, _), do: false
-
-  defp skip_resource?(%{"object" => resource}, _) do
-    # skip resource if generation has been observed
-    get_in(resource, ~w(metadata generation)) ==
-      get_in(resource, [Access.key("status", %{}), "observedGeneration"])
   end
 end
