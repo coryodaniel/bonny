@@ -25,13 +25,24 @@ defmodule Bonny.Operator do
         apiGroups: ["apiextensions.k8s.io"],
         resources: ["customresourcedefinitions"],
         verbs: ["*"]
+      },
+      %{
+        apiGroups: ["events.k8s.io/v1"],
+        resources: ["events"],
+        verbs: ["*"]
       }
     ]
 
     crd_rules =
       Enum.map(Bonny.Config.controllers(), fn controller ->
         crd = controller.crd()
-        %{apiGroups: [crd.group], resources: [crd.names.plural], verbs: ["*"]}
+        plural_name = crd.names.plural
+
+        %{
+          apiGroups: [crd.group],
+          resources: [plural_name, "#{plural_name}/status", "#{plural_name}/scale"],
+          verbs: ["*"]
+        }
       end)
 
     controller_rules = Enum.flat_map(Bonny.Config.controllers(), & &1.rules())
