@@ -227,6 +227,10 @@ defmodule Bonny.ControllerV2 do
     end
   end
 
+  @doc """
+  Register a RBAC rule. Use this macro if your controller requires
+  additional access to the kubernetes API.
+  """
   defmacro rbac_rule(rule) do
     quote do
       unquote(Bonny.ControllerV2.__rbac_rule__(rule))
