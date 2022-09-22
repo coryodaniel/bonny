@@ -54,120 +54,105 @@ defmodule Bonny.ControllerV2 do
 
   @doc false
   defmacro __using__(opts) do
-    quote bind_quoted: [opts: opts] do
-      rules =
-        opts
-        |> Keyword.get_lazy(:rbac_rules, fn -> Keyword.get_values(opts, :rbac_rule) end)
-        |> Enum.map(fn {apis, resources, verbs} ->
-          %{
-            apiGroups: List.wrap(apis),
-            resources: resources,
-            verbs: verbs
-          }
-        end)
-        |> Macro.escape()
+    quote do
+      unquote(__prelude__())
+      unquote(__init_process__())
+      unquote(__maybes__(opts[:skip_observed_generations]))
+      unquote(__defs__())
 
-      skip_observed_generations =
-        opts
-        |> Keyword.get(:skip_observed_generations, false)
-        |> Macro.escape()
+      defoverridable list_operation: 0, conn: 0
+    end
+  end
+
+  @spec __prelude__ ::
+          {:__block__, [], [{:@ | :import | :use | {any, any, any}, list, [...]}, ...]}
+  def __prelude__() do
+    quote do
+      Module.register_attribute(__MODULE__, :rbac_rules, accumulate: true)
 
       use Supervisor
 
       import Bonny.Resource, only: [add_owner_reference: 2]
-      import Bonny.ControllerV2, only: [event: 5, event: 6]
+      import Bonny.ControllerV2, only: [event: 5, event: 6, rbac_rule: 1]
 
       @behaviour Bonny.ControllerV2
 
-      @spec rules() :: list(map())
-      def rules(), do: unquote(rules)
+      @before_compile Bonny.ControllerV2
+    end
+  end
 
+  def __init_process__() do
+    quote do
       @spec start_link(term) :: {:ok, pid}
-      def start_link(_) do
-        Supervisor.start_link(__MODULE__, %{}, name: __MODULE__)
-      end
+      def start_link(_), do: Supervisor.start_link(__MODULE__, %{}, name: __MODULE__)
 
       @impl true
-      def init(_init_arg) do
-        conn = conn()
-        list_operation = list_operation()
+      def init(_init_arg), do: Bonny.ControllerV2.__init__(__MODULE__)
+    end
+  end
 
-        watcher_stream =
-          Bonny.Server.Watcher.get_raw_stream(conn, list_operation)
-          |> maybe_reject_watch_event()
-          |> Stream.map(&process_event/1)
+  def __init__(controller) do
+    conn = controller.conn()
+    list_operation = controller.list_operation()
 
-        reconciler_stream =
-          __MODULE__
-          |> Bonny.Server.Reconciler.get_stream(conn, list_operation)
-          |> Task.async_stream(&process_event({:reconcile, &1}))
+    watcher_stream =
+      Bonny.Server.Watcher.get_raw_stream(conn, list_operation)
+      |> controller.maybe_reject_watch_event()
+      |> Stream.map(&__handle_event__(controller, &1))
 
-        children = [
-          {Bonny.Server.AsyncStreamRunner,
-           id: __MODULE__.WatchServer,
-           name: __MODULE__.WatchServer,
-           stream: watcher_stream,
-           termination_delay: 5_000},
-          {Bonny.Server.AsyncStreamRunner,
-           id: __MODULE__.ReconcileServer,
-           name: __MODULE__.ReconcileServer,
-           stream: reconciler_stream,
-           termination_delay: 30_000},
-          {Bonny.EventRecorder, name: __MODULE__.EventRecorder, conn: conn()}
-        ]
+    reconciler_stream =
+      controller
+      |> Bonny.Server.Reconciler.get_stream(conn, list_operation)
+      |> Task.async_stream(&__handle_event__(controller, {:reconcile, &1}))
 
-        Supervisor.init(
-          children,
-          strategy: :one_for_one,
-          max_restarts: 20,
-          max_seconds: 120
-        )
-      end
+    children = [
+      {Bonny.Server.AsyncStreamRunner,
+       id: :"#{controller}.WatchServer",
+       name: :"#{controller}.WatchServer",
+       stream: watcher_stream,
+       termination_delay: 5_000},
+      {Bonny.Server.AsyncStreamRunner,
+       id: :"#{controller}.ReconcileServer",
+       name: :"#{controller}.ReconcileServer",
+       stream: reconciler_stream,
+       termination_delay: 30_000},
+      {Bonny.EventRecorder, name: :"#{controller}.EventRecorder", conn: conn}
+    ]
 
-      defp process_event({action, resource} = watch_event) do
-        apply(__MODULE__, action, [resource])
-        |> Bonny.ControllerV2.map_event_handler_result(watch_event)
-        |> Bonny.ControllerV2.process_event_handler_result(&event/6)
-        |> post_process_resource()
-      end
+    Supervisor.init(
+      children,
+      strategy: :one_for_one,
+      max_restarts: 20,
+      max_seconds: 120
+    )
+  end
 
-      defp post_process_resource(resource) do
-        resource
-        |> maybe_set_observed_generation()
-        |> Bonny.Resource.apply_status(crd().names.plural, conn())
+  def __maybes__(true) do
+    quote do
+      defdelegate maybe_set_observed_generation(resource),
+        to: Bonny.Resource,
+        as: :set_observed_generation
 
-        :ok
-      end
+      defdelegate maybe_add_obseved_generation_status(crd),
+        to: Bonny.ControllerV2,
+        as: :__add_obseved_generation_status__
 
-      if skip_observed_generations do
-        defp maybe_set_observed_generation(resource),
-          do: Bonny.Resource.set_observed_generation(resource)
+      defdelegate maybe_reject_watch_event(stream),
+        to: Bonny.ControllerV2,
+        as: :__reject_watch_event__
+    end
+  end
 
-        defp maybe_add_obseved_generation_status(crd),
-          do:
-            Bonny.CRDV2.update_versions(
-              crd,
-              & &1.storage,
-              &Bonny.CRD.Version.add_observed_generation_status/1
-            )
+  def __maybes__(_) do
+    quote do
+      def maybe_set_observed_generation(resource), do: resource
+      def maybe_add_obseved_generation_status(crd), do: crd
+      def maybe_reject_watch_event(stream), do: stream
+    end
+  end
 
-        defp maybe_reject_watch_event(stream) do
-          Stream.reject(stream, fn
-            {:delete, _} ->
-              false
-
-            {_, resource} ->
-              # skip resource if generation has been observed
-              get_in(resource, ~w(metadata generation)) ==
-                get_in(resource, [Access.key("status", %{}), "observedGeneration"])
-          end)
-        end
-      else
-        defp maybe_set_observed_generation(resource), do: resource
-        defp maybe_add_obseved_generation_status(crd), do: crd
-        defp maybe_reject_watch_event(stream), do: stream
-      end
-
+  def __defs__() do
+    quote do
       @impl Bonny.ControllerV2
       def list_operation(), do: Bonny.ControllerV2.list_operation(__MODULE__)
 
@@ -179,9 +164,35 @@ defmodule Bonny.ControllerV2 do
         |> Bonny.ControllerV2.crd()
         |> maybe_add_obseved_generation_status()
       end
-
-      defoverridable list_operation: 0, conn: 0
     end
+  end
+
+  @spec __handle_event__(module(), {atom(), Bonny.Resource.t()}) :: :ok
+  def __handle_event__(controller, {action, resource} = watch_event) do
+    apply(controller, action, [resource])
+    |> map_event_handler_result(watch_event)
+    |> process_event_handler_result(controller)
+    |> post_process_resource(controller)
+  end
+
+  def __add_obseved_generation_status__(crd) do
+    Bonny.CRDV2.update_versions(
+      crd,
+      & &1.storage,
+      &Bonny.CRD.Version.add_observed_generation_status/1
+    )
+  end
+
+  def __reject_watch_event__(stream) do
+    Stream.reject(stream, fn
+      {:delete, _} ->
+        false
+
+      {_, resource} ->
+        # skip resource if generation has been observed
+        get_in(resource, ~w(metadata generation)) ==
+          get_in(resource, [Access.key("status", %{}), "observedGeneration"])
+    end)
   end
 
   @doc """
@@ -216,6 +227,41 @@ defmodule Bonny.ControllerV2 do
     end
   end
 
+  @doc """
+  Register a RBAC rule. Use this macro if your controller requires
+  additional access to the kubernetes API.
+  """
+  defmacro rbac_rule(rule) do
+    quote do
+      unquote(Bonny.ControllerV2.__rbac_rule__(rule))
+    end
+  end
+
+  def __rbac_rule__(rule) do
+    quote bind_quoted: [rule: rule] do
+      {apis, resources, verbs} = rule
+
+      rule =
+        %{
+          apiGroups: List.wrap(apis),
+          resources: resources,
+          verbs: verbs
+        }
+        |> Macro.escape()
+
+      Module.put_attribute(__MODULE__, :rbac_rules, rule)
+    end
+  end
+
+  defmacro __before_compile__(%{module: module}) do
+    rbac_rules = module |> Module.get_attribute(:rbac_rules, [])
+
+    quote do
+      @spec rules() :: list(map())
+      def rules(), do: unquote(rbac_rules)
+    end
+  end
+
   @spec crd(module()) :: Bonny.CRDV2.t()
   def crd(controller) do
     names =
@@ -232,6 +278,7 @@ defmodule Bonny.ControllerV2 do
       version: Bonny.CRD.Version.new!(name: "v1")
     )
     |> maybe_cutomize_crd(controller)
+    |> controller.maybe_add_obseved_generation_status()
   end
 
   defp maybe_cutomize_crd(crd, controller) do
@@ -252,71 +299,70 @@ defmodule Bonny.ControllerV2 do
     end
   end
 
-  @doc """
-  To be called by a controller.
-  """
-  @spec map_event_handler_result(
-          event_handler_result(),
-          watch_or_reconcile_event()
-        ) :: {event_handler_result_type(), binary() | nil, action(), Bonny.Resource.t()}
-  def map_event_handler_result(type, watch_or_reconcile_event) when type in [:ok, :error],
+  defp map_event_handler_result(type, watch_or_reconcile_event) when type in [:ok, :error],
     do: map_event_handler_result({type, nil}, watch_or_reconcile_event)
 
-  def map_event_handler_result({type, %{} = resource}, watch_or_reconcile_event),
+  defp map_event_handler_result({type, %{} = resource}, watch_or_reconcile_event),
     do: map_event_handler_result({type, nil, resource}, watch_or_reconcile_event)
 
-  def map_event_handler_result({type, message}, {action, original_resource}),
+  defp map_event_handler_result({type, message}, {action, original_resource}),
     do: {type, message, action, original_resource}
 
-  def map_event_handler_result({type, message, resource}, {action, original_resource}) do
+  defp map_event_handler_result({type, message, resource}, {action, original_resource}) do
     if Map.get(resource, "apiVersion") == original_resource["apiVersion"] &&
          Map.get(resource, "kind") == original_resource["kind"],
        do: {type, message, action, resource},
        else: {type, message, action, original_resource}
   end
 
-  def map_event_handler_result(_, {action, original_resource}) do
+  defp map_event_handler_result(_, {action, original_resource}) do
     {:ok, nil, action, original_resource}
   end
 
-  @doc """
-  To be called by a controller.
-  """
-  @spec process_event_handler_result(
-          {event_handler_result_type(), binary() | nil, action(), Bonny.Resource.t()},
-          fun()
-        ) :: Bonny.Resource.t()
-  def process_event_handler_result({:ok, message, action, resource}, create_event)
-      when action in [:add, :modify, :delete] do
+  defp process_event_handler_result({:ok, message, action, resource}, controller)
+       when action in [:add, :modify, :delete] do
     action_string = action |> Atom.to_string() |> String.capitalize()
 
-    create_event.(
+    Bonny.EventRecorder.event(
+      :"#{controller}.EventRecorder",
       resource,
       nil,
       :Normal,
       "Successful" <> action_string,
-      action,
+      Atom.to_string(action),
       message || "Resource #{action} was successful."
     )
 
     resource
   end
 
-  def process_event_handler_result({_, message, action, resource}, create_event)
-      when action in [:add, :modify, :delete] do
+  defp process_event_handler_result({_, message, action, resource}, controller)
+       when action in [:add, :modify, :delete] do
     action_string = action |> Atom.to_string() |> String.capitalize()
 
-    create_event.(
+    Bonny.EventRecorder.event(
+      :"#{controller}.EventRecorder",
       resource,
       nil,
       :Normal,
       "Successful" <> action_string,
-      action,
+      Atom.to_string(action),
       message || "Resource #{action} failed."
     )
 
     resource
   end
 
-  def process_event_handler_result({_, _, _, resource}, _), do: resource
+  defp process_event_handler_result({_, _, _, resource}, _), do: resource
+
+  defp post_process_resource(resource, controller) do
+    crd = controller.crd()
+    conn = controller.conn()
+
+    resource
+    |> controller.maybe_set_observed_generation()
+    |> Bonny.Resource.apply_status(crd.names.plural, conn)
+
+    :ok
+  end
 end

@@ -8,8 +8,9 @@ defmodule TestResourceV2 do
   to kubernetes and wait to receive the message from this controller.
   """
 
-  use Bonny.ControllerV2,
-    rbac_rule: {"", ["secrets"], ["get", "watch", "list"]}
+  use Bonny.ControllerV2
+
+  rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
 
   @impl true
   @spec conn() :: K8s.Conn.t()
