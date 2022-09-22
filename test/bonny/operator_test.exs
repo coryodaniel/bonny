@@ -16,12 +16,37 @@ defmodule Bonny.OperatorTest do
           resources: ["customresourcedefinitions"],
           verbs: ["*"]
         },
-        %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
-        %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
-        %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
-        %{apiGroups: ["example.com"], resources: ["testresources"], verbs: ["*"]},
-        %{apiGroups: ["example.com"], resources: ["testresourcev2s"], verbs: ["*"]},
-        %{apiGroups: ["example.com"], resources: ["testresourcev3s"], verbs: ["*"]},
+        %{apiGroups: ["events.k8s.io/v1"], resources: ["events"], verbs: ["*"]},
+        %{
+          apiGroups: ["example.com"],
+          resources: ["widgets", "widgets/status", "widgets/scale"],
+          verbs: ["*"]
+        },
+        %{
+          apiGroups: ["example.com"],
+          resources: ["cogs", "cogs/status", "cogs/scale"],
+          verbs: ["*"]
+        },
+        %{
+          apiGroups: ["example.com"],
+          resources: ["whizbangs", "whizbangs/status", "whizbangs/scale"],
+          verbs: ["*"]
+        },
+        %{
+          apiGroups: ["example.com"],
+          resources: ["testresources", "testresources/status", "testresources/scale"],
+          verbs: ["*"]
+        },
+        %{
+          apiGroups: ["example.com"],
+          resources: ["testresourcev2s", "testresourcev2s/status", "testresourcev2s/scale"],
+          verbs: ["*"]
+        },
+        %{
+          apiGroups: ["example.com"],
+          resources: ["testresourcev3s", "testresourcev3s/status", "testresourcev3s/scale"],
+          verbs: ["*"]
+        },
         %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
         %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
         %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]}
@@ -40,12 +65,37 @@ defmodule Bonny.OperatorTest do
         resources: ["customresourcedefinitions"],
         verbs: ["*"]
       },
-      %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
-      %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
-      %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
-      %{apiGroups: ["example.com"], resources: ["testresources"], verbs: ["*"]},
-      %{apiGroups: ["example.com"], resources: ["testresourcev2s"], verbs: ["*"]},
-      %{apiGroups: ["example.com"], resources: ["testresourcev3s"], verbs: ["*"]},
+      %{apiGroups: ["events.k8s.io/v1"], resources: ["events"], verbs: ["*"]},
+      %{
+        apiGroups: ["example.com"],
+        resources: ["widgets", "widgets/status", "widgets/scale"],
+        verbs: ["*"]
+      },
+      %{
+        apiGroups: ["example.com"],
+        resources: ["cogs", "cogs/status", "cogs/scale"],
+        verbs: ["*"]
+      },
+      %{
+        apiGroups: ["example.com"],
+        resources: ["whizbangs", "whizbangs/status", "whizbangs/scale"],
+        verbs: ["*"]
+      },
+      %{
+        apiGroups: ["example.com"],
+        resources: ["testresources", "testresources/status", "testresources/scale"],
+        verbs: ["*"]
+      },
+      %{
+        apiGroups: ["example.com"],
+        resources: ["testresourcev2s", "testresourcev2s/status", "testresourcev2s/scale"],
+        verbs: ["*"]
+      },
+      %{
+        apiGroups: ["example.com"],
+        resources: ["testresourcev3s", "testresourcev3s/status", "testresourcev3s/scale"],
+        verbs: ["*"]
+      },
       %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
       %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
       %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]}
