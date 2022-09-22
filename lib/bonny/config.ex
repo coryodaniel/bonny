@@ -24,6 +24,17 @@ defmodule Bonny.Config do
   end
 
   @doc """
+  The name of the operator instance.
+
+  This is set via environment variable `BONNY_POD_NAME`
+  ```
+  """
+  @spec instance_name() :: binary
+  def instance_name() do
+    System.get_env("BONNY_POD_NAME") || name()
+  end
+
+  @doc """
   Kubernetes service account name to run operator as.
 
   *Note:* if a kube config file is provided, this service account will still be created
