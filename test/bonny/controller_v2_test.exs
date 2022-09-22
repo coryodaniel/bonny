@@ -5,9 +5,10 @@ defmodule Bonny.ControllerV2Test do
   defmodule FooBar do
     alias Bonny.CRD.Version
 
-    use Bonny.ControllerV2,
-      rbac_rule: {"", ["secrets"], ["get", "watch", "list"]},
-      rbac_rule: {"v1", ["pods"], ["get", "watch", "list"]}
+    use Bonny.ControllerV2
+
+    rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
+    rbac_rule({"v1", ["pods"], ["get", "watch", "list"]})
 
     @impl true
     def add(_resource), do: :ok

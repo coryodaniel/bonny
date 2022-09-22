@@ -55,17 +55,7 @@ defmodule Bonny.ControllerV2 do
   @doc false
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
-      rules =
-        opts
-        |> Keyword.get_lazy(:rbac_rules, fn -> Keyword.get_values(opts, :rbac_rule) end)
-        |> Enum.map(fn {apis, resources, verbs} ->
-          %{
-            apiGroups: List.wrap(apis),
-            resources: resources,
-            verbs: verbs
-          }
-        end)
-        |> Macro.escape()
+      Module.register_attribute(__MODULE__, :rbac_rules, accumulate: true)
 
       skip_observed_generations =
         opts
@@ -75,12 +65,11 @@ defmodule Bonny.ControllerV2 do
       use Supervisor
 
       import Bonny.Resource, only: [add_owner_reference: 2]
-      import Bonny.ControllerV2, only: [event: 5, event: 6]
+      import Bonny.ControllerV2, only: [event: 5, event: 6, rbac_rule: 1]
 
       @behaviour Bonny.ControllerV2
 
-      @spec rules() :: list(map())
-      def rules(), do: unquote(rules)
+      @before_compile Bonny.ControllerV2
 
       @spec start_link(term) :: {:ok, pid}
       def start_link(_) do
@@ -213,6 +202,37 @@ defmodule Bonny.ControllerV2 do
         unquote(action),
         unquote(message)
       )
+    end
+  end
+
+  defmacro rbac_rule(rule) do
+    quote do
+      unquote(Bonny.ControllerV2.__rbac_rule__(rule))
+    end
+  end
+
+  def __rbac_rule__(rule) do
+    quote bind_quoted: [rule: rule] do
+      {apis, resources, verbs} = rule
+
+      rule =
+        %{
+          apiGroups: List.wrap(apis),
+          resources: resources,
+          verbs: verbs
+        }
+        |> Macro.escape()
+
+      Module.put_attribute(__MODULE__, :rbac_rules, rule)
+    end
+  end
+
+  defmacro __before_compile__(%{module: module}) do
+    rbac_rules = module |> Module.get_attribute(:rbac_rules, [])
+
+    quote do
+      @spec rules() :: list(map())
+      def rules(), do: unquote(rbac_rules)
     end
   end
 

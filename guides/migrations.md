@@ -6,7 +6,7 @@ If you follow these steps, you should be able to successfully migrate your contr
 The new concepts like `customize_crd/1` and RBAC rule definition are explained in the [controllers guide livebook](./controllers.livemd).
 
 - Change `use Bonny.Controller` to `use Bonny.ControllerV2`
-- If you have defined additional RBAC rules via `@rule {apiGroup, resources_list, verbs_list}`, add an option `rbac_rule: {apiGroup, resources_list, verbs_list}` to the `use` statement **for each `@rule` attribute**.
+- If you have defined additional RBAC rules via `@rule {apiGroup, resources_list, verbs_list}`, replace each `@rule` attribute with a call to `rbac_rule` (`rbac_rule {apiGroup, resources_list, verbs_list}`).
 - If you have defined a custom version, e.g. `@version "v2alpha1"`, implement `customize_crd/1` and change the default version name.
 - If you have defined a custom group, e.g. `@group kewl.example.com`, implement `customize_crd/1` and change the group in your CRD.
 - If you have defined your controller to operate on cluster scope (i.e. `@scope :cluster`), implement `customize_crd/1` and change the scope in your CRD.
