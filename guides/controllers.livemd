@@ -1,7 +1,7 @@
 # Controllers
 
 ```elixir
-Mix.install([{:bonny, path: "/Users/mruoss/src/community/bonny"}])
+Mix.install([{:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}])
 
 Application.put_env(:bonny, :group, "example.com")
 Application.put_env(:bonny, :operator_name, "livebook-operator")
