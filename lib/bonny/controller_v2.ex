@@ -12,7 +12,7 @@ defmodule Bonny.ControllerV2 do
   you generate your manifest using `mix bonny.gen.manifest`.
   """
 
-  alias Bonny.CRDV2, as: CRD
+  alias Bonny.API.CRD, as: CRD
 
   @type action :: Bonny.Server.Watcher.action() | :reconcile
   @type event_handler_result_type :: :ok | :error
@@ -42,7 +42,7 @@ defmodule Bonny.ControllerV2 do
   override that CRD. You can use it to add versions, specify the OpenAPIV3Schema for them,
   change the resource's scope, and more.
   """
-  @callback customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
+  @callback customize_crd(Bonny.API.CRD.t()) :: Bonny.API.CRD.t()
 
   #  Action Callbacks
   @callback add(map()) :: event_handler_result_type()
@@ -57,8 +57,9 @@ defmodule Bonny.ControllerV2 do
     quote do
       unquote(__prelude__())
       unquote(__init_process__())
-      unquote(__maybes__(opts[:skip_observed_generations]))
+      unquote(__maybes__(opts[:crd] && opts[:skip_observed_generations]))
       unquote(__defs__())
+      unquote(__api_version__(opts, __CALLER__))
 
       defoverridable list_operation: 0, conn: 0
     end
@@ -158,12 +159,30 @@ defmodule Bonny.ControllerV2 do
 
       @impl Bonny.ControllerV2
       defdelegate conn(), to: Bonny.Config
+    end
+  end
 
-      def crd() do
-        __MODULE__
-        |> Bonny.ControllerV2.crd()
-        |> maybe_add_obseved_generation_status()
-      end
+  def __api_version__(opts, env) do
+    cond do
+      Keyword.has_key?(opts, :api_definition) ->
+        quote do
+          def api_definition(), do: unquote(opts)[:api_definition]
+        end
+
+      Keyword.has_key?(opts, :crd) ->
+        crd = Macro.expand(opts[:crd], env).get() |> Macro.escape()
+
+        quote bind_quoted: [crd: crd] do
+          def api_definition(), do: Bonny.API.CRD.api_definition(crd)
+          def crd(), do: maybe_add_obseved_generation_status(crd)
+        end
+
+      true ->
+        raise CompileError,
+          file: env.file,
+          line: env.line,
+          description:
+            "When using Bonny.ControllerV2 you have to pass either a :crd or :api_definition as an option."
     end
   end
 
@@ -176,7 +195,7 @@ defmodule Bonny.ControllerV2 do
   end
 
   def __add_obseved_generation_status__(crd) do
-    Bonny.CRDV2.update_versions(
+    Bonny.API.CRD.update_versions(
       crd,
       & &1.storage,
       &Bonny.CRD.Version.add_observed_generation_status/1
@@ -262,7 +281,7 @@ defmodule Bonny.ControllerV2 do
     end
   end
 
-  @spec crd(module()) :: Bonny.CRDV2.t()
+  @spec crd(module()) :: Bonny.API.CRD.t()
   def crd(controller) do
     names =
       controller
@@ -289,13 +308,16 @@ defmodule Bonny.ControllerV2 do
 
   @spec list_operation(module()) :: K8s.Operation.t()
   def list_operation(controller) do
-    crd = controller.crd()
-    api_version = CRD.resource_api_version(crd)
-    kind = crd.names.kind
+    api_definition = controller.api_definition()
+    api_version = Bonny.API.Definition.resource_api_version(api_definition)
+    resource_type = api_version.resource_type
 
-    case crd.scope do
-      :Namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
-      _ -> K8s.Client.list(api_version, kind)
+    case resource_type.scope do
+      :Namespaced ->
+        K8s.Client.list(api_version, resource_type, namespace: Bonny.Config.namespace())
+
+      _ ->
+        K8s.Client.list(api_version, resource_type)
     end
   end
 
@@ -356,12 +378,12 @@ defmodule Bonny.ControllerV2 do
   defp process_event_handler_result({_, _, _, resource}, _), do: resource
 
   defp post_process_resource(resource, controller) do
-    crd = controller.crd()
+    %{resource_type: resource_type} = controller.api_definition()
     conn = controller.conn()
 
     resource
     |> controller.maybe_set_observed_generation()
-    |> Bonny.Resource.apply_status(crd.names.plural, conn)
+    |> Bonny.Resource.apply_status(resource_type, conn)
 
     :ok
   end

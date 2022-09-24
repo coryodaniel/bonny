@@ -1,10 +1,10 @@
-defmodule Bonny.CRDV2Test do
+defmodule Bonny.API.CRDTest do
   @moduledoc false
 
   use ExUnit.Case, async: true
 
   alias Bonny.CRD.Version
-  alias Bonny.CRDV2, as: MUT
+  alias Bonny.API.CRD, as: MUT
 
   doctest MUT
 

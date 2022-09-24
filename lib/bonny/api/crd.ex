@@ -1,7 +1,9 @@
-defmodule Bonny.CRDV2 do
+defmodule Bonny.API.CRD do
   @moduledoc """
   Represents a Custom Resource Definition.
   """
+
+  alias Bonny.API.Definition, as: APIDefinition
 
   @kind "CustomResourceDefinition"
   @api_version "apiextensions.k8s.io/v1"
@@ -46,7 +48,7 @@ defmodule Bonny.CRDV2 do
   ]
 
   @doc """
-  Creates a new %Bonny.CRDV2{} struct from the given values. `:scope` is
+  Creates a new %Bonny.API.CRD{} struct from the given values. `:scope` is
   optional and defaults to `:Namespaced`.
   """
   @spec new!(keyword()) :: __MODULE__.t()
@@ -77,6 +79,21 @@ defmodule Bonny.CRDV2 do
     }
   end
 
+  def api_definition(crd) do
+    APIDefinition.new!(
+      group: crd.group,
+      resource_type: crd.names.plural,
+      scope: crd.scope,
+      version: stored_version(crd)
+    )
+  end
+
+  defp stored_version(crd) do
+    crd.versions
+    |> Enum.find(&(&1.storage == true))
+    |> Map.get(:name)
+  end
+
   defp check_single_storage!(crd) do
     no_stored_versions = Enum.count(crd.versions, &(&1.storage == true))
 
@@ -91,17 +108,17 @@ defmodule Bonny.CRDV2 do
 
   ### Examples
 
-      iex> Bonny.CRDV2.kind_to_names("SomeKind")
+      iex> Bonny.API.CRD.kind_to_names("SomeKind")
       %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []}
 
     The `:inflex` library is used to generate the plural form.
 
-      iex> Bonny.CRDV2.kind_to_names("Hero")
+      iex> Bonny.API.CRD.kind_to_names("Hero")
       %{singular: "hero", plural: "heroes", kind: "Hero", shortNames: []}
 
     Accepts an optional list of abbreviations as second argument.
 
-      iex> Bonny.CRDV2.kind_to_names("SomeKind", ["sk", "some"])
+      iex> Bonny.API.CRD.kind_to_names("SomeKind", ["sk", "some"])
       %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: ["sk", "some"]}
 
   """
@@ -119,54 +136,13 @@ defmodule Bonny.CRDV2 do
   end
 
   @doc """
-  Gets apiVersion of the actual resources.
-
-  ## Examples
-    Returns apiVersion for an operator
-
-      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: "hello.example.com", versions: [Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
-      "hello.example.com/v1"
-
-    Returns apiVersion for `apps` resources
-
-      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: "apps", versions: [Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
-      "apps/v1"
-
-    Returns apiVersion for `core` resources
-
-      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: "", versions: [Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
-      "v1"
-
-      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: nil, versions: [Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
-      "v1"
-
-    Returs apiVresion of stored version if there are multiple
-
-      iex> Bonny.CRDV2.resource_api_version(%Bonny.CRDV2{group: "", versions: [Bonny.CRD.Version.new!(name: "v1beta1", storage: false), Bonny.CRD.Version.new!(name: "v1")], scope: :namespaced, names: %{}})
-      "v1"
-  """
-  @spec resource_api_version(t()) :: String.t()
-  def resource_api_version(crd),
-    do: api_group_prefix(crd) <> stored_version(crd)
-
-  defp stored_version(crd) do
-    crd.versions
-    |> Enum.find(&(&1.storage == true))
-    |> Map.get(:name)
-  end
-
-  defp api_group_prefix(%__MODULE__{group: ""}), do: ""
-  defp api_group_prefix(%__MODULE__{group: nil}), do: ""
-  defp api_group_prefix(%__MODULE__{group: g}), do: "#{g}/"
-
-  @doc """
   Calls updates all versions of the given CRD by calling `fun`.
 
   ### Examples
 
-      iex> crd = Bonny.CRDV2.new!(versions: [Bonny.CRD.Version.new!(name: "v1")], group: "", names: [])
-      ...> Bonny.CRDV2.update_versions(crd, & struct!(&1, name: "v1beta1"))
-      %Bonny.CRDV2{
+      iex> crd = Bonny.API.CRD.new!(versions: [Bonny.CRD.Version.new!(name: "v1")], group: "", names: [])
+      ...> Bonny.API.CRD.update_versions(crd, & struct!(&1, name: "v1beta1"))
+      %Bonny.API.CRD{
               group: "",
               names: [],
               scope: :Namespaced,
@@ -193,9 +169,9 @@ defmodule Bonny.CRDV2 do
 
   ### Examples
 
-      iex> crd = Bonny.CRDV2.new!(versions: [Bonny.CRD.Version.new!(name: "v1beta1"), Bonny.CRD.Version.new!(name: "v1")], group: "", names: [])
-      ...> Bonny.CRDV2.update_versions(crd, & &1.name == "v1beta1", & struct!(&1, storage: false))
-      %Bonny.CRDV2{
+      iex> crd = Bonny.API.CRD.new!(versions: [Bonny.CRD.Version.new!(name: "v1beta1"), Bonny.CRD.Version.new!(name: "v1")], group: "", names: [])
+      ...> Bonny.API.CRD.update_versions(crd, & &1.name == "v1beta1", & struct!(&1, storage: false))
+      %Bonny.API.CRD{
               group: "",
               names: [],
               scope: :Namespaced,

@@ -75,7 +75,7 @@ defmodule Bonny.Operator do
           Bonny.CRD.to_manifest(controller.crd(), Bonny.Config.api_version())
 
         Enum.member?(attributes, {:behaviour, [Bonny.ControllerV2]}) ->
-          Bonny.CRDV2.to_manifest(controller.crd())
+          Bonny.API.CRD.to_manifest(controller.crd())
       end
     end)
   end

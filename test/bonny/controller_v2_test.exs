@@ -24,7 +24,7 @@ defmodule Bonny.ControllerV2Test do
 
     @impl true
     def customize_crd(_) do
-      Bonny.CRDV2.new!(
+      Bonny.API.CRD.new!(
         group: "test.com",
         version: Version.new!(name: "v1beta1", storage: false),
         version:
@@ -54,7 +54,7 @@ defmodule Bonny.ControllerV2Test do
             }
           ),
         scope: :Cluster,
-        names: Bonny.CRDV2.kind_to_names("FooBar", ["fb"])
+        names: Bonny.API.CRD.kind_to_names("FooBar", ["fb"])
       )
     end
   end
@@ -63,7 +63,7 @@ defmodule Bonny.ControllerV2Test do
     test "creates crd/0 with group, scope, names and version" do
       crd = FooBar.crd()
 
-      assert %Bonny.CRDV2{
+      assert %Bonny.API.CRD{
                group: "test.com",
                scope: :Cluster,
                names: %{singular: "foobar", plural: "foobars", kind: "FooBar", shortNames: ["fb"]},
@@ -109,7 +109,7 @@ defmodule Bonny.ControllerV2Test do
 
       assert %K8s.Operation{} = op
       assert "test.com/v1" = op.api_version
-      assert "FooBar" = op.name
+      assert "foobars" = op.name
       assert :get = op.method
       assert :list = op.verb
     end

@@ -26,8 +26,8 @@ defmodule <%= app_name %>.Controller.<%= mod_name %> do
       # Customizing the scope (defaults to :Namespaced):
       scope: :Cluster
 
-      # Customizing the names (defaults to Bonny.CRDV2.kind_to_names("<%= mod_name %>"))
-      names: Bonny.CRDV2.kind_to_names("Wheel", ["w]) # => %{singular: "wheel", plural: "wheels", kind: "Wheel", shortNames: ["w"]}
+      # Customizing the names (defaults to Bonny.API.CRD.kind_to_names("<%= mod_name %>"))
+      names: Bonny.API.CRD.kind_to_names("Wheel", ["w]) # => %{singular: "wheel", plural: "wheels", kind: "Wheel", shortNames: ["w"]}
 
       # Define your own versions (defaults to an auto-generated "v1" version)
       versions: [

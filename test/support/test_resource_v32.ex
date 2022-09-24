@@ -19,7 +19,7 @@ defmodule TestResourceV32 do
 
   @impl Bonny.ControllerV2
   def customize_crd(crd) do
-    struct!(crd, names: Bonny.CRDV2.kind_to_names("TestResourceV3"))
+    struct!(crd, names: Bonny.API.CRD.kind_to_names("TestResourceV3"))
   end
 
   @impl Bonny.ControllerV2

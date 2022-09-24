@@ -6,12 +6,13 @@ defmodule DeploymentEventLogController do
   This controller simply logs lifecycle events on Deployments.
   """
   require Logger
-  use Bonny.ControllerV2
+  use Bonny.ControllerV2,
+    api_definition: %Bonny.API.Definition{group: "apps", resource_type: "deployments", version: "v1"}
 
   @impl true
   def customize_crd(crd) do
     struct!(crd, [
-      names: Bonny.CRDV2.kind_to_names("Deployment"),
+      names: Bonny.API.CRD.kind_to_names("Deployment"),
       group: "apps"
     ])
   end

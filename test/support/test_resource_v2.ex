@@ -17,7 +17,7 @@ defmodule TestResourceV2 do
   def conn(), do: Bonny.Test.IntegrationHelper.conn()
 
   @impl true
-  @spec customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
+  @spec customize_crd(Bonny.API.CRD.t()) :: Bonny.API.CRD.t()
   def customize_crd(crd) do
     struct!(
       crd,
