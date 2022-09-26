@@ -3,11 +3,61 @@ defmodule Bonny.ControllerV2Test do
   use ExUnit.Case, async: true
 
   defmodule FooBar do
-    alias Bonny.CRD.Version
+    alias Bonny.API.CRD
+    alias Bonny.API.Version
+    require CRD
 
-    use Bonny.ControllerV2
+    defmodule V1Beta1 do
+      use Version
+
+      def manifest(), do: defaults()
+    end
+
+    defmodule V1 do
+      use Version,
+        hub: true
+
+      def manifest() do
+        struct!(
+          defaults(),
+          schema: %{
+            openAPIV3Schema: %{
+              type: :object,
+              properties: %{
+                spec: %{
+                  type: :object,
+                  properties: %{
+                    foos: %{type: :integer},
+                    has_bars: %{type: :boolean},
+                    description: %{type: :string}
+                  }
+                }
+              }
+            }
+          },
+          additionalPrinterColumns: [
+            %{
+              name: "foos",
+              type: :integer,
+              description: "Number of foos",
+              jsonPath: ".spec.foos"
+            }
+          ]
+        )
+      end
+    end
+
+    use Bonny.ControllerV2,
+      for_resource:
+        CRD.build_for_controller!(
+          group: "test.com",
+          scope: :Cluster,
+          names: Bonny.API.CRD.kind_to_names("FooBar", ["fb"]),
+          versions: [V1, V1Beta1]
+        )
 
     rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
+
     rbac_rule({"v1", ["pods"], ["get", "watch", "list"]})
 
     @impl true
@@ -21,71 +71,40 @@ defmodule Bonny.ControllerV2Test do
 
     @impl true
     def reconcile(_resource), do: :ok
-
-    @impl true
-    def customize_crd(_) do
-      Bonny.API.CRD.new!(
-        group: "test.com",
-        version: Version.new!(name: "v1beta1", storage: false),
-        version:
-          Version.new!(
-            name: "v1",
-            storage: true,
-            schema: %{
-              openAPIV3Schema: %{
-                type: :object,
-                properties: %{
-                  spec: %{
-                    type: :object,
-                    properties: %{
-                      foos: %{type: :integer},
-                      has_bars: %{type: :boolean},
-                      description: %{type: :string}
-                    }
-                  }
-                }
-              }
-            },
-            additionalPrinterColumns: %{
-              name: "foos",
-              type: :integer,
-              description: "Number of foos",
-              jsonPath: ".spec.foos"
-            }
-          ),
-        scope: :Cluster,
-        names: Bonny.API.CRD.kind_to_names("FooBar", ["fb"])
-      )
-    end
   end
 
   describe "__using__" do
     test "creates crd/0 with group, scope, names and version" do
-      crd = FooBar.crd()
+      %{spec: crd_spec} = FooBar.crd_manifest()
 
-      assert %Bonny.API.CRD{
+      assert %{
                group: "test.com",
                scope: :Cluster,
-               names: %{singular: "foobar", plural: "foobars", kind: "FooBar", shortNames: ["fb"]},
+               names: %{
+                 singular: "foobar",
+                 plural: "foobars",
+                 kind: "FooBar",
+                 shortNames: ["fb"]
+               },
                versions: _
-             } = crd
+             } = crd_spec
 
-      assert 2 == length(crd.versions)
+      assert 2 == length(crd_spec.versions)
 
       # no subresource
-      assert %{} == hd(crd.versions).subresources
+      assert %{} == hd(crd_spec.versions).subresources
     end
 
     test "creates status subresource if skip_observed_generations is true" do
-      crd = TestResourceV3.crd()
+      %{spec: crd_spec} = TestResourceV3.crd_manifest()
 
-      assert %{status: %{}} == hd(crd.versions).subresources
+      assert %{status: %{}} == hd(crd_spec.versions).subresources
 
       assert %{
                properties: %{observedGeneration: %{type: :integer}, rand: %{type: :string}},
                type: :object
              } ==
-               get_in(crd, [
+               get_in(crd_spec, [
                  Access.key(:versions),
                  Access.at(0),
                  Access.key(:schema),
@@ -99,7 +118,7 @@ defmodule Bonny.ControllerV2Test do
       rules = FooBar.rules()
 
       assert is_list(rules)
-      assert 2 == length(rules)
+      assert 3 == length(rules)
     end
   end
 

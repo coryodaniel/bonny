@@ -19,36 +19,37 @@ defmodule Bonny.OperatorTest do
         %{apiGroups: ["events.k8s.io/v1"], resources: ["events"], verbs: ["*"]},
         %{
           apiGroups: ["example.com"],
-          resources: ["widgets", "widgets/status", "widgets/scale"],
+          resources: ["widgets"],
           verbs: ["*"]
         },
         %{
           apiGroups: ["example.com"],
-          resources: ["cogs", "cogs/status", "cogs/scale"],
+          resources: ["cogs"],
           verbs: ["*"]
         },
         %{
           apiGroups: ["example.com"],
-          resources: ["whizbangs", "whizbangs/status", "whizbangs/scale"],
+          resources: ["whizbangs"],
           verbs: ["*"]
         },
         %{
           apiGroups: ["example.com"],
-          resources: ["testresources", "testresources/status", "testresources/scale"],
+          resources: ["testresources"],
           verbs: ["*"]
         },
         %{
           apiGroups: ["example.com"],
-          resources: ["testresourcev2s", "testresourcev2s/status", "testresourcev2s/scale"],
+          resources: ["testresourcev2s"],
           verbs: ["*"]
         },
         %{
           apiGroups: ["example.com"],
-          resources: ["testresourcev3s", "testresourcev3s/status", "testresourcev3s/scale"],
+          resources: ["testresourcev3s"],
           verbs: ["*"]
         },
         %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
         %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
+        %{apiGroups: ["example.com"], resources: ["testresourcev2s/status"], verbs: ["*"]},
         %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]}
       ]
     }
@@ -68,36 +69,37 @@ defmodule Bonny.OperatorTest do
       %{apiGroups: ["events.k8s.io/v1"], resources: ["events"], verbs: ["*"]},
       %{
         apiGroups: ["example.com"],
-        resources: ["widgets", "widgets/status", "widgets/scale"],
+        resources: ["widgets"],
         verbs: ["*"]
       },
       %{
         apiGroups: ["example.com"],
-        resources: ["cogs", "cogs/status", "cogs/scale"],
+        resources: ["cogs"],
         verbs: ["*"]
       },
       %{
         apiGroups: ["example.com"],
-        resources: ["whizbangs", "whizbangs/status", "whizbangs/scale"],
+        resources: ["whizbangs"],
         verbs: ["*"]
       },
       %{
         apiGroups: ["example.com"],
-        resources: ["testresources", "testresources/status", "testresources/scale"],
+        resources: ["testresources"],
         verbs: ["*"]
       },
       %{
         apiGroups: ["example.com"],
-        resources: ["testresourcev2s", "testresourcev2s/status", "testresourcev2s/scale"],
+        resources: ["testresourcev2s"],
         verbs: ["*"]
       },
       %{
         apiGroups: ["example.com"],
-        resources: ["testresourcev3s", "testresourcev3s/status", "testresourcev3s/scale"],
+        resources: ["testresourcev3s"],
         verbs: ["*"]
       },
       %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
       %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
+      %{apiGroups: ["example.com"], resources: ["testresourcev2s/status"], verbs: ["*"]},
       %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]}
     ]
 
@@ -254,7 +256,7 @@ defmodule Bonny.OperatorTest do
                  },
                  scope: :Namespaced,
                  versions: [
-                   %Bonny.CRD.Version{
+                   %Bonny.API.Version{
                      name: "v1",
                      served: true,
                      storage: true,

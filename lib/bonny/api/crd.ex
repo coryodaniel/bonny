@@ -1,9 +1,14 @@
 defmodule Bonny.API.CRD do
   @moduledoc """
-  Represents a Custom Resource Definition.
+  A Custom Resource Definition.
+
+  The %Bonny.API.CRD{} struct contains the fields `group`, `resource_type`,
+  `scope` and `version`. New definitions can be created directly, using the
+  `new!/1` function or from inside a controller using the
+  `build_for_controller!/1` macro.
   """
 
-  alias Bonny.API.Definition, as: APIDefinition
+  alias Bonny.API.ResourceEndpoint, as: APIDefinition
 
   @kind "CustomResourceDefinition"
   @api_version "apiextensions.k8s.io/v1"
@@ -32,10 +37,10 @@ defmodule Bonny.API.CRD do
   - `versions`: list of versions supported by this CustomResourceDefinition
   """
   @type t :: %__MODULE__{
-          scope: :Namespaced | :Cluster,
           group: binary() | nil,
           names: names_t(),
-          versions: list(Bonny.CRD.Version.t())
+          scope: :Namespaced | :Cluster,
+          versions: list(module())
         }
 
   @enforce_keys [:group, :names, :versions]
@@ -51,22 +56,35 @@ defmodule Bonny.API.CRD do
   Creates a new %Bonny.API.CRD{} struct from the given values. `:scope` is
   optional and defaults to `:Namespaced`.
   """
-  @spec new!(keyword()) :: __MODULE__.t()
-  def new!(fields) do
-    fields =
-      fields
-      |> Keyword.put_new_lazy(:versions, fn -> Keyword.get_values(fields, :version) end)
-      |> Keyword.delete(:version)
+  @spec new!(keyword()) :: t()
+  def new!(fields), do: struct!(__MODULE__, fields)
 
-    struct!(__MODULE__, fields)
+  @doc """
+  This macro can be used from inside a controller to build a new
+  %Bonny.API.CRD{} struct. It's going to derive the CRD names from the
+  controller's module name and takes the group from config.
+  """
+  defmacro build_for_controller!(fields) do
+    kind = __CALLER__.module |> Module.split() |> Enum.reverse() |> hd()
+
+    quote do
+      unquote(fields)
+      |> Keyword.put_new_lazy(:names, fn -> Bonny.API.CRD.kind_to_names(unquote(kind)) end)
+      |> Keyword.put_new_lazy(:group, fn -> Bonny.Config.group() end)
+      |> Bonny.API.CRD.new!()
+    end
   end
 
   @doc """
-  Changes the internally used structure into a map representing a kubernetes CRD manifest
+  Converts the internally used structure to a map representing a kubernetes CRD manifest.
   """
   @spec to_manifest(__MODULE__.t()) :: map()
   def to_manifest(%__MODULE__{} = crd) do
-    check_single_storage!(crd)
+    spec =
+      crd
+      |> Map.from_struct()
+      |> update_in([Access.key(:versions, []), Access.all()], & &1.manifest())
+      |> assert_single_storage!()
 
     %{
       apiVersion: @api_version,
@@ -75,31 +93,44 @@ defmodule Bonny.API.CRD do
         name: "#{crd.names.plural}.#{crd.group}",
         labels: Bonny.Operator.labels()
       },
-      spec: Map.from_struct(crd)
+      spec: spec
     }
   end
 
-  def api_definition(crd) do
+  @doc """
+  The resource endpoint for this CRD.
+  """
+  @spec resource_endpoint(t()) :: Bonny.API.ResourceEndpoint.t()
+  def resource_endpoint(crd) do
+    manifest = to_manifest(crd)
+
     APIDefinition.new!(
-      group: crd.group,
-      resource_type: crd.names.plural,
-      scope: crd.scope,
-      version: stored_version(crd)
+      group: manifest.spec.group,
+      resource_type: manifest.spec.names.plural,
+      scope: manifest.spec.scope,
+      version: stored_version(manifest)
     )
   end
 
-  defp stored_version(crd) do
-    crd.versions
+  defp stored_version(manifest) do
+    manifest.spec.versions
     |> Enum.find(&(&1.storage == true))
     |> Map.get(:name)
   end
 
-  defp check_single_storage!(crd) do
-    no_stored_versions = Enum.count(crd.versions, &(&1.storage == true))
+  defp assert_single_storage!(crd) do
+    stored_versions_count = Enum.count(crd.versions, &(&1.storage == true))
 
-    if no_stored_versions != 1 do
-      raise ArgumentError,
-            "Only one single version of a CRD can have the attribute \"storage\" set to true. In your CRD #{no_stored_versions} versions define `storage: true`."
+    cond do
+      stored_versions_count == 0 and length(crd.versions) == 1 ->
+        Map.update!(crd, :versions, fn [version] -> [Map.put(version, :storage, true)] end)
+
+      stored_versions_count != 1 ->
+        raise ArgumentError,
+              "One single version of a CRD has to be the hub. In your CRD \"#{crd.names.kind}\", #{stored_versions_count} versions define `hub: true`."
+
+      true ->
+        crd
     end
   end
 
@@ -133,78 +164,5 @@ defmodule Bonny.API.CRD do
       plural: plural,
       shortNames: short_names
     }
-  end
-
-  @doc """
-  Calls updates all versions of the given CRD by calling `fun`.
-
-  ### Examples
-
-      iex> crd = Bonny.API.CRD.new!(versions: [Bonny.CRD.Version.new!(name: "v1")], group: "", names: [])
-      ...> Bonny.API.CRD.update_versions(crd, & struct!(&1, name: "v1beta1"))
-      %Bonny.API.CRD{
-              group: "",
-              names: [],
-              scope: :Namespaced,
-              versions: [%Bonny.CRD.Version{
-                name: "v1beta1",
-                served: true,
-                storage: true,
-                deprecated: false,
-                deprecationWarning: nil,
-                schema: %{openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}},
-                additionalPrinterColumns: [],
-                subresources: %{}
-              }]
-            }
-  """
-  @spec update_versions(t(), (Bonny.CRD.Version.t() -> Bonny.CRD.Version.t())) :: t()
-  def update_versions(crd, fun) do
-    update_in(crd, [Access.key(:versions), Access.all()], fun)
-  end
-
-  @doc """
-  Calls updates all versions of the given CRD for which `filter`
-  resolves truthy, by calling `fun`.
-
-  ### Examples
-
-      iex> crd = Bonny.API.CRD.new!(versions: [Bonny.CRD.Version.new!(name: "v1beta1"), Bonny.CRD.Version.new!(name: "v1")], group: "", names: [])
-      ...> Bonny.API.CRD.update_versions(crd, & &1.name == "v1beta1", & struct!(&1, storage: false))
-      %Bonny.API.CRD{
-              group: "",
-              names: [],
-              scope: :Namespaced,
-              versions: [
-                %Bonny.CRD.Version{
-                  name: "v1beta1",
-                  served: true,
-                  storage: false,
-                  deprecated: false,
-                  deprecationWarning: nil,
-                  schema: %{openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}},
-                  additionalPrinterColumns: [],
-                  subresources: %{}
-                },
-                %Bonny.CRD.Version{
-                  name: "v1",
-                  served: true,
-                  storage: true,
-                  deprecated: false,
-                  deprecationWarning: nil,
-                  schema: %{openAPIV3Schema: %{type: :object, "x-kubernetes-preserve-unknown-fields": true}},
-                  additionalPrinterColumns: [],
-                  subresources: %{}
-                }
-              ]
-            }
-  """
-  @spec update_versions(
-          t(),
-          (Bonny.CRD.Version.t() -> boolean()),
-          (Bonny.CRD.Version.t() -> Bonny.CRD.Version.t())
-        ) :: t()
-  def update_versions(crd, filter, fun) do
-    update_in(crd, [Access.key(:versions), Access.filter(filter)], fun)
   end
 end

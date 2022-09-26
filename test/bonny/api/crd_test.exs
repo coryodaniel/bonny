@@ -3,24 +3,17 @@ defmodule Bonny.API.CRDTest do
 
   use ExUnit.Case, async: true
 
-  alias Bonny.CRD.Version
   alias Bonny.API.CRD, as: MUT
+  alias Bonny.API.Version
+
+  defmodule V1 do
+    use Version,
+      hub: true
+
+    def manifest(), do: defaults()
+  end
 
   doctest MUT
-
-  describe "new!/1" do
-    test "wraps versions if only one given" do
-      crd =
-        MUT.new!(
-          names: %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []},
-          group: "example.xom",
-          version: struct!(Version, name: "v1")
-        )
-
-      assert is_list(crd.versions)
-      assert 1 == length(crd.versions)
-    end
-  end
 
   describe "to_manifest" do
     test "creates manifest" do
@@ -28,7 +21,7 @@ defmodule Bonny.API.CRDTest do
         MUT.new!(
           names: %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []},
           group: "example.xom",
-          versions: [struct!(Version, name: "v1")],
+          versions: [V1],
           scope: :Namespaced
         )
 
@@ -41,7 +34,7 @@ defmodule Bonny.API.CRDTest do
           names: %{kind: "SomeKind", plural: "somekinds", shortNames: [], singular: "somekind"},
           scope: :Namespaced,
           versions: [
-            %Bonny.CRD.Version{
+            %Bonny.API.Version{
               name: "v1",
               served: true,
               storage: true,
@@ -58,24 +51,6 @@ defmodule Bonny.API.CRDTest do
 
       actual = MUT.to_manifest(crd)
       assert expected == actual
-    end
-
-    test "raises if no version with storage flag set to true" do
-      crd =
-        MUT.new!(
-          names: %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []},
-          group: "example.xom",
-          scope: :Namespaced
-        )
-        |> MUT.update_versions(&struct!(&1, storage: false))
-
-      assert_raise(
-        ArgumentError,
-        ~r/Only one single version of a CRD can have the attribute "storage" set to true./,
-        fn ->
-          MUT.to_manifest(crd)
-        end
-      )
     end
   end
 end

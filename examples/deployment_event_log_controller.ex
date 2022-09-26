@@ -7,15 +7,7 @@ defmodule DeploymentEventLogController do
   """
   require Logger
   use Bonny.ControllerV2,
-    api_definition: %Bonny.API.Definition{group: "apps", resource_type: "deployments", version: "v1"}
-
-  @impl true
-  def customize_crd(crd) do
-    struct!(crd, [
-      names: Bonny.API.CRD.kind_to_names("Deployment"),
-      group: "apps"
-    ])
-  end
+    for_resource: Bonny.API.ResourceEndpoint.new!("apps/v1", "Deployment")
 
   @impl true
   def reconcile(resource) do

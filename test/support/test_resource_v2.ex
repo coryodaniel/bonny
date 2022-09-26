@@ -8,40 +8,44 @@ defmodule TestResourceV2 do
   to kubernetes and wait to receive the message from this controller.
   """
 
-  use Bonny.ControllerV2
+  alias Bonny.API.CRD
+  alias Bonny.API.Version
+  require CRD
+
+  defmodule V1 do
+    @moduledoc false
+    use Version
+
+    @impl true
+    def manifest() do
+      struct!(
+        defaults(),
+        schema: %{
+          openAPIV3Schema: %{
+            type: :object,
+            properties: %{
+              spec: %{
+                type: :object,
+                properties: %{
+                  pid: %{type: :string},
+                  ref: %{type: :string}
+                }
+              }
+            }
+          }
+        }
+      )
+    end
+  end
+
+  use Bonny.ControllerV2,
+    for_resource: CRD.build_for_controller!(versions: [V1])
 
   rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
 
   @impl true
   @spec conn() :: K8s.Conn.t()
   def conn(), do: Bonny.Test.IntegrationHelper.conn()
-
-  @impl true
-  @spec customize_crd(Bonny.API.CRD.t()) :: Bonny.API.CRD.t()
-  def customize_crd(crd) do
-    struct!(
-      crd,
-      versions: [
-        Bonny.CRD.Version.new!(
-          name: "v1",
-          schema: %{
-            openAPIV3Schema: %{
-              type: :object,
-              properties: %{
-                spec: %{
-                  type: :object,
-                  properties: %{
-                    pid: %{type: :string},
-                    ref: %{type: :string}
-                  }
-                }
-              }
-            }
-          }
-        )
-      ]
-    )
-  end
 
   @impl true
   def add(resource), do: respond(resource, :added)
