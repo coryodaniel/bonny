@@ -17,40 +17,17 @@ defmodule Bonny.OperatorTest do
           verbs: ["*"]
         },
         %{apiGroups: ["events.k8s.io/v1"], resources: ["events"], verbs: ["*"]},
-        %{
-          apiGroups: ["example.com"],
-          resources: ["widgets"],
-          verbs: ["*"]
-        },
-        %{
-          apiGroups: ["example.com"],
-          resources: ["cogs"],
-          verbs: ["*"]
-        },
-        %{
-          apiGroups: ["example.com"],
-          resources: ["whizbangs"],
-          verbs: ["*"]
-        },
-        %{
-          apiGroups: ["example.com"],
-          resources: ["testresources"],
-          verbs: ["*"]
-        },
-        %{
-          apiGroups: ["example.com"],
-          resources: ["testresourcev2s"],
-          verbs: ["*"]
-        },
-        %{
-          apiGroups: ["example.com"],
-          resources: ["testresourcev3s"],
-          verbs: ["*"]
-        },
+        %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["testresources"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["testresourcev2s"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["testresourcev3s"], verbs: ["*"]},
+        %{apiGroups: [""], resources: ["configmaps"], verbs: ["*"]},
         %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
         %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
-        %{apiGroups: ["example.com"], resources: ["testresourcev2s/status"], verbs: ["*"]},
-        %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]}
+        %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]},
+        %{apiGroups: ["example.com"], resources: ["testresourcev3s/status"], verbs: ["*"]}
       ]
     }
 
@@ -67,40 +44,17 @@ defmodule Bonny.OperatorTest do
         verbs: ["*"]
       },
       %{apiGroups: ["events.k8s.io/v1"], resources: ["events"], verbs: ["*"]},
-      %{
-        apiGroups: ["example.com"],
-        resources: ["widgets"],
-        verbs: ["*"]
-      },
-      %{
-        apiGroups: ["example.com"],
-        resources: ["cogs"],
-        verbs: ["*"]
-      },
-      %{
-        apiGroups: ["example.com"],
-        resources: ["whizbangs"],
-        verbs: ["*"]
-      },
-      %{
-        apiGroups: ["example.com"],
-        resources: ["testresources"],
-        verbs: ["*"]
-      },
-      %{
-        apiGroups: ["example.com"],
-        resources: ["testresourcev2s"],
-        verbs: ["*"]
-      },
-      %{
-        apiGroups: ["example.com"],
-        resources: ["testresourcev3s"],
-        verbs: ["*"]
-      },
+      %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["testresources"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["testresourcev2s"], verbs: ["*"]},
+      %{apiGroups: ["example.com"], resources: ["testresourcev3s"], verbs: ["*"]},
+      %{apiGroups: [""], resources: ["configmaps"], verbs: ["*"]},
       %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
       %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
-      %{apiGroups: ["example.com"], resources: ["testresourcev2s/status"], verbs: ["*"]},
-      %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]}
+      %{apiGroups: [""], resources: ["secrets"], verbs: ["get", "watch", "list"]},
+      %{apiGroups: ["example.com"], resources: ["testresourcev3s/status"], verbs: ["*"]}
     ]
 
     assert manifest == expected

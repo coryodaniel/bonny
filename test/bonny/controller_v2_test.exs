@@ -118,7 +118,7 @@ defmodule Bonny.ControllerV2Test do
       rules = FooBar.rules()
 
       assert is_list(rules)
-      assert 3 == length(rules)
+      assert 2 == length(rules)
     end
   end
 

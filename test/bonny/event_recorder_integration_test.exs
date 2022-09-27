@@ -49,8 +49,17 @@ defmodule Bonny.EventRecorderIntegrationTest do
       {:ok, events} = K8s.Client.run(conn, get_op)
 
       assert Map.has_key?(events, "items")
-      assert 1 == length(events["items"])
-      assert 3 == events["items"] |> hd |> get_in(~w(series count))
+
+      items =
+        Enum.filter(
+          events["items"],
+          &(&1["metadata"]["name"] =~ "event-test" && &1["action"] == "test")
+        )
+
+      assert 1 == length(items)
+
+      assert 3 ==
+               items |> Enum.find(&(&1["action"] == "test")) |> get_in(~w(series count))
     end
   end
 end

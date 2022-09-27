@@ -38,7 +38,7 @@ defmodule Bonny.Operator do
         resource_endpoint = controller.resource_endpoint()
 
         %{
-          apiGroups: [resource_endpoint.group],
+          apiGroups: [resource_endpoint.group || ""],
           resources: [resource_endpoint.resource_type],
           verbs: ["*"]
         }
@@ -66,15 +66,17 @@ defmodule Bonny.Operator do
   @doc "CRD manifests"
   @spec crds() :: list(map())
   def crds() do
-    Enum.map(Bonny.Config.controllers(), fn controller ->
+    Enum.flat_map(Bonny.Config.controllers(), fn controller ->
       attributes = controller.module_info(:attributes)
 
       cond do
         Enum.member?(attributes, {:behaviour, [Bonny.Controller]}) ->
-          Bonny.CRD.to_manifest(controller.crd(), Bonny.Config.api_version())
+          [Bonny.CRD.to_manifest(controller.crd(), Bonny.Config.api_version())]
 
         Enum.member?(attributes, {:behaviour, [Bonny.ControllerV2]}) ->
-          controller.crd_manifest()
+          if function_exported?(controller, :crd_manifest, 0),
+            do: [controller.crd_manifest()],
+            else: []
       end
     end)
   end

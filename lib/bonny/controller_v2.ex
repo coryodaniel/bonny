@@ -273,22 +273,22 @@ defmodule Bonny.ControllerV2 do
     if Module.get_attribute(module, :skip_observed_generations, false) do
       quote do
         @spec rules() :: list(map())
-        def rules(), do: unquote(rbac_rules)
-      end
-    else
-      quote do
-        @spec rules() :: list(map())
         def rules() do
           %{group: group, resource_type: resource_type} = resource_endpoint()
 
           status_rule = %{
-            apiGroups: [group],
+            apiGroups: [group || ""],
             resources: ["#{resource_type}/status"],
             verbs: ["*"]
           }
 
           [status_rule | unquote(rbac_rules)]
         end
+      end
+    else
+      quote do
+        @spec rules() :: list(map())
+        def rules(), do: unquote(rbac_rules)
       end
     end
   end
