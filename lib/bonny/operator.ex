@@ -73,10 +73,12 @@ defmodule Bonny.Operator do
         Enum.member?(attributes, {:behaviour, [Bonny.Controller]}) ->
           [Bonny.CRD.to_manifest(controller.crd(), Bonny.Config.api_version())]
 
-        Enum.member?(attributes, {:behaviour, [Bonny.ControllerV2]}) ->
-          if function_exported?(controller, :crd_manifest, 0),
-            do: [controller.crd_manifest()],
-            else: []
+        Enum.member?(attributes, {:behaviour, [Bonny.ControllerV2]}) and
+            function_exported?(controller, :crd_manifest, 0) ->
+          [controller.crd_manifest()]
+
+        true ->
+          []
       end
     end)
   end

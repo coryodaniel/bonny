@@ -53,7 +53,7 @@ defmodule Bonny.API.Version do
 
   """
 
-  # TODO: Use this behviour when implementing conversion webhooks
+  # Use this behviour when implementing conversion webhooks
   # defmodule NonHub do
   #   @callback convert_to(Bonny.Resource.t()) :: Bonny.Resource.t()
   #   @callback convert_from(Bonny.Resource.t()) :: Bonny.Resource.t()

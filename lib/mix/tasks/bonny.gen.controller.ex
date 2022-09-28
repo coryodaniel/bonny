@@ -5,20 +5,19 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
   An operator can have multiple controllers. Each controller handles the lifecycle of a custom resource.
 
   ```shell
-  mix bonny.gen.controller Widget
+  mix bonny.gen.controller
   ```
   Open up your controller and add functionality for your resources lifecycle:
 
-  * Apply
+  * Add
+  * Modify
   * Delete
+  * Reconcile
 
-  Optionally implement `customize_crd/1` in your generated controller e.g. to define an OpenAPIV3Schema
-  or define additional printer columns.
-
-  Each controller can create multiple resources.
-
-  For example, a *todo app* controller could deploy a `Deployment` and a `Service`.
+  If you selected to add a CRD, also edit the generated CRD version module.
   """
+
+  # credo:disable-for-this-file Credo.Check.Refactor.CyclomaticComplexity
 
   use Mix.Task
 
