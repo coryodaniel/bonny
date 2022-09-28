@@ -17,7 +17,7 @@ defmodule Bonny.MixProject do
       docs: docs(),
       package: package(),
       aliases: aliases(),
-      dialyzer: [plt_add_apps: [:mix, :eex]],
+      dialyzer: [plt_add_apps: [:mix, :eex, :owl]],
       xref: [exclude: [EEx]]
     ]
   end
