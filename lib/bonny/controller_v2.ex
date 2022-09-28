@@ -12,8 +12,6 @@ defmodule Bonny.ControllerV2 do
   you generate your manifest using `mix bonny.gen.manifest`.
   """
 
-  alias Bonny.CRDV2, as: CRD
-
   @type action :: Bonny.Server.Watcher.action() | :reconcile
   @type event_handler_result_type :: :ok | :error
   @type event_handler_result ::
@@ -37,38 +35,34 @@ defmodule Bonny.ControllerV2 do
   """
   @callback conn() :: K8s.Conn.t()
 
-  @doc """
-  Bonny auto-generates a CRD for every controller. Use this (optional) callback to
-  override that CRD. You can use it to add versions, specify the OpenAPIV3Schema for them,
-  change the resource's scope, and more.
-  """
-  @callback customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
-
   #  Action Callbacks
   @callback add(map()) :: event_handler_result_type()
   @callback modify(map()) :: event_handler_result_type()
   @callback delete(map()) :: event_handler_result_type()
   @callback reconcile(map()) :: event_handler_result_type()
 
-  @optional_callbacks customize_crd: 1
-
   @doc false
   defmacro __using__(opts) do
     quote do
-      unquote(__prelude__())
+      unquote(__prelude__(opts))
       unquote(__init_process__())
       unquote(__maybes__(opts[:skip_observed_generations]))
       unquote(__defs__())
+      unquote(__for_resource__(opts))
 
       defoverridable list_operation: 0, conn: 0
     end
   end
 
-  @spec __prelude__ ::
-          {:__block__, [], [{:@ | :import | :use | {any, any, any}, list, [...]}, ...]}
-  def __prelude__() do
+  def __prelude__(opts) do
     quote do
       Module.register_attribute(__MODULE__, :rbac_rules, accumulate: true)
+
+      Module.put_attribute(
+        __MODULE__,
+        :skip_observed_generations,
+        unquote(opts[:skip_observed_generations])
+      )
 
       use Supervisor
 
@@ -158,11 +152,31 @@ defmodule Bonny.ControllerV2 do
 
       @impl Bonny.ControllerV2
       defdelegate conn(), to: Bonny.Config
+    end
+  end
 
-      def crd() do
-        __MODULE__
-        |> Bonny.ControllerV2.crd()
-        |> maybe_add_obseved_generation_status()
+  def __for_resource__(opts) do
+    quote do
+      cond do
+        match?(%Bonny.API.ResourceEndpoint{}, unquote(opts)[:for_resource]) ->
+          def resource_endpoint(), do: unquote(opts)[:for_resource]
+
+        match?(%Bonny.API.CRD{}, unquote(opts)[:for_resource]) ->
+          def resource_endpoint(),
+            do: Bonny.API.CRD.resource_endpoint(unquote(opts)[:for_resource])
+
+          def crd_manifest() do
+            unquote(opts)[:for_resource]
+            |> Bonny.API.CRD.to_manifest()
+            |> maybe_add_obseved_generation_status()
+          end
+
+        true ->
+          raise CompileError,
+            file: __ENV__.file,
+            line: __ENV__.line,
+            description:
+              "The option `:for_resource` is required and has to a struct of type `%Bonny.API.ResourceEndpoint{}` or `%Bonny.API.CRD{}`."
       end
     end
   end
@@ -175,11 +189,11 @@ defmodule Bonny.ControllerV2 do
     |> post_process_resource(controller)
   end
 
-  def __add_obseved_generation_status__(crd) do
-    Bonny.CRDV2.update_versions(
-      crd,
-      & &1.storage,
-      &Bonny.CRD.Version.add_observed_generation_status/1
+  def __add_obseved_generation_status__(crd_manifest) do
+    update_in(
+      crd_manifest,
+      [:spec, Access.key(:versions, []), Access.all()],
+      &Bonny.API.Version.add_observed_generation_status/1
     )
   end
 
@@ -254,48 +268,43 @@ defmodule Bonny.ControllerV2 do
   end
 
   defmacro __before_compile__(%{module: module}) do
-    rbac_rules = module |> Module.get_attribute(:rbac_rules, [])
+    rbac_rules = Module.get_attribute(module, :rbac_rules, [])
 
-    quote do
-      @spec rules() :: list(map())
-      def rules(), do: unquote(rbac_rules)
+    if Module.get_attribute(module, :skip_observed_generations, false) do
+      quote do
+        @spec rules() :: list(map())
+        def rules() do
+          %{group: group, resource_type: resource_type} = resource_endpoint()
+
+          status_rule = %{
+            apiGroups: [group || ""],
+            resources: ["#{resource_type}/status"],
+            verbs: ["*"]
+          }
+
+          [status_rule | unquote(rbac_rules)]
+        end
+      end
+    else
+      quote do
+        @spec rules() :: list(map())
+        def rules(), do: unquote(rbac_rules)
+      end
     end
-  end
-
-  @spec crd(module()) :: Bonny.CRDV2.t()
-  def crd(controller) do
-    names =
-      controller
-      |> Atom.to_string()
-      |> String.split(".")
-      |> Enum.reverse()
-      |> hd()
-      |> CRD.kind_to_names()
-
-    CRD.new!(
-      names: names,
-      group: Bonny.Config.group(),
-      version: Bonny.CRD.Version.new!(name: "v1")
-    )
-    |> maybe_cutomize_crd(controller)
-    |> controller.maybe_add_obseved_generation_status()
-  end
-
-  defp maybe_cutomize_crd(crd, controller) do
-    if function_exported?(controller, :customize_crd, 1),
-      do: controller.customize_crd(crd),
-      else: crd
   end
 
   @spec list_operation(module()) :: K8s.Operation.t()
   def list_operation(controller) do
-    crd = controller.crd()
-    api_version = CRD.resource_api_version(crd)
-    kind = crd.names.kind
+    resource_endpoint = controller.resource_endpoint()
+    api_version = Bonny.API.ResourceEndpoint.resource_api_version(resource_endpoint)
+    resource_type = resource_endpoint.resource_type
 
-    case crd.scope do
-      :Namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
-      _ -> K8s.Client.list(api_version, kind)
+    case resource_endpoint.scope do
+      :Namespaced ->
+        K8s.Client.list(api_version, resource_type, namespace: Bonny.Config.namespace())
+
+      _ ->
+        K8s.Client.list(api_version, resource_type)
     end
   end
 
@@ -356,12 +365,12 @@ defmodule Bonny.ControllerV2 do
   defp process_event_handler_result({_, _, _, resource}, _), do: resource
 
   defp post_process_resource(resource, controller) do
-    crd = controller.crd()
+    %{resource_type: resource_type} = controller.resource_endpoint()
     conn = controller.conn()
 
     resource
     |> controller.maybe_set_observed_generation()
-    |> Bonny.Resource.apply_status(crd.names.plural, conn)
+    |> Bonny.Resource.apply_status(resource_type, conn)
 
     :ok
   end

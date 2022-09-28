@@ -11,7 +11,10 @@ defmodule Bonny.ControllerV2IntegrationTest do
   alias Bonny.Test.IntegrationHelper
 
   setup_all do
-    Supervisor.start_link([TestResourceV2, TestResourceV3], strategy: :one_for_one)
+    Supervisor.start_link([TestResourceV2, TestResourceV3, ConfigMapController],
+      strategy: :one_for_one
+    )
+
     # give the watcher time to initialize:
     :timer.sleep(500)
 
@@ -142,6 +145,46 @@ defmodule Bonny.ControllerV2IntegrationTest do
       {^ref, :reconciled, ^resource_name},
       timeout
     )
+  end
+
+  @tag :integration
+  test "works for core resource controller", %{
+    conn: conn,
+    resource_name: resource_name,
+    timeout: timeout,
+    ref: ref
+  } do
+    resource = %{
+      "apiVersion" => "v1",
+      "kind" => "ConfigMap",
+      "metadata" => %{
+        "name" => resource_name,
+        "namespace" => "default"
+      },
+      "data" => %{
+        "pid" => "#{self() |> :erlang.pid_to_list() |> List.to_string()}",
+        "ref" => "#{ref |> :erlang.ref_to_list() |> List.to_string()}"
+      }
+    }
+
+    create_op = K8s.Client.create(resource)
+    {:ok, _} = K8s.Client.run(conn, create_op)
+
+    assert_receive(
+      {^ref, :added, ^resource_name},
+      timeout
+    )
+
+    delete_op = K8s.Client.delete(resource)
+    {:ok, _} = K8s.Client.run(conn, delete_op)
+
+    assert_receive(
+      {^ref, :deleted, ^resource_name},
+      timeout
+    )
+
+    # create again so on_exit can delete it again
+    {:ok, _} = K8s.Client.run(conn, create_op)
   end
 
   @tag :integration

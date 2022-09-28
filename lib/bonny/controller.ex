@@ -83,6 +83,17 @@ defmodule Bonny.Controller do
       @impl Bonny.Controller
       def list_operation(), do: Bonny.Controller.list_operation(__MODULE__)
 
+      def resource_endpoint() do
+        crd = crd()
+
+        %Bonny.API.ResourceEndpoint{
+          group: crd.group,
+          version: crd.version,
+          scope: crd.scope,
+          resource_type: crd.names.plural
+        }
+      end
+
       @impl Bonny.Controller
       defdelegate conn(), to: Bonny.Config
 
@@ -91,14 +102,14 @@ defmodule Bonny.Controller do
   end
 
   @doc false
-  defmacro __before_compile__(%{module: controller}) do
-    additional_printer_columns =
-      case Module.get_attribute(controller, :additional_printer_columns, []) do
-        [] -> quote do: []
-        _ -> quote do: @additional_printer_columns ++ Bonny.CRD.default_columns()
-      end
+  defmacro __before_compile__(_) do
+    quote unquote: false do
+      additional_printer_columns =
+        case Module.get_attribute(__MODULE__, :additional_printer_columns, []) do
+          [] -> quote do: []
+          _ -> quote do: @additional_printer_columns ++ Bonny.CRD.default_columns()
+        end
 
-    quote do
       @doc """
       Returns the `Bonny.CRD.t()` the controller manages the lifecycle of.
       """
@@ -109,7 +120,7 @@ defmodule Bonny.Controller do
           scope: @scope,
           version: @version,
           names: Map.merge(default_names(), @names),
-          additional_printer_columns: additional_printer_columns()
+          additional_printer_columns: unquote(additional_printer_columns)
         }
       end
 
@@ -140,8 +151,6 @@ defmodule Bonny.Controller do
           shortNames: nil
         }
       end
-
-      defp additional_printer_columns(), do: unquote(additional_printer_columns)
     end
   end
 

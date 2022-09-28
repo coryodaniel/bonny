@@ -13,10 +13,10 @@ Use `mix bonny.gen.controller KindOfYourResource` to create a controller.
 
 Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It therefore has to implement the following action callbacks to handle the events:
 
-* `add/1` - Called upon the resource's creation.
-* `delete/1` - Called upon the resource's deletion.
-* `modify/1` - Called upon the resource's modification.
-* `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
+- `add/1` - Called upon the resource's creation.
+- `delete/1` - Called upon the resource's deletion.
+- `modify/1` - Called upon the resource's modification.
+- `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
 
 If you used `mix bonny.gen.controller` to create the controller, `add/1` and `modify/1` are delegated to a function `apply/1`. Feel free to change this default behaviour.
 
@@ -58,13 +58,13 @@ end
 
 Your event handlers should return one of the following atoms or tuples:
 
-* `:ok` or `:error`  
+- `:ok` or `:error`  
   Let Bonny know about success or filure.
-* `{:ok, "Custom event message"}` or `{:error, "Custom event message"}`  
+- `{:ok, "Custom event message"}` or `{:error, "Custom event message"}`  
   (See section [Kubernetes Events](#kubernetes-events))
-* `{:ok, resource_with_status}` or `{:error, resource_with_status}`   
+- `{:ok, resource_with_status}` or `{:error, resource_with_status}`  
   If you decide to set values inside the status subresource (`.status.*`), you can return the resource. Bonny is gonna apply the status for you.
-* `{:ok, "Custom event message", resource_with_status}` or `{:error, "Custom event message", resource_with_status}`  
+- `{:ok, "Custom event message", resource_with_status}` or `{:error, "Custom event message", resource_with_status}`  
   The combination of the above.
 
 <!-- livebook:{"break_markdown":true} -->
@@ -160,7 +160,7 @@ Pear.rules()
 The controller creates a default CRD from the information it's got, being the module name and some variables defined in `config.exs`. This CRD is used to generate the manifest when running `mix bonny.gen.manifest`. The default CRD for our `Apple` controller looks as follows:
 
 ```elixir
-Apple.crd() |> Bonny.CRDV2.to_manifest()
+Apple.crd() |> Bonny.API.CRD.to_manifest()
 ```
 
 As you can see, the CRD contains one single version with the default name of "v1" and a very generic OpenAPIV3Schema which allows the spec to be an arbitrary object. If you would like to add additional printer columns or define a more specific schema and profit from kubernetes' input validation, you can implement `customize_crd/1` in your controller.
@@ -185,7 +185,7 @@ defmodule Peach do
   def reconcile(resource), do: :ok
 
   @impl true
-  @spec customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
+  @spec customize_crd(Bonny.API.CRD.t()) :: Bonny.API.CRD.t()
   def customize_crd(crd) do
     additional_printer_columns = [
       %{name: "color", type: "string", jsonPath: ".spec.color"},
@@ -197,14 +197,14 @@ defmodule Peach do
       }
     ]
 
-    Bonny.CRDV2.update_versions(
+    Bonny.API.CRD.update_versions(
       crd,
       fn version -> struct!(version, additionalPrinterColumns: additional_printer_columns) end
     )
   end
 end
 
-Peach.crd() |> Bonny.CRDV2.to_manifest()
+Peach.crd() |> Bonny.API.CRD.to_manifest()
 ```
 
 A more complex case where you redefine the whole CRD including OpenAPIV3Schema:
@@ -226,7 +226,7 @@ defmodule DatabaseUser do
   def reconcile(resource), do: :ok
 
   @impl true
-  @spec customize_crd(Bonny.CRDV2.t()) :: Bonny.CRDV2.t()
+  @spec customize_crd(Bonny.API.CRD.t()) :: Bonny.API.CRD.t()
   def customize_crd(crd) do
     open_api_schema = %{
       openAPIV3Schema: %{
@@ -268,7 +268,7 @@ defmodule DatabaseUser do
   end
 end
 
-DatabaseUser.crd() |> Bonny.CRDV2.to_manifest()
+DatabaseUser.crd() |> Bonny.API.CRD.to_manifest()
 ```
 
 ## Skipping Observed Generations
@@ -296,14 +296,14 @@ defmodule Plum do
   def reconcile(resource), do: :ok
 end
 
-Plum.crd() |> Bonny.CRDV2.to_manifest()
+Plum.crd() |> Bonny.API.CRD.to_manifest()
 ```
 
 ### Some important remarks
 
-* When enabling skipping of observed generations, you MUST re-generate the manifest using `mix bonny.gen.manifest`.
-* Your `apply/1` (and/or `add/1` and `modify/1`) callbacks are not called if you change the metadata of a resource, e.g. labels or annotations (since only changing the spec increments the generation).
-* The `reconcile/1` action is meant to "fix" deviated states. Therefore it is always called, even if the reconciled generation has already been observed.
+- When enabling skipping of observed generations, you MUST re-generate the manifest using `mix bonny.gen.manifest`.
+- Your `apply/1` (and/or `add/1` and `modify/1`) callbacks are not called if you change the metadata of a resource, e.g. labels or annotations (since only changing the spec increments the generation).
+- The `reconcile/1` action is meant to "fix" deviated states. Therefore it is always called, even if the reconciled generation has already been observed.
 
 ## Kubernetes Events
 
@@ -311,8 +311,8 @@ Kubernetes events provide a way to report back to the client. A Kubernetes event
 
 For any `:add`, `:modify` or `:delete` action, Bonny creates events for the handled resource.
 
-* If the handler returns `:ok` or one of the allowed result tuples with `:ok` as first element, an event of type `Normal` is created with a default or the given message.
-* If the handler returns `:error` or one of the allowed result tuples with `:error` as first element, an event of type `Warning` is created with a default or the given message.
+- If the handler returns `:ok` or one of the allowed result tuples with `:ok` as first element, an event of type `Normal` is created with a default or the given message.
+- If the handler returns `:error` or one of the allowed result tuples with `:error` as first element, an event of type `Warning` is created with a default or the given message.
 
 ### Example
 
@@ -341,7 +341,7 @@ Events:
   Type     Reason        Age    From             Message
   ----     ------        ----   ----             -------
   Normal  SuccessfulAdd  45s    ExampleOperator  All good over here.
- 
+
 ```
 
 <!-- livebook:{"break_markdown":true} -->
@@ -356,18 +356,18 @@ Besides the events described above which are created by Bonny, you can create yo
 @doc """
 Creates a kubernetes event.
 
-  * regarding: regarding contains the object this Event is about. 
-    In most cases it's an Object reporting controller implements, 
-    e.g. ReplicaSetController implements ReplicaSets and this event 
+  * regarding: regarding contains the object this Event is about.
+    In most cases it's an Object reporting controller implements,
+    e.g. ReplicaSetController implements ReplicaSets and this event
     is emitted because it acts on some changes in a ReplicaSet object.
-  * related: the related related is the optional secondary object for 
-    more complex actions. E.g. when regarding object triggers a creation 
+  * related: the related related is the optional secondary object for
+    more complex actions. E.g. when regarding object triggers a creation
     or deletion of related object.
   * event_type: `:Normal` or `:Warning`
-  * reason: reason is why the action was taken. It is human-readable. 
-    This field cannot be empty for new Events and it can have at most 
+  * reason: reason is why the action was taken. It is human-readable.
+    This field cannot be empty for new Events and it can have at most
     128 characters.
-    e.g "SuccessfulResourceCreation" 
+    e.g "SuccessfulResourceCreation"
   * action: e.g. "Add"
   * message: note is a human-readable description of the status of this operation
 """
@@ -385,7 +385,7 @@ def add(resource) do
     {:ok, created_pod} ->
       event(resource, created_pod, :Normal, "SuccessfulPodCreation", "The pod \"foobar\" was created successfully")
       :ok
-    {:error, _} -> 
+    {:error, _} ->
       {:error, "An error occurred during the creation of pod \"foobar\"."}
   end
 end

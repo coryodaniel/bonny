@@ -1,4 +1,4 @@
-defmodule TestResourceV2 do
+defmodule ConfigMapController do
   @moduledoc """
   This controller gets the pid and reference from the resource's spec.
   It then sends a message including that reference, the action and the resource
@@ -8,40 +8,10 @@ defmodule TestResourceV2 do
   to kubernetes and wait to receive the message from this controller.
   """
 
-  alias Bonny.API.CRD
-  alias Bonny.API.Version
-  require CRD
-
-  defmodule V1 do
-    @moduledoc false
-    use Version
-
-    @impl true
-    def manifest() do
-      struct!(
-        defaults(),
-        schema: %{
-          openAPIV3Schema: %{
-            type: :object,
-            properties: %{
-              spec: %{
-                type: :object,
-                properties: %{
-                  pid: %{type: :string},
-                  ref: %{type: :string}
-                }
-              }
-            }
-          }
-        }
-      )
-    end
-  end
+  alias Bonny.API.ResourceEndpoint
 
   use Bonny.ControllerV2,
-    for_resource: CRD.build_for_controller!(versions: [V1])
-
-  rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
+    for_resource: ResourceEndpoint.new!("v1", "ConfigMap")
 
   @impl true
   @spec conn() :: K8s.Conn.t()
@@ -63,11 +33,14 @@ defmodule TestResourceV2 do
   defp parse_ref(ref), do: ref |> String.to_charlist() |> :erlang.list_to_ref()
 
   defp respond(resource, action) do
-    pid = resource |> get_in(["spec", "pid"]) |> parse_pid()
-    ref = resource |> get_in(["spec", "ref"]) |> parse_ref()
-    name = resource |> get_in(["metadata", "name"])
+    if resource["data"]["pid"] do
+      pid = resource |> get_in(["data", "pid"]) |> parse_pid()
+      ref = resource |> get_in(["data", "ref"]) |> parse_ref()
+      name = resource |> get_in(["metadata", "name"])
 
-    send(pid, {ref, action, name})
+      send(pid, {ref, action, name})
+    end
+
     :ok
   end
 end

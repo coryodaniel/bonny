@@ -140,12 +140,12 @@ defmodule Bonny.Resource do
   :noop is returned.
   """
   @spec apply_status(t(), binary(), K8s.Conn.t()) :: K8s.Client.Runner.Base.result_t() | :noop
-  def apply_status(resource, plural_resource_kind, conn)
+  def apply_status(resource, resource_type, conn)
       when is_map_key(resource, "status") or is_map_key(resource, :status) do
     op =
       K8s.Client.apply(
         resource["apiVersion"],
-        plural_resource_kind <> "/status",
+        resource_type <> "/status",
         [
           namespace: get_in(resource, ~w(metadata namespace)),
           name: get_in(resource, ~w(metadata name))

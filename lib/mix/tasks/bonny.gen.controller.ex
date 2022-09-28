@@ -5,40 +5,48 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
   An operator can have multiple controllers. Each controller handles the lifecycle of a custom resource.
 
   ```shell
-  mix bonny.gen.controller Widget
+  mix bonny.gen.controller
   ```
   Open up your controller and add functionality for your resources lifecycle:
 
-  * Apply
+  * Add
+  * Modify
   * Delete
+  * Reconcile
 
-  Optionally implement `customize_crd/1` in your generated controller e.g. to define an OpenAPIV3Schema
-  or define additional printer columns.
-
-  Each controller can create multiple resources.
-
-  For example, a *todo app* controller could deploy a `Deployment` and a `Service`.
+  If you selected to add a CRD, also edit the generated CRD version module.
   """
+
+  # credo:disable-for-this-file Credo.Check.Refactor.CyclomaticComplexity
 
   use Mix.Task
 
-  @switches [out: :string]
-  @aliases [o: :out]
+  alias Bonny.API.ResourceEndpoint
+
+  @switches [out: :string, help: :boolean]
+  @aliases [o: :out, h: :help]
 
   @shortdoc "Generate a new CRD Controller for this operator"
   @spec run([binary()]) :: nil | :ok
   def run(args) do
     Mix.Bonny.no_umbrella!()
 
-    {mod_name, file_name, opts} = build(args)
+    {opts, args, _} = Mix.Bonny.parse_args(args, [], switches: @switches, aliases: @aliases)
 
-    binding = [
-      mod_name: mod_name,
-      app_name: Mix.Bonny.app_name()
-    ]
+    if opts[:help] do
+      print_usage()
+      exit(:normal)
+    end
 
-    controller_out = opts[:out] || controller_path(file_name)
-    test_out = opts[:out] || test_path(file_name)
+    binding =
+      args
+      |> init_values()
+      |> get_input()
+      |> Keyword.put(:app_name, Mix.Bonny.app_name())
+
+    controller_filename = Macro.underscore(binding[:controller_name])
+    controller_out = opts[:out] || controller_path(controller_filename)
+    test_out = opts[:out] || controller_test_path(controller_filename)
 
     "controller.ex"
     |> Mix.Bonny.template()
@@ -49,52 +57,206 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     |> Mix.Bonny.template()
     |> EEx.eval_file(binding)
     |> Mix.Bonny.render(test_out)
+
+    if binding[:with_crd] do
+      crd_directory_name = Macro.underscore(binding[:crd_name])
+      crd_version_filename = Macro.underscore(binding[:crd_version])
+      version_out = opts[:out] || crd_version_path(crd_directory_name, crd_version_filename)
+
+      "version.ex"
+      |> Mix.Bonny.template()
+      |> EEx.eval_file(binding)
+      |> Mix.Bonny.render(version_out)
+    end
   end
 
   # coveralls-ignore-start trivial code and we use stdout in tests
-  defp controller_path(file_name) do
-    Path.join(["lib", Mix.Bonny.app_dir_name(), "controllers", "#{file_name}.ex"])
+  defp controller_path(filename) do
+    Path.join(["lib", Mix.Bonny.app_dir_name(), "controllers", "#{filename}.ex"])
   end
 
-  defp test_path(file_name) do
-    Path.join(["test", Mix.Bonny.app_dir_name(), "controllers", "#{file_name}_test.exs"])
+  defp crd_version_path(crd_directory_name, crd_version_filename) do
+    Path.join([
+      "lib",
+      Mix.Bonny.app_dir_name(),
+      "api",
+      crd_directory_name,
+      "#{crd_version_filename}.ex"
+    ])
+  end
+
+  defp controller_test_path(filename) do
+    Path.join([
+      "test",
+      Mix.Bonny.app_dir_name(),
+      "controllers",
+      "#{filename}_test.exs"
+    ])
   end
 
   # coveralls-ignore-stop
 
-  defp build(args) do
-    {opts, parsed, _} = Mix.Bonny.parse_args(args, [], switches: @switches, aliases: @aliases)
-
-    [mod_name | _] = validate_args!(parsed)
-
-    file_name = Macro.underscore(mod_name)
-
-    {mod_name, file_name, opts}
+  defp controller_name_valid?(controller_name) do
+    controller_name =~ ~r/^[A-Z]\w*(\.[A-Z]\w*)*$/
   end
 
-  defp validate_args!([mod_name | _] = args) do
-    if mod_name =~ ~r/^[A-Z]\w*(\.[A-Z]\w*)*$/ do
-      args
-    else
-      raise_with_help("Expected the controller #{inspect(mod_name)} to be a valid module name")
+  def get_input(input \\ []) do
+    cond do
+      is_nil(input[:controller_name]) ->
+        controller_name =
+          Owl.IO.input(
+            label:
+              "What's the name of your controller? This has to be a valid Elixir module name. e.g. CronTabController"
+          )
+
+        input
+        |> Keyword.put(:controller_name, controller_name)
+        |> get_input()
+
+      !controller_name_valid?(input[:controller_name]) ->
+        error(
+          "The controller name you defined (#{input[:controller_name]}) is not a valid Elixir module name!"
+        )
+
+        input
+        |> Keyword.delete(:controller_name)
+        |> get_input()
+
+      is_nil(input[:with_crd]) ->
+        with_crd =
+          Owl.IO.confirm(
+            message: "Do you want to create a CRD for this controller?",
+            default: true
+          )
+
+        input
+        |> Keyword.put(:with_crd, with_crd)
+        |> get_input()
+
+      input[:with_crd] and is_nil(input[:crd_name]) ->
+        from_controller = String.replace_suffix(input[:controller_name], "Controller", "")
+
+        crd_name =
+          Owl.IO.input(
+            label:
+              "What's the name (kind) of the Custom Resource? (defaults to #{inspect(from_controller)})",
+            optional: true
+          )
+
+        input
+        |> Keyword.put(:crd_name, crd_name || from_controller)
+        |> get_input()
+
+      input[:with_crd] and !controller_name_valid?(input[:crd_name]) ->
+        error("The CRD name you defined (#{input[:crd_name]}) is not a valid kubernetes kind!")
+
+        input
+        |> Keyword.delete(:crd_name)
+        |> get_input()
+
+      input[:with_crd] && is_nil(input[:crd_version]) ->
+        version =
+          Owl.IO.input(label: "Please enter the API version of the CRD? (e.g. v1, v1alpha1,...)")
+          |> ensure_module_name()
+
+        input
+        |> Keyword.put(:crd_version, version)
+        |> get_input()
+
+      !input[:with_crd] and is_nil(input[:resource_endpoint]) ->
+        resource_endpoint =
+          Owl.IO.select(
+            ["ConfigMap", "Deployment", "Job", "Pod", "Secret", "Service", "other"],
+            label: "What resource should your controller act on?"
+          )
+          |> get_resource_endpoint()
+
+        input
+        |> Keyword.put(:resource_endpoint, resource_endpoint)
+        |> get_input()
+
+      input[:resource_endpoint] == :other ->
+        group =
+          Owl.IO.input(
+            label:
+              "Enter the API group of the resource your controller should act on (e.g. \"apps\")"
+          )
+
+        version =
+          Owl.IO.input(
+            label:
+              "Enter the API version of the resource your controller should act on (e.g. \"v1\")"
+          )
+
+        resource_type =
+          Owl.IO.input(
+            label:
+              "Enter the plural lowercase name of the resource your controller should act on (e.g. \"deployments\")"
+          )
+
+        scope =
+          Owl.IO.select(["Namespaced", "Cluster"],
+            label: "What's the scope of the resource your controller should act on?"
+          )
+          |> String.to_atom()
+
+        input
+        |> Keyword.put(
+          :resource_endpoint,
+          Bonny.API.ResourceEndpoint.new!(
+            group: group,
+            version: version,
+            resource_type: resource_type,
+            scope: scope
+          )
+        )
+        |> get_input()
+
+      true ->
+        input
     end
   end
 
-  defp validate_args!(_) do
-    raise_with_help("Invalid arguments.")
+  defp init_values(args) do
+    init_values =
+      args
+      |> Enum.with_index()
+      |> Enum.flat_map(fn
+        {arg, 0} -> [{:controller_name, arg}]
+        {arg, 1} -> [{:crd_version, ensure_module_name(arg)}, {:with_crd, true}]
+      end)
+
+    Keyword.merge([resource_endpoint: nil, crd_name: nil, crd_version: nil], init_values)
   end
 
-  @doc false
-  @spec raise_with_help(String.t()) :: no_return()
-  def raise_with_help(msg) do
-    Mix.raise("""
-    #{msg}
+  defp error(message) do
+    message |> Owl.Data.tag(:red) |> Owl.IO.puts()
+  end
 
-    mix bonny.gen.controller expects a module name representing the resource's "Kind".
+  defp ensure_module_name(string) do
+    if string =~ ~r/[A-Z].+/, do: string, else: String.capitalize(string)
+  end
 
-    For example:
-       mix bonny.gen.controller Webhook
-       mix bonny.gen.controller Memcached
+  # coveralls-ignore-start trivial code
+  defp get_resource_endpoint("Secret"), do: ResourceEndpoint.new!("v1", "secrets")
+  defp get_resource_endpoint("Service"), do: ResourceEndpoint.new!("v1", "services")
+  defp get_resource_endpoint("ConfigMap"), do: ResourceEndpoint.new!("v1", "pods")
+  defp get_resource_endpoint("Job"), do: ResourceEndpoint.new!("batch/v1", "jobs")
+  defp get_resource_endpoint("Pod"), do: ResourceEndpoint.new!("v1", "configmaps")
+  defp get_resource_endpoint("Deployment"), do: ResourceEndpoint.new!("apps/v1", "deployments")
+  defp get_resource_endpoint("other"), do: :other
+  # coveralls-ignore-stop
+
+  defp print_usage() do
+    IO.puts("""
+    usage: mix bonny.gen.controller [options] [controller_name] [crd_version]
+
+        controller_name:  The module name of your controller - Should be a valid Elixir module name
+        crd_version:      If you want to create a CRD, you can pass the version name here (e.g. v1, V1Alpha1)
+
+        options:
+        -h, --help      Print this message
+        -o, --out       "-" prints to stdout
     """)
   end
 end

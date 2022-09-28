@@ -1,7 +1,65 @@
-defmodule Bonny.CRD.Version do
+defmodule Bonny.API.Version do
   @moduledoc """
-  A CRD can describe multiple versions of a resource. This module helps dealing with those versions.
+  Describes an API version of a custom resource.
+
+  The %Bonny.API.Version{} struct contains the fields required to build the manifest
+  for this version.
+
+  This module is meant to be `use`d by a module representing the
+  API version of a custom resource. The using module has to define
+  the function `manifest/0`.
+
+  The macro `defaults/1` is imported to the using module. It can be used to
+  simplify getting started. The first argument is the version's name (e.g. "v1").
+  If no name is passed, The macro will use the using module's name as the
+  version name.
+
+  The Option `hub` has to be `true` for exactly one version of your CRD.
+  The `defaults/1` macro will set the `storage` flag to the value passed via the
+  `hub` option.
+
+  ```
+  defmodule MyOperator.API.CronTab.V1 do
+    use Bonny.API.Version,
+      hub: true
+
+    def manifest() do
+      defaults()
+    end
+  ```
+
+  ### Use the `manifest/0` callback to override the defaults, e.g. add a schema:
+
+
+  ```
+  defmodule MyOperator.API.CronTab.V1 do
+    use Bonny.API.Version,
+      hub: true
+
+    def manifest() do
+      struct!(
+        defaults(),
+        schema: %{
+          openAPIV3Schema: %{
+            type: :object,
+            properties: %{
+              spec: %{
+            }
+          }
+        }
+      )
+    end
+  ```
+
   """
+
+  # Use this behviour when implementing conversion webhooks
+  # defmodule NonHub do
+  #   @callback convert_to(Bonny.Resource.t()) :: Bonny.Resource.t()
+  #   @callback convert_from(Bonny.Resource.t()) :: Bonny.Resource.t()
+  # end
+
+  @callback manifest() :: Bonny.API.Version.t()
 
   @typedoc """
   Defines an [additional printer column](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#additional-printer-columns).
@@ -49,10 +107,11 @@ defmodule Bonny.CRD.Version do
             }
           }
         }
-  @typedoc """
-  Defines a version of a custom resource. Refer to the [CRD versioning documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/)
-  """
 
+  @typedoc """
+  Defines a version of a custom resource. Refer to the
+  [CRD versioning documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/)
+  """
   @type subresources_t :: %{
           optional(:status) => %{},
           optional(:scale) => %{
@@ -84,9 +143,31 @@ defmodule Bonny.CRD.Version do
     subresources: %{}
   ]
 
-  @spec new!(keyword()) :: __MODULE__.t()
-  def new!(fields) do
-    struct!(__MODULE__, fields)
+  defmacro __using__(opts) do
+    quote do
+      @behaviour Bonny.API.Version
+      import Bonny.API.Version, only: [defaults: 0, defaults: 1]
+      @hub Keyword.get(unquote(opts), :hub, false)
+    end
+  end
+
+  defmacro defaults(name \\ nil) do
+    name = name || __extract_version__(__CALLER__.module)
+
+    quote do
+      struct!(Bonny.API.Version,
+        name: unquote(name),
+        storage: @hub
+      )
+    end
+  end
+
+  def __extract_version__(module) do
+    module
+    |> Module.split()
+    |> Enum.reverse()
+    |> Enum.at(0)
+    |> String.downcase()
   end
 
   @doc """
@@ -96,7 +177,7 @@ defmodule Bonny.CRD.Version do
 
   ### Example
 
-      iex> Bonny.CRD.Version.add_observed_generation_status(%{})
+      iex> Bonny.API.Version.add_observed_generation_status(%{})
       %{
         subresources: %{status: %{}},
         schema: %{

@@ -1,84 +1,63 @@
-defmodule <%= app_name %>.Controller.<%= mod_name %> do
+defmodule <%= app_name %>.Controller.<%= controller_name %> do
   @moduledoc """
-  <%= app_name %>: <%= mod_name %> CRD.
+  <%= app_name %>: <%= controller_name %> controller.
 
-  ## Kubernetes CRD Spec
+  ## Controlled Resource
 
-  creates a default CRD from the information it's got, i.e. the module name
-  and some variables defined in `config.exs`. You can customize them by
-  implementing the  `customize_crd/1` callback:
-
-  ### Examples
-
-  The crd you get as an argument to `customize_crd/1 is already a valid CRD.
-  This means you don't have to pass all the fields to `struct!()`, just the
-  ones you want to override.
-
-  ```
-  @impl Bonny.ControllerV2
-  def customize_crd(crd) do
-    struct!(
-      crd,
-
-      # Customizing the group (defaults to what's defined  in config.exs):
-      group: "kewl.example.io"
-
-      # Customizing the scope (defaults to :Namespaced):
-      scope: :Cluster
-
-      # Customizing the names (defaults to Bonny.CRDV2.kind_to_names("<%= mod_name %>"))
-      names: Bonny.CRDV2.kind_to_names("Wheel", ["w]) # => %{singular: "wheel", plural: "wheels", kind: "Wheel", shortNames: ["w"]}
-
-      # Define your own versions (defaults to an auto-generated "v1" version)
-      versions: [
-        Bonny.CRD.Version.new!(
-          name: "v1beta2",
-          served: true,
-          storage: true,
-          schema: %{openAPIV3Schema: %{...}}
-        )
-      ]
-    )
-  end
-  ```
-
-  ## Add additional printer columns
-
-  In version 1 of this controller, you could define additional printer columns
-  as module attributes. Now they are part of your versions array and are defined
-  withing the `customize_crd/1` callback.
-
-  ```
-  @impl Bonny.ControllerV2
-  def customize_crd(crd) do
-    additional_printer_columns = [
-      %{name: "username", type: "string", jsonPath: ".spec.username"},
-      %{name: "connections", type: "integer", jsonPath: ".spec.max_conn", description: "Maximum of simultaneos connections allowed for this user."
-      }
-    ]
-    put_in(crd, [Access.key(:versions), Access.at(0), Access.key(:additionalPrinterColumns)], additional_printer_columns)
-  end
-
-  ```
-
-  ## Declare RBAC permissions used by this module
-
-  RBAC rules can be declared by passing them as options to the `use` statement and generated using `mix bonny.manifest`.
+  You have to pass the option `for_resource` to `use Bonny.ControllerV2`.
+  `for_resource` should be either a `%Bonny.API.CRD{}` struct or a
+  `%Bonny.API.ResourceEndpoint` struct.
 
   ### Examples
 
   ```
   use Bonny.ControllerV2,
-    # rbac_rule: {apiGroup, resources_list, verbs_list}
-    rbac_rule: {"", ["pods", "secrets"], ["*"]},
-    rbac_rule: {"apiextensions.k8s.io", ["foo"], ["*"]}
+    for_resource:
+      %Bonny.API.CRD{
+        group: "example.com",
+        names: Bonny.API.CRD.kind_to_names("CronTab"),
+        versions: [MyController.API.CronTab.V1],
+      }
+  ```
+
+  ```
+  use Bonny.ControllerV2,
+    for_resource:
+      %Bonny.API.ResourceEndpoint{
+        group: "apps",
+        version: "v1",
+        resource_type: "deployments",
+      }
+  ```
+
+  ## Declare RBAC permissions used by this module
+
+  RBAC rules can be declared via the `rbac_rule/1` macro and generated using `mix bonny.manifest`.
+
+  ### Examples
+
+  ```
+  # rbac_rule({apiGroup, resources_list, verbs_list})
+  rbac_rule({"", ["pods", "secrets"], ["*"]})
+  rbac_rule({"apiextensions.k8s.io", ["foo"], ["*"]})
+  ```
   """
 
-  use Bonny.ControllerV2
+  <%= if with_crd do %>
+  alias <%= app_name %>.API.<%= crd_name %>.<%= crd_version %>
+  require Bonny.API.CRD
+  <% end %>
+
+  use Bonny.ControllerV2,
+    for_resource: <%= if with_crd do %>
+      Bonny.API.CRD.build_for_controller!(
+        names: Bonny.API.CRD.kind_to_names("<%= crd_name %>"),
+        versions: [<%= crd_version %>]
+      )<% else %>
+      <%= inspect(resource_endpoint) %><% end %>,
     # check the controller guide for an explanation on skip_observed_generations.
     # If you enable skip_observed_generations, make sure to regenerate your manifest!
     skip_observed_generations: false
-    # rbac_rule: {"", ["pods", "secrets"], ["*"]}
 
   @doc """
   Handles a `ADDED` event.
