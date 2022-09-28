@@ -1,12 +1,12 @@
-defmodule <%= app_name %>.Controller.<%= mod_name %>Test do
+defmodule <%= app_name %>.Controller.<%= controller_name %>Test do
   @moduledoc false
   use ExUnit.Case, async: false
-  alias <%= app_name %>.Controller.<%= mod_name %>
+  alias <%= app_name %>.Controller.<%= controller_name %>
 
   describe "add/1" do
     test "returns :ok" do
       event = %{}
-      result = <%= mod_name %>.add(event)
+      result = <%= controller_name %>.add(event)
       assert result == :ok
     end
   end
@@ -14,7 +14,7 @@ defmodule <%= app_name %>.Controller.<%= mod_name %>Test do
   describe "modify/1" do
     test "returns :ok" do
       event = %{}
-      result = <%= mod_name %>.modify(event)
+      result = <%= controller_name %>.modify(event)
       assert result == :ok
     end
   end
@@ -22,7 +22,7 @@ defmodule <%= app_name %>.Controller.<%= mod_name %>Test do
   describe "reconcile/1" do
     test "returns :ok" do
       event = %{}
-      result = <%= mod_name %>.reconcile(event)
+      result = <%= controller_name %>.reconcile(event)
       assert result == :ok
     end
   end
@@ -30,7 +30,7 @@ defmodule <%= app_name %>.Controller.<%= mod_name %>Test do
   describe "delete/1" do
     test "returns :ok" do
       event = %{}
-      result = <%= mod_name %>.delete(event)
+      result = <%= controller_name %>.delete(event)
       assert result == :ok
     end
   end

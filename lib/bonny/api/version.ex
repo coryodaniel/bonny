@@ -39,7 +39,8 @@ defmodule Bonny.API.Version do
     def manifest() do
       struct!(
         defaults(),
-        schema: %{          openAPIV3Schema: %{
+        schema: %{
+          openAPIV3Schema: %{
             type: :object,
             properties: %{
               spec: %{
