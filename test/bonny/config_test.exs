@@ -3,6 +3,11 @@ defmodule Bonny.ConfigTest do
   use ExUnit.Case, async: false
   alias Bonny.Config
 
+  defmodule ConnGetter do
+    def get_conn(), do: %K8s.Conn{cluster_name: "foo"}
+    def get_conn(:tuple), do: {:ok, %K8s.Conn{cluster_name: "bar"}}
+  end
+
   describe "group/0" do
     test "defaults to hyphenated app name example.com" do
       original = Application.get_env(:bonny, :group)
@@ -141,6 +146,35 @@ defmodule Bonny.ConfigTest do
       assert Config.labels() == %{"foo" => "bar"}
 
       Application.put_env(:bonny, :labels, original)
+    end
+  end
+
+  describe "conn/0" do
+    setup do
+      original = Application.get_env(:bonny, :get_conn)
+      on_exit(fn -> Application.put_env(:bonny, :get_conn, original) end)
+    end
+
+    test "raises when not set" do
+      Application.delete_env(:bonny, :get_conn)
+
+      assert_raise(RuntimeError, ~r/^Check bonny.get_conn in your config.exs./, fn ->
+        Config.conn()
+      end)
+    end
+
+    test "works with a getter that takes no args" do
+      Application.put_env(:bonny, :get_conn, {ConnGetter, :get_conn})
+
+      conn = Config.conn()
+      assert "foo" == conn.cluster_name
+    end
+
+    test "works with a getter that takes args" do
+      Application.put_env(:bonny, :get_conn, {ConnGetter, :get_conn, [:tuple]})
+
+      conn = Config.conn()
+      assert "bar" == conn.cluster_name
     end
   end
 end
