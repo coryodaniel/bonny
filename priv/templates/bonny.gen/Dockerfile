@@ -2,7 +2,7 @@
 ###### Build Image ######
 #########################
 
-FROM bitwalker/alpine-elixir:1.13.2 as builder
+FROM elixir:<%= elixir_image_tag %> as builder
 
 ENV MIX_ENV=prod \
   MIX_HOME=/opt/mix \
@@ -27,9 +27,10 @@ RUN mix release
 ##### Release Image #####
 #########################
 
-FROM alpine:3.10
+FROM erlang:<%= otp_image_tag %>-alpine
 
-RUN apk add --update openssl ncurses
+# elixir expects utf8.
+ENV LANG=C.UTF-8
 
 WORKDIR /app
 COPY --from=builder /app/_build/prod/rel/<%= app_name %> ./
