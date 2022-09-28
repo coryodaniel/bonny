@@ -43,8 +43,10 @@ defmodule <%= app_name %>.Controller.<%= controller_name %> do
   ```
   """
 
+  <%= if with_crd do %>
   alias <%= app_name %>.API.<%= crd_name %>.<%= crd_version %>
   require Bonny.API.CRD
+  <% end %>
 
   use Bonny.ControllerV2,
     for_resource: <%= if with_crd do %>

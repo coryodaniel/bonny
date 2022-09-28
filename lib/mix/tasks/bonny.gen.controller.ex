@@ -199,7 +199,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
           Owl.IO.select(["Namespaced", "Cluster"],
             label: "What's the scope of the resource your controller should act on?"
           )
-          |> String.to_existing_atom()
+          |> String.to_atom()
 
         input
         |> Keyword.put(
@@ -238,6 +238,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     if string =~ ~r/[A-Z].+/, do: string, else: String.capitalize(string)
   end
 
+  # coveralls-ignore-start trivial code
   defp get_resource_endpoint("Secret"), do: ResourceEndpoint.new!("v1", "secrets")
   defp get_resource_endpoint("Service"), do: ResourceEndpoint.new!("v1", "services")
   defp get_resource_endpoint("ConfigMap"), do: ResourceEndpoint.new!("v1", "pods")
@@ -245,6 +246,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
   defp get_resource_endpoint("Pod"), do: ResourceEndpoint.new!("v1", "configmaps")
   defp get_resource_endpoint("Deployment"), do: ResourceEndpoint.new!("apps/v1", "deployments")
   defp get_resource_endpoint("other"), do: :other
+  # coveralls-ignore-stop
 
   defp print_usage() do
     IO.puts("""
