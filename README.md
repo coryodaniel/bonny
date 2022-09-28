@@ -155,7 +155,9 @@ There are a number of generators to help create a Kubernetes operator.
 An operator can have multiple controllers. Each controller handles the lifecycle of a custom resource.
 
 ```shell
-mix bonny.gen.controller Widget
+mix bonny.gen.controller
+# or
+mix bonny.gen.controller Widget v1
 ```
 
 Open up your controller and add functionality for your resource's lifecycles:
@@ -204,8 +206,6 @@ mix bonny.gen.manifest --image ${BONNY_IMAGE}
 ```
 
 You may _omit_ the `--image` flag if you want to generate a manifest _without the deployment_ so that you can develop locally running the operator outside of the cluster.
-
-**Note:** YAML output is JSON formatted YAML. Sorry, elixirland isn't fond of YAML :D
 
 By default the manifest will generate the service account and deployment in the "default" namespace.
 
