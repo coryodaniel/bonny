@@ -65,7 +65,12 @@ defmodule Bonny.API.CRD do
   controller's module name and takes the group from config.
   """
   defmacro build_for_controller!(fields) do
-    kind = __CALLER__.module |> Module.split() |> Enum.reverse() |> hd()
+    kind =
+      __CALLER__.module
+      |> Module.split()
+      |> Enum.reverse()
+      |> hd()
+      |> String.replace_suffix("Controller", "")
 
     quote do
       unquote(fields)

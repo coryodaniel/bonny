@@ -1,28 +1,104 @@
 # Controllers
 
 ```elixir
-Mix.install([{:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}])
+Mix.install([
+  {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master", force: true}
+])
 
 Application.put_env(:bonny, :group, "example.com")
 Application.put_env(:bonny, :operator_name, "livebook-operator")
+
+defmodule V1 do
+  use Bonny.API.Version
+
+  @impl true
+  def manifest(), do: defaults()
+end
 ```
 
-## Event Handlers - Creating a simple Controller
+## Creating your first Controller
 
-Use `mix bonny.gen.controller KindOfYourResource` to create a controller.
+Use `mix bonny.gen.controller` to create a controller. You are going to be asked whether you want to create a CRD for this controller or not. It defaults to `yes`, as in most cases you probably want to define a custom resource which you're goint to control with your controller. However, your controller could also act upon events on other resources like `configmaps`, `deployments` or even custom resources defined by other operators. The mix task will then guide you through the creation of controller and if applicable a CRD version (see [versions.livemd](versions.livemd)).
 
-Your controller implements the `behaviour` defined in `Bonny.ControllerV2`. It therefore has to implement the following action callbacks to handle the events:
+## Controlled Resource
 
-- `add/1` - Called upon the resource's creation.
-- `delete/1` - Called upon the resource's deletion.
-- `modify/1` - Called upon the resource's modification.
-- `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
+A controller watches for events of a certain resource type and acts upon them. Therefore, when `use`-ing `Bonny.ControllerV2`, you have to to define WHICH resource endpoint to "monitor". You do this through the `for_resource` options.
+
+### Defining Custom Resources
+
+To configure a controller for a custom resource, you pass a `%Bonny.API.CRD{}` struct with the `for_resource` option. This will automatically add a function `crd_manifest/0` to your controller which is used by `mix bonny.gen.manifest` to generate the CRD manifest.
+
+```elixir
+defmodule AppleController do
+  use Bonny.ControllerV2,
+    for_resource: %Bonny.API.CRD{
+      group: "example.com",
+      scope: :Namespaced,
+      names: Bonny.API.CRD.kind_to_names("Apple"),
+      versions: [V1]
+    }
+end
+
+AppleController.crd_manifest()
+```
+
+Note that these example throw compiler warnings because we haven't declared the action handlers. Let's ignore them for now.
+
+Instead of defining the full CRD, you can use the `Bonny.API.CRD.build_for_controller!/1` macro. It will make an educated guess for the names using the controller module name and take the group form `config.exs`. You only have to pass the versions (which are handled in a [separate guide](versions.livemd)).
+
+```elixir
+defmodule AppleController do
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2,
+    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1])
+end
+
+AppleController.crd_manifest()
+```
+
+### A Controller for other Resources
+
+To configure a controller for let's say a core resource, you pass a `%Bonny.API.ResourceEndpoint{}` struct with the `for_resource` option. Note that **no** `crd_manifest/0` function is generated for this controller.
+
+```elixir
+defmodule DeploymentController do
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2,
+    for_resource: Bonny.API.ResourceEndpoint.new!("apps/v1", "Deployment")
+end
+
+function_exported?(DeploymentController, :crd_manifest, 0)
+```
+
+Note that the example above uses `Bonny.API.ResourceEndpoint.new!/3` to define the resource endpoint.
+
+```elixir
+Bonny.API.ResourceEndpoint.new!("apps/v1", "Deployment")
+```
+
+```elixir
+Bonny.API.ResourceEndpoint.new!("rbac.authorization.k8s.io/v1", "ClusterRole", :Cluster)
+```
+
+## Event Handlers
+
+A controller must implements the `behaviour` defined by `Bonny.ControllerV2`. This means it must implement the following action callbacks to handle the events:
+
+* `add/1` - Called upon the resource's creation.
+* `delete/1` - Called upon the resource's deletion.
+* `modify/1` - Called upon the resource's modification.
+* `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
 
 If you used `mix bonny.gen.controller` to create the controller, `add/1` and `modify/1` are delegated to a function `apply/1`. Feel free to change this default behaviour.
 
 ```elixir
 defmodule Apple do
-  use Bonny.ControllerV2
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2,
+    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1])
 
   @impl true
   def add(resource) do
@@ -58,13 +134,13 @@ end
 
 Your event handlers should return one of the following atoms or tuples:
 
-- `:ok` or `:error`  
+* `:ok` or `:error`  
   Let Bonny know about success or filure.
-- `{:ok, "Custom event message"}` or `{:error, "Custom event message"}`  
+* `{:ok, "Custom event message"}` or `{:error, "Custom event message"}`  
   (See section [Kubernetes Events](#kubernetes-events))
-- `{:ok, resource_with_status}` or `{:error, resource_with_status}`  
+* `{:ok, resource_with_status}` or `{:error, resource_with_status}`  
   If you decide to set values inside the status subresource (`.status.*`), you can return the resource. Bonny is gonna apply the status for you.
-- `{:ok, "Custom event message", resource_with_status}` or `{:error, "Custom event message", resource_with_status}`  
+* `{:ok, "Custom event message", resource_with_status}` or `{:error, "Custom event message", resource_with_status}`  
   The combination of the above.
 
 <!-- livebook:{"break_markdown":true} -->
@@ -79,7 +155,10 @@ If your controller creates other resources for your custom resource (e.g. pods, 
 
 ```elixir
 defmodule Orange do
-  use Bonny.ControllerV2
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2,
+    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1])
 
   @impl true
   def add(resource) do
@@ -97,13 +176,13 @@ defmodule Orange do
   end
 
   @impl true
-  def modify(resource), do: :ok
+  def modify(_resource), do: :ok
 
   @impl true
-  def delete(resource), do: :ok
+  def delete(_resource), do: :ok
 
   @impl true
-  def reconcile(resource), do: :ok
+  def reconcile(_resource), do: :ok
 end
 ```
 
@@ -125,6 +204,10 @@ Orange.add(%{
 
 See the section [Kubernetes Events](#kubernetes-events) below.
 
+## Customizing Versions in the resulting CRD
+
+Refer to the [Versions](versions.livemd) user guide if you want to define your own OpenAPIV3 schema, add additional printer columns, etc.
+
 ## RBAC Rules
 
 Your controller might need special permissions on the kubernetes cluster. Maybe it needs to be able to read secrets. Or it has to be able to create pods. These permissions need to be reflected in the final manifest generated by `mix bonny.gen.manifest` through RBAC rules.
@@ -133,142 +216,29 @@ You can define such rules one by one using the `rbac_rule` macro. These rules ha
 
 ```elixir
 defmodule Pear do
-  use Bonny.ControllerV2
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2,
+    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1])
 
   # Additional RBAC Rules
   rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
   rbac_rule({"v1", ["pods"], ["get", "watch", "list"]})
 
   @impl true
-  def add(resource), do: :ok
+  def add(_resource), do: :ok
 
   @impl true
-  def modify(resource), do: :ok
+  def modify(_resource), do: :ok
   @impl true
-  def delete(resource), do: :ok
+  def delete(_resource), do: :ok
 
   @impl true
-  def reconcile(resource), do: :ok
+  def reconcile(_resource), do: :ok
 end
 
 # When generating the manifest, an auto-generated function `rules/0` is called.
 Pear.rules()
-```
-
-## Custom Resource Definition (CRD)
-
-The controller creates a default CRD from the information it's got, being the module name and some variables defined in `config.exs`. This CRD is used to generate the manifest when running `mix bonny.gen.manifest`. The default CRD for our `Apple` controller looks as follows:
-
-```elixir
-Apple.crd() |> Bonny.API.CRD.to_manifest()
-```
-
-As you can see, the CRD contains one single version with the default name of "v1" and a very generic OpenAPIV3Schema which allows the spec to be an arbitrary object. If you would like to add additional printer columns or define a more specific schema and profit from kubernetes' input validation, you can implement `customize_crd/1` in your controller.
-
-<!-- livebook:{"break_markdown":true} -->
-
-A simple case where you would just set `additionalPrinterColumns` on the default version:
-
-```elixir
-defmodule Peach do
-  use Bonny.ControllerV2
-
-  @impl true
-  def add(resource), do: :ok
-
-  @impl true
-  def modify(resource), do: :ok
-  @impl true
-  def delete(resource), do: :ok
-
-  @impl true
-  def reconcile(resource), do: :ok
-
-  @impl true
-  @spec customize_crd(Bonny.API.CRD.t()) :: Bonny.API.CRD.t()
-  def customize_crd(crd) do
-    additional_printer_columns = [
-      %{name: "color", type: "string", jsonPath: ".spec.color"},
-      %{
-        name: "ripe",
-        type: "boolean",
-        jsonPath: ".spec.ripe",
-        description: "Indicates whether the fruit is ripe or not."
-      }
-    ]
-
-    Bonny.API.CRD.update_versions(
-      crd,
-      fn version -> struct!(version, additionalPrinterColumns: additional_printer_columns) end
-    )
-  end
-end
-
-Peach.crd() |> Bonny.API.CRD.to_manifest()
-```
-
-A more complex case where you redefine the whole CRD including OpenAPIV3Schema:
-
-```elixir
-defmodule DatabaseUser do
-  use Bonny.ControllerV2
-
-  @impl true
-  def add(resource), do: :ok
-
-  @impl true
-  def modify(resource), do: :ok
-
-  @impl true
-  def delete(resource), do: :ok
-
-  @impl true
-  def reconcile(resource), do: :ok
-
-  @impl true
-  @spec customize_crd(Bonny.API.CRD.t()) :: Bonny.API.CRD.t()
-  def customize_crd(crd) do
-    open_api_schema = %{
-      openAPIV3Schema: %{
-        type: :object,
-        properties: %{
-          spec: %{
-            type: :object,
-            properties: %{
-              username: %{type: :string},
-              max_conn: %{
-                type: :integer,
-                description: "Maximum of simultaneos connections allowed for this user."
-              }
-            }
-          }
-        }
-      }
-    }
-
-    struct!(
-      crd,
-      versions: [
-        Bonny.CRD.Version.new!(
-          name: "v1",
-          additionalPrinterColumns: [
-            %{name: "username", type: "string", jsonPath: ".spec.username"},
-            %{
-              name: "connections",
-              type: "integer",
-              jsonPath: ".spec.max_conn",
-              description: "Maximum of simultaneos connections allowed for this user."
-            }
-          ],
-          schema: open_api_schema
-        ),
-        Bonny.CRD.Version.new!(name: "v1beta1", schema: open_api_schema, storage: false)
-      ]
-    )
-  end
-end
-
-DatabaseUser.crd() |> Bonny.API.CRD.to_manifest()
 ```
 
 ## Skipping Observed Generations
@@ -281,29 +251,32 @@ Behind the scenes, if you set `skip_observed_generations: true`, Bonny adds the 
 
 ```elixir
 defmodule Plum do
+  require Bonny.API.CRD
+
   use Bonny.ControllerV2,
+    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1]),
     skip_observed_generations: true
 
   @impl true
-  def add(resource), do: :ok
+  def add(_resource), do: :ok
   @impl true
-  def modify(resource), do: :ok
+  def modify(_resource), do: :ok
 
   @impl true
-  def delete(resource), do: :ok
+  def delete(_resource), do: :ok
 
   @impl true
-  def reconcile(resource), do: :ok
+  def reconcile(_resource), do: :ok
 end
 
-Plum.crd() |> Bonny.API.CRD.to_manifest()
+Plum.crd_manifest()
 ```
 
 ### Some important remarks
 
-- When enabling skipping of observed generations, you MUST re-generate the manifest using `mix bonny.gen.manifest`.
-- Your `apply/1` (and/or `add/1` and `modify/1`) callbacks are not called if you change the metadata of a resource, e.g. labels or annotations (since only changing the spec increments the generation).
-- The `reconcile/1` action is meant to "fix" deviated states. Therefore it is always called, even if the reconciled generation has already been observed.
+* When enabling skipping of observed generations, you MUST re-generate the manifest using `mix bonny.gen.manifest`.
+* Your `apply/1` (and/or `add/1` and `modify/1`) callbacks are not called if you change the metadata of a resource, e.g. labels or annotations (since only changing the spec increments the generation).
+* The `reconcile/1` action is meant to "fix" deviated states. Therefore it is always called, even if the reconciled generation has already been observed.
 
 ## Kubernetes Events
 
@@ -311,8 +284,8 @@ Kubernetes events provide a way to report back to the client. A Kubernetes event
 
 For any `:add`, `:modify` or `:delete` action, Bonny creates events for the handled resource.
 
-- If the handler returns `:ok` or one of the allowed result tuples with `:ok` as first element, an event of type `Normal` is created with a default or the given message.
-- If the handler returns `:error` or one of the allowed result tuples with `:error` as first element, an event of type `Warning` is created with a default or the given message.
+* If the handler returns `:ok` or one of the allowed result tuples with `:ok` as first element, an event of type `Normal` is created with a default or the given message.
+* If the handler returns `:error` or one of the allowed result tuples with `:error` as first element, an event of type `Warning` is created with a default or the given message.
 
 ### Example
 
