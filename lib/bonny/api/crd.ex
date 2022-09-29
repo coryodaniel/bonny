@@ -62,11 +62,22 @@ defmodule Bonny.API.CRD do
   """
   @spec new!(keyword()) :: t()
   def new!(fields) do
-    versions = Enum.map(Bonny.Config.versions(), &Module.concat([&1, fields[:names].kind]))
+    versions = Bonny.Config.versions()
+    possible_version_modules = Enum.map(versions, &Module.concat(&1, fields[:names].kind))
+
+    version_modules =
+      Enum.filter(possible_version_modules, &match?({:module, _}, Code.ensure_compiled(&1)))
+
+    if Enum.empty?(version_modules),
+      do:
+        raise(RuntimeError,
+          message:
+            "No API Version module exists for the given kind \"#{fields[:names].kind}\". Make sure you define at least one of the following modules: #{inspect(possible_version_modules)}"
+        )
 
     fields =
       fields
-      |> Keyword.put(:versions, versions)
+      |> Keyword.put(:versions, version_modules)
 
     struct!(__MODULE__, fields)
   end

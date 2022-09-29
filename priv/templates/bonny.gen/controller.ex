@@ -50,7 +50,7 @@ defmodule <%= app_name %>.Controller.<%= controller_name %> do
   use Bonny.ControllerV2,
     for_resource: <%= if with_crd do %>
       Bonny.API.CRD.build_for_controller!(
-        names: Bonny.API.CRD.kind_to_names("<%= crd_name %>"),
+        names: Bonny.API.CRD.kind_to_names("<%= crd_name %>")
       )<% else %>
       <%= inspect(resource_endpoint) %><% end %>,
     # check the controller guide for an explanation on skip_observed_generations.

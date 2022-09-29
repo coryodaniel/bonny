@@ -44,6 +44,20 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
       |> get_input()
       |> Keyword.put(:app_name, Mix.Bonny.app_name())
 
+    if binding[:with_crd] do
+      for version <- Bonny.Config.versions() do
+        binding = Keyword.put(binding, :crd_version, version)
+
+        version_out =
+          opts[:out] || crd_version_path(version, Macro.underscore(binding[:crd_name]))
+
+        "version.ex"
+        |> Mix.Bonny.template()
+        |> EEx.eval_file(binding)
+        |> Mix.Bonny.render(version_out)
+      end
+    end
+
     controller_filename = Macro.underscore(binding[:controller_name])
     controller_out = opts[:out] || controller_path(controller_filename)
     test_out = opts[:out] || controller_test_path(controller_filename)
@@ -57,17 +71,6 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     |> Mix.Bonny.template()
     |> EEx.eval_file(binding)
     |> Mix.Bonny.render(test_out)
-
-    if binding[:with_crd] do
-      crd_directory_name = Macro.underscore(binding[:crd_name])
-      crd_version_filename = Macro.underscore(binding[:crd_version])
-      version_out = opts[:out] || crd_version_path(crd_directory_name, crd_version_filename)
-
-      "version.ex"
-      |> Mix.Bonny.template()
-      |> EEx.eval_file(binding)
-      |> Mix.Bonny.render(version_out)
-    end
   end
 
   # coveralls-ignore-start trivial code and we use stdout in tests
@@ -75,14 +78,12 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     Path.join(["lib", Mix.Bonny.app_dir_name(), "controllers", "#{filename}.ex"])
   end
 
-  defp crd_version_path(crd_directory_name, crd_version_filename) do
-    Path.join([
-      "lib",
-      Mix.Bonny.app_dir_name(),
-      "api",
-      crd_directory_name,
-      "#{crd_version_filename}.ex"
-    ])
+  defp crd_version_path(version, file_name) do
+    directory = version |> Module.split() |> Enum.map(&Macro.underscore/1)
+
+    ["lib" | directory]
+    |> Path.join()
+    |> Path.join("#{file_name}.ex")
   end
 
   defp controller_test_path(filename) do
@@ -155,15 +156,6 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
         |> Keyword.delete(:crd_name)
         |> get_input()
 
-      input[:with_crd] && is_nil(input[:crd_version]) ->
-        version =
-          Owl.IO.input(label: "Please enter the API version of the CRD? (e.g. v1, v1alpha1,...)")
-          |> ensure_module_name()
-
-        input
-        |> Keyword.put(:crd_version, version)
-        |> get_input()
-
       !input[:with_crd] and is_nil(input[:resource_endpoint]) ->
         resource_endpoint =
           Owl.IO.select(
@@ -224,18 +216,13 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
       |> Enum.with_index()
       |> Enum.flat_map(fn
         {arg, 0} -> [{:controller_name, arg}]
-        {arg, 1} -> [{:crd_version, ensure_module_name(arg)}, {:with_crd, true}]
       end)
 
-    Keyword.merge([resource_endpoint: nil, crd_name: nil, crd_version: nil], init_values)
+    Keyword.merge([resource_endpoint: nil, crd_name: nil], init_values)
   end
 
   defp error(message) do
     message |> Owl.Data.tag(:red) |> Owl.IO.puts()
-  end
-
-  defp ensure_module_name(string) do
-    if string =~ ~r/[A-Z].+/, do: string, else: String.capitalize(string)
   end
 
   # coveralls-ignore-start trivial code
@@ -250,10 +237,9 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
 
   defp print_usage() do
     IO.puts("""
-    usage: mix bonny.gen.controller [options] [controller_name] [crd_version]
+    usage: mix bonny.gen.controller [options] [controller_name]
 
         controller_name:  The module name of your controller - Should be a valid Elixir module name
-        crd_version:      If you want to create a CRD, you can pass the version name here (e.g. v1, V1Alpha1)
 
         options:
         -h, --help      Print this message
