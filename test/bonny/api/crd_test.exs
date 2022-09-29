@@ -10,20 +10,19 @@ defmodule Bonny.API.CRDTest do
     use Version,
       hub: true
 
-    def manifest(), do: defaults()
+    def manifest(), do: defaults("v1")
   end
 
   doctest MUT
 
   describe "to_manifest" do
     test "creates manifest" do
-      crd =
-        MUT.new!(
-          names: %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []},
-          group: "example.xom",
-          versions: [V1],
-          scope: :Namespaced
-        )
+      crd = %MUT{
+        names: %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []},
+        group: "example.xom",
+        versions: [V1],
+        scope: :Namespaced
+      }
 
       expected = %{
         apiVersion: "apiextensions.k8s.io/v1",

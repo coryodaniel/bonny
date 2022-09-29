@@ -125,7 +125,8 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
       is_nil(input[:with_crd]) ->
         with_crd =
           Owl.IO.confirm(
-            message: "Do you want to create a CRD for this controller?",
+            message:
+              "Do you want to create a CRD with this controller? (For operators you typically do)",
             default: true
           )
 

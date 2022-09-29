@@ -1,4 +1,4 @@
-defmodule TestResourceV2 do
+defmodule TestResourceV2Controller do
   @moduledoc """
   This controller gets the pid and reference from the resource's spec.
   It then sends a message including that reference, the action and the resource
@@ -9,34 +9,7 @@ defmodule TestResourceV2 do
   """
 
   alias Bonny.API.CRD
-  alias Bonny.API.Version
   require CRD
-
-  defmodule V1 do
-    @moduledoc false
-    use Version
-
-    @impl true
-    def manifest() do
-      struct!(
-        defaults(),
-        schema: %{
-          openAPIV3Schema: %{
-            type: :object,
-            properties: %{
-              spec: %{
-                type: :object,
-                properties: %{
-                  pid: %{type: :string},
-                  ref: %{type: :string}
-                }
-              }
-            }
-          }
-        }
-      )
-    end
-  end
 
   use Bonny.ControllerV2,
     for_resource: CRD.build_for_controller!(versions: [V1])

@@ -32,32 +32,44 @@ defmodule Bonny.API.CRD do
   A Custom Resource Definition.
 
   - `scope`: either Namespaced or Cluster
-  - `group`: group name to use for REST API: /apis/<group>/<version>
+  - `group`: group name to use for REST API: /apis/<group>/<version>, defaults to the group in config.exs
   - `names`: see `names_t`
-  - `versions`: list of versions supported by this CustomResourceDefinition
+  - `versions`: list of API Version modules for this Resource, defaults to the versions in config.exs
   """
   @type t :: %__MODULE__{
-          group: binary() | nil,
+          group: binary(),
           names: names_t(),
           scope: :Namespaced | :Cluster,
           versions: list(module())
         }
 
-  @enforce_keys [:group, :names, :versions]
+  @enforce_keys [:names, :versions]
 
   defstruct [
-    :versions,
-    :group,
     :names,
+    :versions,
+    group: Bonny.Config.group(),
     scope: :Namespaced
   ]
+
+  def get_versions() do
+    Bonny.Config.versions()
+  end
 
   @doc """
   Creates a new %Bonny.API.CRD{} struct from the given values. `:scope` is
   optional and defaults to `:Namespaced`.
   """
   @spec new!(keyword()) :: t()
-  def new!(fields), do: struct!(__MODULE__, fields)
+  def new!(fields) do
+    versions = Enum.map(Bonny.Config.versions(), &Module.concat([&1, fields[:names].kind]))
+
+    fields =
+      fields
+      |> Keyword.put(:versions, versions)
+
+    struct!(__MODULE__, fields)
+  end
 
   @doc """
   This macro can be used from inside a controller to build a new
@@ -75,7 +87,6 @@ defmodule Bonny.API.CRD do
     quote do
       unquote(fields)
       |> Keyword.put_new_lazy(:names, fn -> Bonny.API.CRD.kind_to_names(unquote(kind)) end)
-      |> Keyword.put_new_lazy(:group, fn -> Bonny.Config.group() end)
       |> Bonny.API.CRD.new!()
     end
   end

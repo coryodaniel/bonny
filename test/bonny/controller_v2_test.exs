@@ -10,7 +10,7 @@ defmodule Bonny.ControllerV2Test do
     defmodule V1Beta1 do
       use Version
 
-      def manifest(), do: defaults()
+      def manifest(), do: defaults("v1beta1")
     end
 
     defmodule V1 do
@@ -19,7 +19,7 @@ defmodule Bonny.ControllerV2Test do
 
       def manifest() do
         struct!(
-          defaults(),
+          defaults("v1"),
           schema: %{
             openAPIV3Schema: %{
               type: :object,
@@ -48,13 +48,12 @@ defmodule Bonny.ControllerV2Test do
     end
 
     use Bonny.ControllerV2,
-      for_resource:
-        CRD.build_for_controller!(
-          group: "test.com",
-          scope: :Cluster,
-          names: Bonny.API.CRD.kind_to_names("FooBar", ["fb"]),
-          versions: [V1, V1Beta1]
-        )
+      for_resource: %Bonny.API.CRD{
+        group: "test.com",
+        scope: :Cluster,
+        names: Bonny.API.CRD.kind_to_names("FooBar", ["fb"]),
+        versions: [V1, V1Beta1]
+      }
 
     rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
 
@@ -96,7 +95,7 @@ defmodule Bonny.ControllerV2Test do
     end
 
     test "creates status subresource if skip_observed_generations is true" do
-      %{spec: crd_spec} = TestResourceV3.crd_manifest()
+      %{spec: crd_spec} = TestResourceV3Controller.crd_manifest()
 
       assert %{status: %{}} == hd(crd_spec.versions).subresources
 

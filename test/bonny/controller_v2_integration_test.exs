@@ -11,7 +11,8 @@ defmodule Bonny.ControllerV2IntegrationTest do
   alias Bonny.Test.IntegrationHelper
 
   setup_all do
-    Supervisor.start_link([TestResourceV2, TestResourceV3, ConfigMapController],
+    Supervisor.start_link(
+      [TestResourceV2Controller, TestResourceV3Controller, ConfigMapController],
       strategy: :one_for_one
     )
 
@@ -139,7 +140,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
 
-    start_supervised(TestResourceV32)
+    start_supervised(TestResourceV32Controller)
 
     assert_receive(
       {^ref, :reconciled, ^resource_name},
@@ -255,7 +256,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     create_op = K8s.Client.create(resource)
     {:ok, added_reource} = K8s.Client.run(conn, create_op)
 
-    start_supervised(TestResourceV32)
+    start_supervised(TestResourceV32Controller)
 
     assert_receive(
       {^ref, :reconciled, ^resource_name},

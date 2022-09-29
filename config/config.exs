@@ -14,11 +14,12 @@ if Mix.env() == :test do
       Cog,
       V1.Whizbang,
       TestResource,
-      TestResourceV2,
-      TestResourceV3,
+      TestResourceV2Controller,
+      TestResourceV3Controller,
       ConfigMapController
     ],
     group: "example.com",
+    versions: [Bonny.Test.API.V1],
     get_conn: {Bonny.K8sMock, :conn},
     api_version: "apiextensions.k8s.io/v1"
 end

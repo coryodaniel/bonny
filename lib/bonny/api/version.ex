@@ -166,7 +166,7 @@ defmodule Bonny.API.Version do
     module
     |> Module.split()
     |> Enum.reverse()
-    |> Enum.at(0)
+    |> Enum.at(1)
     |> String.downcase()
   end
 
