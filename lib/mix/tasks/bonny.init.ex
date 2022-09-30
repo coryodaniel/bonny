@@ -14,12 +14,7 @@ defmodule Mix.Tasks.Bonny.Init do
     requests: %{cpu: "200m", memory: "200Mi"}
   }
 
-  @switches [out: :string]
-  @aliases [o: :out]
-
-  def run(args) do
-    {opts, _args, _} = Mix.Bonny.parse_args(args, [], switches: @switches, aliases: @aliases)
-
+  def run(_args) do
     input =
       [
         resources: @default_resources,
@@ -28,10 +23,11 @@ defmodule Mix.Tasks.Bonny.Init do
       ]
       |> get_input()
 
-    create_discovery_file(opts)
-    create_conn_file(input, opts)
-    create_config_file(input, opts)
-    add_config_to_main_config()
+    create_discovery_file()
+    create_conn_file(input)
+    create_config_file(input)
+    import_bonny_config_in_main_config()
+    add_dynamic_http_provder_to_test_helper()
   end
 
   def get_input(input \\ []) do
@@ -127,6 +123,7 @@ defmodule Mix.Tasks.Bonny.Init do
           limits: %{cpu: cpu_limit, memory: mem_limit},
           requests: %{cpu: cpu_request, memory: mem_request}
         })
+        |> Keyword.put(:define_resources?, false)
         |> get_input()
 
       true ->
@@ -134,62 +131,52 @@ defmodule Mix.Tasks.Bonny.Init do
     end
   end
 
-  # defp create_discovery_file(opts) when opts.out == "-" do
-  #   if opts[:out] == "-",
-  #     do: IO.puts(File.read!("init/discovery.json")),
-  #     else:
-  # end
-  defp create_discovery_file(opts) do
-    out = opts[:out] || "test/support/discovery.json"
-
+  defp create_discovery_file() do
     "init/discovery.json"
     |> Mix.Bonny.template()
-    |> Mix.Bonny.copy(out)
+    |> Mix.Bonny.copy("test/support/discovery.json")
   end
 
-  defp create_config_file(input, opts) do
-    out = opts[:out] || "config/bonny.exs"
-
+  defp create_config_file(input) do
     "init/config.exs"
     |> Mix.Bonny.template()
-    |> Mix.Bonny.render_template(out, input)
+    |> Mix.Bonny.render_template("config/bonny.exs", input)
   end
 
-  defp create_conn_file(input, opts) do
-    out = opts[:out] || "lib/#{input[:app_dir_name]}/k8s_conn.ex"
-
+  defp create_conn_file(input) do
     "init/k8s_conn.ex"
     |> Mix.Bonny.template()
-    |> Mix.Bonny.render_template(out, input)
+    |> Mix.Bonny.render_template("lib/#{input[:app_dir_name]}/k8s_conn.ex", input)
   end
 
-  defp add_config_to_main_config() do
-    cond do
-      !File.exists?("config/config.exs") ->
-        Owl.IO.puts([Owl.Data.tag("* adding", :green), " config/bonny.exs to config/config.exs"])
+  defp import_bonny_config_in_main_config() do
+    check = ~s(import_config "bonny.exs")
 
-        content = """
-        import Config
+    append_conent = ~s(\n\n#{check})
 
-        import_config "bonny.exs"
-        """
+    new_file_content = """
+    import Config
+    #{append_conent}
+    """
 
-        File.write!("config/config.exs", content)
+    check = ~s(import_config "bonny.exs")
+    Mix.Bonny.append_or_create_with("config/config.exs", append_conent, new_file_content, check)
+  end
 
-      !(File.read!("config/config.exs") =~ ~s(import_config "bonny.exs")) ->
-        Owl.IO.puts([Owl.Data.tag("* adding", :green), " config/bonny.exs to config/config.exs"])
+  defp add_dynamic_http_provder_to_test_helper() do
+    check = "K8s.Client.DynamicHTTPProvider.start_link(nil)"
+    content_to_prepend = "#{check}\n"
 
-        content = """
+    new_file_content = """
+    #{content_to_prepend}
+    ExUnit.start()
+    """
 
-        import_config "bonny.exs"
-        """
-
-        {:ok, file} = File.open("config/config.exs", [:append])
-        IO.binwrite(file, content)
-        File.close(file)
-
-      true ->
-        :ok
-    end
+    Mix.Bonny.prepend_or_create_with(
+      "config/config.exs",
+      content_to_prepend,
+      new_file_content,
+      check
+    )
   end
 end
