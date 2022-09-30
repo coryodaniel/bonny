@@ -33,6 +33,18 @@ defmodule Mix.Bonny do
     Mix.Generator.create_file(target, source)
   end
 
+  @spec render_template(binary(), binary(), keyword()) :: term()
+  def render_template(source, "-", bindings) do
+    EEx.eval_file(source, bindings) |> IO.puts()
+  end
+
+  def render_template(source, target, bindings),
+    do: Mix.Generator.copy_template(source, target, bindings)
+
+  @spec copy(binary, binary) :: term()
+  def copy(source, "-"), do: IO.puts(File.read!(source))
+  def copy(source, target), do: Mix.Generator.copy_file(source, target)
+
   @doc "Get the OTP app name"
   @spec app_name() :: binary
   def app_name() do

@@ -21,10 +21,16 @@ defmodule Mix.Tasks.Bonny.Init do
     {opts, _args, _} = Mix.Bonny.parse_args(args, [], switches: @switches, aliases: @aliases)
 
     input =
-      [resources: @default_resources]
+      [
+        resources: @default_resources,
+        app_name: Mix.Bonny.app_name(),
+        app_dir_name: Mix.Bonny.app_dir_name()
+      ]
       |> get_input()
 
-    generate_config(input, opts)
+    create_discovery_file(opts)
+    create_conn_file(input, opts)
+    create_config_file(input, opts)
     add_config_to_main_config()
   end
 
@@ -128,13 +134,33 @@ defmodule Mix.Tasks.Bonny.Init do
     end
   end
 
-  defp generate_config(input, opts) do
-    config_out = opts[:out] || "config/bonny.exs"
+  # defp create_discovery_file(opts) when opts.out == "-" do
+  #   if opts[:out] == "-",
+  #     do: IO.puts(File.read!("init/discovery.json")),
+  #     else:
+  # end
+  defp create_discovery_file(opts) do
+    out = opts[:out] || "test/support/discovery.json"
 
-    "config.exs"
+    "init/discovery.json"
     |> Mix.Bonny.template()
-    |> EEx.eval_file(input)
-    |> Mix.Bonny.render(config_out)
+    |> Mix.Bonny.copy(out)
+  end
+
+  defp create_config_file(input, opts) do
+    out = opts[:out] || "config/bonny.exs"
+
+    "init/config.exs"
+    |> Mix.Bonny.template()
+    |> Mix.Bonny.render_template(out, input)
+  end
+
+  defp create_conn_file(input, opts) do
+    out = opts[:out] || "lib/#{input[:app_dir_name]}/k8s_conn.ex"
+
+    "init/k8s_conn.ex"
+    |> Mix.Bonny.template()
+    |> Mix.Bonny.render_template(out, input)
   end
 
   defp add_config_to_main_config() do

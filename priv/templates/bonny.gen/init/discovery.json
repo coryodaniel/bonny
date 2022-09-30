@@ -1,0 +1,116 @@
+{
+  "v1": [
+    {
+      "kind": "Namespace",
+      "name": "namespaces",
+      "namespaced": false,
+      "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "configmaps",
+      "namespaced": true,
+      "verbs": [
+        "create",
+        "delete",
+        "deletecollection",
+        "get",
+        "list",
+        "patch",
+        "update",
+        "watch"
+      ]
+    },
+    {
+      "kind": "Service",
+      "name": "services",
+      "namespaced": true,
+      "verbs": [
+        "create",
+        "delete",
+        "deletecollection",
+        "get",
+        "list",
+        "patch",
+        "update",
+        "watch"
+      ]
+    },
+    {
+      "kind": "Pod",
+      "name": "pods",
+      "namespaced": true,
+      "verbs": [
+        "create",
+        "delete",
+        "deletecollection",
+        "get",
+        "list",
+        "patch",
+        "update",
+        "watch"
+      ]
+    }
+  ],
+  "apps/v1": [
+    {
+      "kind": "DaemonSet",
+      "name": "daemonsets",
+      "namespaced": true,
+      "verbs": [
+        "create",
+        "delete",
+        "deletecollection",
+        "get",
+        "list",
+        "patch",
+        "update",
+        "watch"
+      ]
+    },
+    {
+      "kind": "Deployment",
+      "name": "deployments",
+      "namespaced": true,
+      "verbs": [
+        "create",
+        "delete",
+        "deletecollection",
+        "get",
+        "list",
+        "patch",
+        "update",
+        "watch"
+      ]
+    },
+    {
+      "kind": "Deployment",
+      "name": "deployments/status",
+      "namespaced": true,
+      "verbs": ["get", "patch", "update"]
+    },
+    {
+      "kind": "StatefulSet",
+      "name": "statefulsets",
+      "namespaced": true,
+      "verbs": [
+        "create",
+        "delete",
+        "deletecollection",
+        "get",
+        "list",
+        "patch",
+        "update",
+        "watch"
+      ]
+    }
+  ],
+  "events.k8s.io/v1": [
+    {
+      "kind": "Event",
+      "name": "events",
+      "namespaced": false,
+      "verbs": ["create", "get", "list", "watch"]
+    }
+  ]
+}
