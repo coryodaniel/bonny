@@ -11,10 +11,10 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
 
   @choice_scope_namespaced "1"
 
-  setup do
+  setup_all do
     [
-      crd_no_args: ~w(McController y Memcached V1Alpha1) |> input_args(),
-      crd_arg_controller: ~w(y Memcached V1Alpha1) |> input_args(),
+      crd_no_args: ~w(McController y Memcached) |> input_args(),
+      crd_arg_controller: ~w(y Memcached) |> input_args(),
       crd_arg_controller_version: ~w(y Memcached) |> input_args(),
       deployment_no_args: ["DeplController", "n", @choice_resource_deployment] |> input_args(),
       deployment_arg_controller: ["n", @choice_resource_deployment] |> input_args(),
@@ -24,7 +24,6 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
           "n",
           @choice_resource_other,
           "bitnami.com",
-          "v1alpha1",
           "sealedsecrets",
           @choice_scope_namespaced
         ]
@@ -34,7 +33,6 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
           "n",
           @choice_resource_other,
           "bitnami.com",
-          "v1alpha1",
           "sealedsecrets",
           @choice_scope_namespaced
         ]
@@ -52,7 +50,7 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
 
       assert output =~ "defmodule Bonny.Controller.McController do"
       assert output =~ "defmodule Bonny.Controller.McControllerTest do"
-      assert output =~ "defmodule Bonny.API.Memcached.V1Alpha1 do"
+      assert output =~ "defmodule Bonny.Test.API.V1.Memcached do"
     end
 
     test "generates a CRD controller and a Version module module when controller name is passed.",
@@ -66,7 +64,7 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
 
       assert output =~ "defmodule Bonny.Controller.McController do"
       assert output =~ "defmodule Bonny.Controller.McControllerTest do"
-      assert output =~ "defmodule Bonny.API.Memcached.V1Alpha1 do"
+      assert output =~ "defmodule Bonny.Test.API.V1.Memcached do"
     end
 
     test "generates a CRD controller and a Version module module when controller name and version are passed.",
@@ -75,11 +73,11 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
          } do
       output =
         capture_io([input: input], fn ->
-          Controller.run(["--out", "-", "McController", "V1Alpha1"])
+          Controller.run(["--out", "-", "McController"])
         end)
 
       assert output =~ "defmodule Bonny.Controller.McController do"
-      assert output =~ "defmodule Bonny.API.Memcached.V1Alpha1 do"
+      assert output =~ "defmodule Bonny.Test.API.V1.Memcached do"
     end
 
     test "generates a deployment controller when no args are passed.",

@@ -12,6 +12,16 @@ defmodule Bonny.Config do
   end
 
   @doc """
+  Kubernetes API Versions of this operator
+  """
+  @spec versions() :: binary
+  def versions() do
+    Application.get_env(:bonny, :versions) ||
+      raise RuntimeError,
+        message: "You have to define a list of versions in your config.exs"
+  end
+
+  @doc """
   The name of the operator.
 
   Name must consist of only lowercase letters and hyphens.

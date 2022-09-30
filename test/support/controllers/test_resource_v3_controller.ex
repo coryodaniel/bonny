@@ -1,29 +1,13 @@
-defmodule TestResourceV32 do
+defmodule TestResourceV3Controller do
   @moduledoc """
   Like TestResourceV2 but observed generations are rejected.
   """
 
   alias Bonny.API.CRD
-  alias Bonny.API.Version
   require CRD
 
-  defmodule V1 do
-    @moduledoc false
-    use Version,
-      hub: true
-
-    @impl true
-    def manifest() do
-      defaults()
-    end
-  end
-
   use Bonny.ControllerV2,
-    for_resource:
-      CRD.build_for_controller!(
-        versions: [V1],
-        names: Bonny.API.CRD.kind_to_names("TestResourceV3")
-      ),
+    for_resource: CRD.build_for_controller!(names: CRD.kind_to_names("TestResourceV3")),
     skip_observed_generations: true
 
   @impl Bonny.ControllerV2
@@ -34,7 +18,7 @@ defmodule TestResourceV32 do
   def list_operation() do
     __MODULE__
     |> Bonny.ControllerV2.list_operation()
-    |> K8s.Operation.put_label_selector(K8s.Selector.label({"version", "3.2"}))
+    |> K8s.Operation.put_label_selector(K8s.Selector.label({"version", "3.1"}))
   end
 
   @impl Bonny.ControllerV2

@@ -1,4 +1,4 @@
-defmodule <%= app_name %>.API.<%= crd_name %>.<%= crd_version %> do
+defmodule <%= String.replace_prefix("#{crd_version}", "Elixir.", "") %>.<%= crd_name %> do
   @moduledoc """
   <%= app_name %>: <%= crd_name %> CRD <%= crd_version %> version.
 
@@ -19,7 +19,7 @@ defmodule <%= app_name %>.API.<%= crd_name %>.<%= crd_version %> do
               properties: %{
                 foos: %{type: integer}
               }
-            }
+            },
             status: %{
               ...
             }

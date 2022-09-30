@@ -15,6 +15,13 @@ defmodule Mix.Bonny do
   end
 
   @doc """
+  Capitalizes the string if it does not begin with a capital letter.
+  """
+  def ensure_module_name(string) do
+    if string =~ ~r/[A-Z].+/, do: string, else: String.capitalize(string)
+  end
+
+  @doc """
   Render text to a file.
 
   Special handling for the path "-" will render to STDOUT

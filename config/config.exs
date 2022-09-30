@@ -14,11 +14,12 @@ if Mix.env() == :test do
       Cog,
       V1.Whizbang,
       TestResource,
-      TestResourceV2,
-      TestResourceV3,
+      TestResourceV2Controller,
+      TestResourceV3Controller,
       ConfigMapController
     ],
     group: "example.com",
+    versions: [Bonny.Test.API.V1],
     get_conn: {Bonny.K8sMock, :conn},
     api_version: "apiextensions.k8s.io/v1"
 end
@@ -35,6 +36,7 @@ if Mix.env() == :dev do
 
   config :bonny,
     get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "k3d-k8s-ex"]]},
+    versions: [Bonny.API.V1],
     controllers: [
       DeploymentEventLogController,
       TestScheduler
