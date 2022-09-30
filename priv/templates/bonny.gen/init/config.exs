@@ -8,7 +8,7 @@ config :bonny,
 
   # Function to call to get a K8s.Conn object.
   # The function should return a %K8s.Conn{} struct or a {:ok, %K8s.Conn{}} tuple
-  get_conn: {<%= assigns[:app_name] %>.K8sConn, :get, [Mix.env()]},
+  get_conn: {<%= assigns[:app_name] %>.K8sConn, :get, [config_env()]},
 
   # The namespace to watch for Namespaced CRDs.
   # Defaults to "default". `:all` for all namespaces

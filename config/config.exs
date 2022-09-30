@@ -1,6 +1,6 @@
 import Config
 
-if Mix.env() == :test do
+if config_env() == :test do
   config :logger, level: :none
 
   config :k8s,
@@ -24,7 +24,7 @@ if Mix.env() == :test do
     api_version: "apiextensions.k8s.io/v1"
 end
 
-if Mix.env() == :dev do
+if config_env() == :dev do
   config :logger, level: :debug
 
   config :mix_test_watch,
