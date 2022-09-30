@@ -41,6 +41,14 @@ defmodule Mix.Bonny do
     |> Macro.camelize()
   end
 
+  @doc "Get the OTP app name with dashes"
+  @spec hyphenated_app_name() :: binary
+  def hyphenated_app_name() do
+    otp_app()
+    |> Atom.to_string()
+    |> String.replace("_", "-")
+  end
+
   @spec app_dir_name() :: binary
   def app_dir_name() do
     Macro.underscore(app_name())

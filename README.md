@@ -67,7 +67,7 @@ The only configuration parameters required are `:bonny` `controllers` and a `:ge
 ```elixir
 
 config :bonny,
-  # Add each CRD Controller module for this operator to load here
+  # Add each Controller module for this operator to load here
   # Defaults to none. This *must* be set.
   controllers: [
     MyApp.Controllers.WebServer,
