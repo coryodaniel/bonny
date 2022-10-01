@@ -60,10 +60,10 @@ defmodule Bonny.MixProject do
       {:telemetry, "~> 1.0"},
       #  2.0 only supports Elixir >= 1.11
       {:ymlr, "~> 3.0"},
+      {:owl, "~> 0.5.1", runtime: false},
 
       # Dev deps
       {:mix_test_watch, "~> 1.1", only: :dev, runtime: false},
-      {:owl, "~> 0.5.1", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.2.0", only: [:dev, :test], runtime: false},
       # {:ex_doc, "~> 0.23", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
