@@ -14,6 +14,7 @@ defmodule Mix.Tasks.Bonny.Init do
     requests: %{cpu: "200m", memory: "200Mi"}
   }
   @rfc_1123_subdomain_check ~r/^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/
+  @dns_1035_label_check ~r/^[a-z]([-a-z0-9]*[a-z0-9])?$/
 
   def run(_args) do
     input =
@@ -59,12 +60,22 @@ defmodule Mix.Tasks.Bonny.Init do
               "Please enter the API Version of your controller in Elixir module form, e.g. V1 or V1Alpha1"
           )
 
-        input
-        |> Keyword.put(
-          :version,
-          "#{Mix.Bonny.app_name()}.API.#{Mix.Bonny.ensure_module_name(version)}"
-        )
-        |> get_input()
+        next_input =
+          if valid_dns_1035_label?(String.downcase(version)) do
+            input
+            |> Keyword.put(
+              :version,
+              "#{Mix.Bonny.app_name()}.API.#{Mix.Bonny.ensure_module_name(version)}"
+            )
+          else
+            Mix.Bonny.error(
+              "Invalid value: #{inspect(input[:version])}. A DNS-1035 label must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character"
+            )
+
+            input
+          end
+
+        get_input(next_input)
 
       is_nil(input[:namespace]) ->
         namespace =
@@ -191,4 +202,5 @@ defmodule Mix.Tasks.Bonny.Init do
   end
 
   defp valid_rfc_1123_subdomain?(string), do: String.match?(string, @rfc_1123_subdomain_check)
+  defp valid_dns_1035_label?(string), do: String.match?(string, @dns_1035_label_check)
 end
