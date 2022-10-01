@@ -87,7 +87,7 @@ defmodule Bonny.API.CRD do
   %Bonny.API.CRD{} struct. It's going to derive the CRD names from the
   controller's module name and takes the group from config.
   """
-  defmacro build_for_controller!(fields) do
+  defmacro build_for_controller!(fields \\ []) do
     kind =
       __CALLER__.module
       |> Module.split()

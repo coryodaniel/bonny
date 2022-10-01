@@ -8,8 +8,17 @@ defmodule Bonny.ControllerV2 do
   Controllers allow for simple `add`, `modify`, `delete`, and `reconcile`
   handling of custom resources in the Kubernetes API.
 
-  This version of the controller lets you customize the resulting CRD before
-  you generate your manifest using `mix bonny.gen.manifest`.
+  ## Controlled Resource
+
+  You can pass the option `for_resource` to `use Bonny.ControllerV2`.
+  If the option is ommitted, Bonny assumes the controler controls a
+  custom resource tries to guess the custom resource's name
+  from the controller's module name.
+  If declared, `for_resource` can be:
+
+  * a string representing the kind of a resource
+  * a `%Bonny.API.CRD{}` struct
+  * a `%Bonny.API.ResourceEndpoint` struct.
   """
 
   @type action :: Bonny.Server.Watcher.action() | :reconcile
@@ -48,7 +57,7 @@ defmodule Bonny.ControllerV2 do
       unquote(__init_process__())
       unquote(__maybes__(opts[:skip_observed_generations]))
       unquote(__defs__())
-      unquote(__for_resource__(opts))
+      unquote(__for_resource__(opts[:for_resource]))
 
       defoverridable list_operation: 0, conn: 0
     end
@@ -155,18 +164,33 @@ defmodule Bonny.ControllerV2 do
     end
   end
 
-  def __for_resource__(opts) do
+  def __for_resource__(nil) do
+    for_resource = quote do: Bonny.API.CRD.build_for_controller!()
+    __for_resource__(for_resource)
+  end
+
+  def __for_resource__(for_resource) when is_binary(for_resource) do
+    for_resource =
+      quote do:
+              Bonny.API.CRD.build_for_controller!(
+                names: Bonny.API.CRD.kind_to_names(unquote(for_resource))
+              )
+
+    __for_resource__(for_resource)
+  end
+
+  def __for_resource__(for_resource) do
     quote do
       cond do
-        match?(%Bonny.API.ResourceEndpoint{}, unquote(opts)[:for_resource]) ->
-          def resource_endpoint(), do: unquote(opts)[:for_resource]
+        match?(%Bonny.API.ResourceEndpoint{}, unquote(for_resource)) ->
+          def resource_endpoint(), do: unquote(for_resource)
 
-        match?(%Bonny.API.CRD{}, unquote(opts)[:for_resource]) ->
+        match?(%Bonny.API.CRD{}, unquote(for_resource)) ->
           def resource_endpoint(),
-            do: Bonny.API.CRD.resource_endpoint(unquote(opts)[:for_resource])
+            do: Bonny.API.CRD.resource_endpoint(unquote(for_resource))
 
           def crd_manifest() do
-            unquote(opts)[:for_resource]
+            unquote(for_resource)
             |> Bonny.API.CRD.to_manifest()
             |> maybe_add_obseved_generation_status()
           end

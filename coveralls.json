@@ -3,7 +3,8 @@
     "test/support/",
     "lib/mix/bonny.ex",
     "lib/bonny/telemetry.ex",
-    "lib/bonny/sys/logger.ex"
+    "lib/bonny/sys/logger.ex",
+    "lib/mix/tasks/bonny.init.ex"
   ],
   "default_stop_words": [
     "Logger",
@@ -12,7 +13,7 @@
     "defrecord",
     "defstruct",
     "defimpl",
-    "def.+(.+\/\/.+).+do"
+    "def.+(.+//.+).+do"
   ],
   "coverage_options": {
     "treat_no_relevant_lines_as_covered": true

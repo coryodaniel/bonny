@@ -105,10 +105,14 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
   # coveralls-ignore-stop
 
   defp controller_name_valid?(controller_name) do
-    controller_name =~ ~r/^[A-Z]\w*(\.[A-Z]\w*)*$/
+    controller_name =~ ~r/^[A-Z][^\W_]*(\.[A-Z]\[^\W_]*)*$/
   end
 
-  def get_input(input \\ []) do
+  defp kind_valid?(kind) do
+    kind =~ ~r/^[A-Z][A-Za-z]*$/
+  end
+
+  def get_input(input) do
     cond do
       is_nil(input[:controller_name]) ->
         controller_name =
@@ -156,7 +160,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
         |> Keyword.put(:crd_name, crd_name || from_controller)
         |> get_input()
 
-      input[:with_crd] and !controller_name_valid?(input[:crd_name]) ->
+      input[:with_crd] and !kind_valid?(input[:crd_name]) ->
         Mix.Bonny.error(
           "The CRD name you defined (#{input[:crd_name]}) is not a valid kubernetes kind!"
         )
