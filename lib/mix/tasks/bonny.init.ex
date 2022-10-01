@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Bonny.Init do
     limits: %{cpu: "200m", memory: "200Mi"},
     requests: %{cpu: "200m", memory: "200Mi"}
   }
+  @rfc_1123_subdomain_check ~r/^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/
 
   def run(_args) do
     input =
@@ -40,6 +41,15 @@ defmodule Mix.Tasks.Bonny.Init do
 
         input
         |> Keyword.put(:api_group, api_group)
+        |> get_input()
+
+      !valid_rfc_1123_subdomain?(input[:api_group]) ->
+        Mix.Bonny.error(
+          "Invalid value: #{inspect(input[:api_group])}. A lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"
+        )
+
+        input
+        |> Keyword.delete(:api_group)
         |> get_input()
 
       is_nil(input[:version]) ->
@@ -179,4 +189,6 @@ defmodule Mix.Tasks.Bonny.Init do
       check
     )
   end
+
+  defp valid_rfc_1123_subdomain?(string), do: String.match?(string, @rfc_1123_subdomain_check)
 end
