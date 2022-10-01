@@ -29,6 +29,7 @@ defmodule Mix.Tasks.Bonny.Init do
     create_conn_file(input)
     create_config_file(input)
     import_bonny_config_in_main_config()
+    add_runtime_config()
     add_dynamic_http_provder_to_test_helper()
   end
 
@@ -76,20 +77,6 @@ defmodule Mix.Tasks.Bonny.Init do
           end
 
         get_input(next_input)
-
-      is_nil(input[:namespace]) ->
-        namespace =
-          Owl.IO.input(
-            label:
-              ~s(Please enter the The namespace to watch for namespaced resources. Enter :all to watch all namespaces. Defaults to "default"),
-            optional: true
-          )
-
-        namespace = if namespace == ":all", do: :all, else: namespace || "default"
-
-        input
-        |> Keyword.put(:namespace, namespace)
-        |> get_input()
 
       is_nil(input[:operator_name]) ->
         default = Mix.Bonny.hyphenated_app_name()
@@ -180,8 +167,25 @@ defmodule Mix.Tasks.Bonny.Init do
     #{append_conent}
     """
 
-    check = ~s(import_config "bonny.exs")
     Mix.Bonny.append_or_create_with("config/config.exs", append_conent, new_file_content, check)
+  end
+
+  defp add_runtime_config() do
+    check = """
+    # The name of this instance.
+    # Defaults to the operator name if env var not defined
+    config :bonny, instance_name: System.get_env("BONNY_POD_NAME")
+    """
+
+    append_conent = ~s(\n#{check})
+
+    new_file_content = """
+    import Config
+
+    #{check}
+    """
+
+    Mix.Bonny.append_or_create_with("config/runtime.exs", append_conent, new_file_content, check)
   end
 
   defp add_dynamic_http_provder_to_test_helper() do

@@ -18,7 +18,8 @@ defmodule Bonny.Config do
   def versions() do
     Application.get_env(:bonny, :versions) ||
       raise RuntimeError,
-        message: "You have to define a list of versions in your config.exs"
+        message:
+          "You have to define a list of versions in your application config under .bonny.versions"
   end
 
   @doc """
@@ -41,7 +42,7 @@ defmodule Bonny.Config do
   """
   @spec instance_name() :: binary
   def instance_name() do
-    System.get_env("BONNY_POD_NAME") || name()
+    Application.get_env(:bonny, :instance_name) || name()
   end
 
   @doc """

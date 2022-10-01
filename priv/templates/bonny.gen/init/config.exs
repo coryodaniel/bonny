@@ -13,7 +13,7 @@ config :bonny,
   # The namespace to watch for Namespaced CRDs.
   # Defaults to "default". `:all` for all namespaces
   # Also configurable via environment variable `BONNY_POD_NAMESPACE`
-  namespace: <%= inspect(assigns[:namespace]) %>,
+  namespace: "default",
 
   # Set the Kubernetes API group for this operator.
   group: "<%= assigns[:api_group] %>",
