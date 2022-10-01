@@ -115,7 +115,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
         |> get_input()
 
       !controller_name_valid?(input[:controller_name]) ->
-        error(
+        Mix.Bonny.error(
           "The controller name you defined (#{input[:controller_name]}) is not a valid Elixir module name!"
         )
 
@@ -150,7 +150,9 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
         |> get_input()
 
       input[:with_crd] and !controller_name_valid?(input[:crd_name]) ->
-        error("The CRD name you defined (#{input[:crd_name]}) is not a valid kubernetes kind!")
+        Mix.Bonny.error(
+          "The CRD name you defined (#{input[:crd_name]}) is not a valid kubernetes kind!"
+        )
 
         input
         |> Keyword.delete(:crd_name)
@@ -219,10 +221,6 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
       end)
 
     Keyword.merge([resource_endpoint: nil, crd_name: nil], init_values)
-  end
-
-  defp error(message) do
-    message |> Owl.Data.tag(:red) |> Owl.IO.puts()
   end
 
   # coveralls-ignore-start trivial code

@@ -139,4 +139,8 @@ defmodule Mix.Bonny do
   defp otp_app() do
     Mix.Project.config() |> Keyword.fetch!(:app)
   end
+
+  def error(message) do
+    message |> Owl.Data.tag(:red) |> Owl.IO.puts()
+  end
 end
