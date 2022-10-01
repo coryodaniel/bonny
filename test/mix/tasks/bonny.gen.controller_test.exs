@@ -141,6 +141,10 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
       _modules =
         output
         |> String.replace(~r/^.*?defmodule/s, "defmodule")
+        |> String.replace(
+          ~r/.*Don't forget to add the controller to the list of controllers in your application config.*/,
+          ""
+        )
         |> Code.compile_string()
     end
 
@@ -153,6 +157,10 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
       _modules =
         output
         |> String.replace(~r/^.*?defmodule/s, "defmodule")
+        |> String.replace(
+          ~r/.*Don't forget to add the controller to the list of controllers in your application config.*/,
+          ""
+        )
         |> Code.compile_string()
     end
 
@@ -165,6 +173,10 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
       _modules =
         output
         |> String.replace(~r/^.*?defmodule/s, "defmodule")
+        |> String.replace(
+          ~r/.*Don't forget to add the controller to the list of controllers in your application config.*/,
+          ""
+        )
         |> Code.compile_string()
     end
 

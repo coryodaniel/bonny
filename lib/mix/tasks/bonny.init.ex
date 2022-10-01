@@ -1,11 +1,13 @@
 defmodule Mix.Tasks.Bonny.Init do
   @moduledoc """
-  Initialized an operator wiht bonny
+  Initialized an operator wiht bonny.
 
-  * Initializes config
+  * Initializes application configuration
+  * Generates helper files for tests
   """
 
   use Mix.Task
+  @shortdoc "Initialized an operator wiht bonny."
 
   # credo:disable-for-this-file Credo.Check.Refactor.CyclomaticComplexity
 
@@ -15,7 +17,6 @@ defmodule Mix.Tasks.Bonny.Init do
   }
   @rfc_1123_subdomain_check ~r/^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/
   @dns_1035_label_check ~r/^[a-z]([-a-z0-9]*[a-z0-9])?$/
-
   def run(_args) do
     input =
       [
@@ -98,7 +99,7 @@ defmodule Mix.Tasks.Bonny.Init do
         service_account_name =
           Owl.IO.input(
             label:
-              ~s(Please enter the name of th service account. It must only consist of only lowercase letters and hyphens. Defaults to "#{default}"),
+              ~s(Please enter the name of the service account when run in kubernetes. It must only consist of only lowercase letters and hyphens. Defaults to "#{default}"),
             optional: true
           )
 

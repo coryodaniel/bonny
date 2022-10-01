@@ -16,31 +16,16 @@ Bonny make it easy to create Kubernetes Operators, Controllers, and Custom [Sche
 
 If Kubernetes CRDs and controllers are new to you, read up on the [terminology](#terminology).
 
-## Tutorials and Examples:
+## Getting Started
 
-_Important!_ These tutorials are for an older version of Bonny, but the `add/1`, `modify/1`, and `delete/1` APIs are the same, as well as a new `reconcile/1` function. Additionally a [k8s](https://github.com/coryodaniel/k8s) has been added!
+Kickstarting your first controller with bonny is very straight-forward. Bonny
+comes with some handy mix tasks to help you.
 
-Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you need any help!
+```
+mix new your_operator
+```
 
-- HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
-- HelloOperator [source code](https://github.com/coryodaniel/hello_operator)
-
-## Talks
-
-- Commandeering Kubernetes @ The Big Elixir 2019
-  - [slides](https://speakerdeck.com/coryodaniel/commandeering-kubernetes-with-elixir)
-  - [source code](https://github.com/coryodaniel/talks/tree/master/commandeering)
-  - [video](https://www.youtube.com/watch?v=0r9YmbH0xTY)
-
-## Example Operators built with Bonny
-
-- [Eviction Operator](https://github.com/bonny-k8s/eviction_operator) - Bonny v 0.4
-- [Hello Operator](https://github.com/coryodaniel/hello_operator) - Bonny v 0.4
-- [Todo Operator](https://github.com/bonny-k8s/todo-operator) - Bonny v 0.4
-
-## Installation
-
-Bonny can be installed by adding `bonny` to your list of dependencies in `mix.exs`:
+Now add bonny to your dependencies in `mix.exs`
 
 ```elixir
 def deps do
@@ -50,19 +35,36 @@ def deps do
 end
 ```
 
+Install dependencies and initialize bonny. This task will ask you
+to answer a few questions about your controller
+
+Refer to the [kubernetes docs](https://kubernetes.io/docs/concepts/overview/kubernetes-api/#api-groups-and-versioning) for
+API group and API version.
+
+```
+mix deps.get
+mix bonny.init
+```
+
+Now you can generate your controllers.
+
+```
+mix bonny.gen.controller
+```
+
+Again, you'll be asked questions regarding your controller. Refer to the [controllers guide](guides/controllers.livemd) for further information.
+
+Don't forget to add your controller to the list of controllers in `config/bonny.exs`
+
 ### Configuration
 
-#### Creating config files
-
-[`mix new <project>` no longer creates initial config files](https://github.com/elixir-lang/elixir/issues/8815).
-If you want to follow theses setup instructions you will need to create one.
-You can find the full documentation for [`Config` here](https://hexdocs.pm/elixir/1.13.2/Config.html).
+`mix bonny.init` creates a configuration file `config/bonny.exs` and imports it to `config/config.exs` for you.
 
 #### Configuring Bonny
 
 Bonny uses the [k8s client](https://github.com/coryodaniel/k8s) under the hood.
 
-The only configuration parameters required are `:bonny` `controllers` and a `:get_conn` callback (Note: this file will not exist unless you created it in the previous step):
+The only configuration parameters required are `:bonny` `controllers` and a `:get_conn` callback (Note: this file will not exist unless you created it using `mix bonny.init`):
 
 ```elixir
 
@@ -113,13 +115,6 @@ config :bonny,
   }
 ```
 
-When configuring bonny to run _in your cluster_ the `mix bonny.gen.manifest` command will generate a service account for you. To use that service account configure the `k8s` library like the following:
-
-```elixir
-config :bonny,
-  get_conn: {K8s.Conn, :from_service_account, []}
-```
-
 ## Running outside of a cluster
 
 Running an operator outside of Kubernetes is not recommended for production use, but can be very useful when testing.
@@ -135,6 +130,8 @@ config :bonny,
   {K8s.Conn, :from_file, ["~/.kube/config", [context: "optional-alternate-context"]]}
 ```
 
+If you've used `mix bonny.init` to generate your config, it created a `YourOperator.Conn` module for you. You can edit that instead.
+
 3. If RBAC is enabled, you must have permissions for creating and modifying `CustomResourceDefinition`, `ClusterRole`, `ClusterRoleBinding` and `ServiceAccount`.
 4. Generate a manifest `mix bonny.gen.manifest` and install it using kubectl `kubectl apply -f manifest.yaml`
 
@@ -144,82 +141,36 @@ Now you are ready to run your operator
 iex -S mix
 ```
 
-## Bonny Generators
+## Guides
 
-There are a number of generators to help create a Kubernetes operator.
+Have a look at the guides that come with this repository. Some can even be opened as a livebook.
 
-`mix help | grep bonny`
+- [Mix Tasks](guides/mix_tasks.md)
+- [Controllers](guides/controllers.livemd)
+- [Migrations](guides/migrations.md)
+- [Testing Bonny (for collaborators)](guides/testing.livemd)
 
-### Generating an operator controller
+## Tutorials and Examples:
 
-An operator can have multiple controllers. Each controller handles the lifecycle of a custom resource.
+_Important!_ These tutorials are for an older version of Bonny, but the `add/1`, `modify/1`, and `delete/1` APIs are the same, as well as a new `reconcile/1` function. Additionally a [k8s](https://github.com/coryodaniel/k8s) has been added!
 
-```shell
-mix bonny.gen.controller
-# or
-mix bonny.gen.controller Widget v1
-```
+Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you need any help!
 
-Open up your controller and add functionality for your resource's lifecycles:
+- HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
+- HelloOperator [source code](https://github.com/coryodaniel/hello_operator)
 
-- Apply (or Add/Modify)
-- Delete
-- Reconcile; periodically called with each every instance of a CRD's resources
+## Talks
 
-Each controller can create multiple resources.
+- Commandeering Kubernetes @ The Big Elixir 2019
+  - [slides](https://speakerdeck.com/coryodaniel/commandeering-kubernetes-with-elixir)
+  - [source code](https://github.com/coryodaniel/talks/tree/master/commandeering)
+  - [video](https://www.youtube.com/watch?v=0r9YmbH0xTY)
 
-For example, a _todo app_ controller could deploy a `Deployment` and a `Service`.
+## Example Operators built with an older version of Bonny
 
-Your operator can also have multiple controllers if you want to support multiple resources in your operator!
-
-Check out the [guide](./guides/controllers.livemd):
-
-### Generating a dockerfile
-
-The following command will generate a dockerfile _for your operator_. This will need to be pushed to a docker repository that your Kubernetes cluster can access.
-
-Again, this Dockerfile is for your operator, not for the pods your operator may deploy.
-
-You can skip this step when developing by running your operator _external_ to the cluster.
-
-```shell
-mix bonny.gen.dockerfile
-
-export BONNY_IMAGE=YOUR_IMAGE_NAME_HERE
-docker build -t ${BONNY_IMAGE} .
-docker push ${BONNY_IMAGE}:latest
-```
-
-### Generating Kubernetes manifest for operator
-
-This will generate the entire manifest for this operator including:
-
-- CRD manifests
-- RBAC
-- Service Account
-- Operator Deployment
-
-The operator manifest generator requires the `image` flag to be passed if you plan to deploy the operator in your cluster. This is the docker image URL of your operators docker image created by `mix bonny.gen.docker` above.
-
-```shell
-mix bonny.gen.manifest --image ${BONNY_IMAGE}
-```
-
-You may _omit_ the `--image` flag if you want to generate a manifest _without the deployment_ so that you can develop locally running the operator outside of the cluster.
-
-By default the manifest will generate the service account and deployment in the "default" namespace.
-
-_To set the namespace explicitly:_
-
-```shell
-mix bonny.gen.manifest --out - -n test
-```
-
-_Alternatively you can apply it directly to kubectl_:
-
-```shell
-mix bonny.gen.manifest --out - -n test | kubectl apply -f - -n test
-```
+- [Eviction Operator](https://github.com/bonny-k8s/eviction_operator) - Bonny v 0.4
+- [Hello Operator](https://github.com/coryodaniel/hello_operator) - Bonny v 0.4
+- [Todo Operator](https://github.com/bonny-k8s/todo-operator) - Bonny v 0.4
 
 ## Telemetry
 

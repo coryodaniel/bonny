@@ -71,6 +71,13 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     |> Mix.Bonny.template()
     |> EEx.eval_file(binding)
     |> Mix.Bonny.render(test_out)
+
+    Owl.IO.puts([
+      Owl.Data.tag(
+        "Don't forget to add the controller to the list of controllers in your application config.",
+        :yellow
+      )
+    ])
   end
 
   # coveralls-ignore-start trivial code and we use stdout in tests
