@@ -1,17 +1,121 @@
 # Migrations
 
-## Migrating from `Bonny.Controller` to `Bonny.ControllerV2`
+## Migrating from 0.5 to a newer version
 
-If you follow these steps, you should be able to successfully migrate your controllers to V2.
-The new concepts like `customize_crd/1` and RBAC rule definition are explained in the [controllers guide livebook](./controllers.livemd).
+This version of Bonny introduces a new controller module `Bonny.ControllerV2` and deprecates the old `Bonny.Controller`
+Follow these steps to migrate your operator to work with `Bonny.ControllerV2`.
 
-- Change `use Bonny.Controller` to `use Bonny.ControllerV2`
-- If you have defined additional RBAC rules via `@rule {apiGroup, resources_list, verbs_list}`, replace each `@rule` attribute with a call to `rbac_rule` (`rbac_rule {apiGroup, resources_list, verbs_list}`).
-- If you have defined a custom version, e.g. `@version "v2alpha1"`, implement `customize_crd/1` and change the default version name.
-- If you have defined a custom group, e.g. `@group kewl.example.com`, implement `customize_crd/1` and change the group in your CRD.
-- If you have defined your controller to operate on cluster scope (i.e. `@scope :cluster`), implement `customize_crd/1` and change the scope in your CRD.
-- If you have defined custom names via `@names %{...}`, implement `customize_crd/1` and change the names in your CRD.
-- If you have defined additional printer columns, implement `customize_crd/1` and add them to the auto-generated default version in your CRD. There's a section in the [controllers guide livebook](./controllers.livemd) about this.
+### Add API Versions to Application Configuration
+
+With this version of Bonny, API Versions are configured in the application config. This was done to bring
+bonny closer to the [Concepts of the Kubernetes API](https://kubernetes.io/docs/concepts/overview/kubernetes-api/#api-groups-and-versioning).
+
+> Versioning is done at the API level rather than at the resource or field level to ensure that the API presents a clear, consistent view of system resources and behavior, and to enable controlling access to end-of-life and/or experimental APIs.
+
+Assuming you already configured the API Group in config.exs, now also add a list of versions. This should be a list of Elixir Modules.
+**Note that these modules don't have to exist.**
+
+```elixir
+# config.exs
+
+config :bonny,
+
+  # ... other config ...
+
+  # Set the Kubernetes API group for this operator.
+  group: "your-operator.example.com",
+
+  # Set the Kubernetes API versions for this operator.
+  # This should be written in Elixir module form, e.g. YourOperator.API.V1 or YourOperator.API.V1Alpha1:
+  versions: [YourOperator.API.V1, YourOperator.API.V1Alpha1],
+
+  # ... other config ...
+```
+
+### Option1: Use `mix bonny.gen.controller`
+
+You can use the refurbished `mix bonny.gen.controller` to create a new
+version of your existing controller. Since with this version, controllers
+are not versioned anymore, the file will not be inside a `/v1/` folder.
+This means your existing controller won't be overwritten.
+
+### Option 2: Manual migration of your controllers
+
+#### Step 1 Create your API versions
+
+For each version you added to your application config above, create the corresponding folder:
+
+```bash
+mkdir lib/your_operator/api/v1 lib/your_operator/api/v1alpha1
+```
+
+Next, for each CRD your operator generates, add a module inside those folders.
+**Note that only one version of the same custom resource can be marked as the `hub`.**
+
+```elixir
+# lib/your_operator/api/v1/cron_tab.ex
+defmodule YourOperator.API.V1.CronTab do
+  use Bonny.API.Version,
+    hub: true
+
+  @impl Bonny.API.Version
+  def manifest(), do: default()
+end
+```
+
+```elixir
+# lib/your_operator/api/v1alpha1/cron_tab.ex
+defmodule YourOperator.API.V1Alpha1.CronTab do
+  use Bonny.API.Version
+
+  @impl Bonny.API.Version
+  def manifest(), do: defaults()
+end
+```
+
+#### Step 2: Additional Printer Columns
+
+Additional printer columns belong to CRD API versions, not to controllers. Therefore, if your
+controller defined additional printer columns, move those over to the verison you just created.
+Modify `manifest/0` for this purpose.
+
+```elixir
+# lib/your_operator/api/v1/cron_tab.ex
+defmodule YourOperator.API.V1Alpha1.CronTab do
+  use Bonny.API.Version
+
+  @impl Bonny.API.Version
+  def manifest() do
+    struct!(
+      defaults(),
+      additionalPrinterColumns: [
+        %{name: "foos", type: :integer, description: "Number of foos", jsonPath: ".spec.foos"}
+      ]
+    )
+  end
+end
+```
+
+#### Step 3: Update your Controllers
+
+- Change `use Bonny.Controller` to:
+
+  ```elixir
+  use Bonny.ControllerV2,
+    for_resource: Bonny.API.CRD.build_for_controller!(
+      names: Bonny.API.CRD.kind_to_names("CronTab"),
+      # scope: :Namespaced (is the default),
+      # group: "example.com" defaults to the API group in your config
+    ),
+  ```
+
+- If you have defined additional RBAC rules via `@rule {apiGroup, resources_list, verbs_list}`, replace each `@rule` attribute with a call to `rbac_rule({apiGroup, resources_list, verbs_list})`.
+- If you have defined custom names via `@names %{...}`, pass `names: %{singular: ...}` to `Bonny.API.CRD.build_for_controller!/1` or use the `Bonny.API.CRD.kind_to_names/1` helper.
+- If you have defined your controller to operate on cluster scope (i.e. `@scope :cluster`), pass `scope: cluster` to `Bonny.API.CRD.build_for_controller!/1`.
+- If you have defined a group that differs from the one from the application config, pass `group: "the-group.com"` to `Bonny.API.CRD.build_for_controller!/1`.
+- If you have defined a version that differs from the one form application config, pass `versions: [YourOperator.API.V1.CronTab]` to `Bonny.API.CRD.build_for_controller!/1`. (replace `V1` with the version and `CronTab` with the resource kind)
+
+The new concepts introduced with `Bonny.ControllerV2` are explained in the [controllers guide livebook](./controllers.livemd).
 
 After having migrated all controllers, re-generate your manifest using `mix bonny.gen.manifest`.
 

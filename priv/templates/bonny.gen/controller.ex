@@ -4,20 +4,24 @@ defmodule <%= app_name %>.Controller.<%= controller_name %> do
 
   ## Controlled Resource
 
-  You have to pass the option `for_resource` to `use Bonny.ControllerV2`.
-  `for_resource` should be either a `%Bonny.API.CRD{}` struct or a
-  `%Bonny.API.ResourceEndpoint` struct.
+  You can pass the option `for_resource` to `use Bonny.ControllerV2`.
+  If the option is ommitted, Bonny assumes the controler controls a
+  custom resource tries to guess the custom resource's name
+  from the controller's module name.
+  If declared, `for_resource` can be:
+
+  * a string representing the kind of a resource
+  * a `%Bonny.API.CRD{}` struct
+  * a `%Bonny.API.ResourceEndpoint` struct.
 
   ### Examples
 
   ```
   use Bonny.ControllerV2,
     for_resource:
-      %Bonny.API.CRD{
-        group: "example.com",
+      Bonny.API.CRD.build_for_controller!(
         names: Bonny.API.CRD.kind_to_names("CronTab"),
-        versions: [MyController.API.CronTab.V1],
-      }
+      )
   ```
 
   ```
@@ -25,7 +29,7 @@ defmodule <%= app_name %>.Controller.<%= controller_name %> do
     for_resource:
       %Bonny.API.ResourceEndpoint{
         group: "apps",
-        version: "v1",
+        versions: "v1",
         resource_type: "deployments",
       }
   ```

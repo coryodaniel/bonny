@@ -71,6 +71,13 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
     |> Mix.Bonny.template()
     |> EEx.eval_file(binding)
     |> Mix.Bonny.render(test_out)
+
+    Owl.IO.puts([
+      Owl.Data.tag(
+        "Don't forget to add the controller to the list of controllers in your application config.",
+        :yellow
+      )
+    ])
   end
 
   # coveralls-ignore-start trivial code and we use stdout in tests
@@ -98,10 +105,14 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
   # coveralls-ignore-stop
 
   defp controller_name_valid?(controller_name) do
-    controller_name =~ ~r/^[A-Z]\w*(\.[A-Z]\w*)*$/
+    controller_name =~ ~r/^[A-Z][^\W_]*(\.[A-Z]\[^\W_]*)*$/
   end
 
-  def get_input(input \\ []) do
+  defp kind_valid?(kind) do
+    kind =~ ~r/^[A-Z][A-Za-z]*$/
+  end
+
+  def get_input(input) do
     cond do
       is_nil(input[:controller_name]) ->
         controller_name =
@@ -115,7 +126,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
         |> get_input()
 
       !controller_name_valid?(input[:controller_name]) ->
-        error(
+        Mix.Bonny.error(
           "The controller name you defined (#{input[:controller_name]}) is not a valid Elixir module name!"
         )
 
@@ -149,8 +160,10 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
         |> Keyword.put(:crd_name, crd_name || from_controller)
         |> get_input()
 
-      input[:with_crd] and !controller_name_valid?(input[:crd_name]) ->
-        error("The CRD name you defined (#{input[:crd_name]}) is not a valid kubernetes kind!")
+      input[:with_crd] and !kind_valid?(input[:crd_name]) ->
+        Mix.Bonny.error(
+          "The CRD name you defined (#{input[:crd_name]}) is not a valid kubernetes kind!"
+        )
 
         input
         |> Keyword.delete(:crd_name)
@@ -219,10 +232,6 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
       end)
 
     Keyword.merge([resource_endpoint: nil, crd_name: nil], init_values)
-  end
-
-  defp error(message) do
-    message |> Owl.Data.tag(:red) |> Owl.IO.puts()
   end
 
   # coveralls-ignore-start trivial code

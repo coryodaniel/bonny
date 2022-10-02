@@ -17,10 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Bonny.ControllerV2` as a successor to `Bonny.Controller`
   - Allows for better CRD definition ([#149](https://github.com/coryodaniel/bonny/pull/149))
   - Decouples CRD and controller ([#158](https://github.com/coryodaniel/bonny/pull/158))
+  - Operator wide API version configuration ([#159](https://github.com/coryodaniel/bonny/pull/159))
   - Adds `Bonny.EventRecorder` for creating Kubernetes events ([#156](https://github.com/coryodaniel/bonny/pull/156), [#5](https://github.com/coryodaniel/bonny/issues/5))
   - Allows skipping observed generations ([#153](https://github.com/coryodaniel/bonny/pull/153))
 - `Bonny.Resource.add_owner_reference/3` used to add the owner reference to resources created by the controller. ([#147](https://github.com/coryodaniel/bonny/pull/147))
 - An integration test suite was added that runs tests agains a "real" kubernetes cluster on the CI pipeline ([#146](https://github.com/coryodaniel/bonny/pull/146), [#84](https://github.com/coryodaniel/bonny/issues/84))
+- Mix task for initializing a new operator `mix bonny.init` ([#160](https://github.com/coryodaniel/bonny/pull/160), [#67](https://github.com/coryodaniel/bonny/issues/67))
 
 <!-- No new entries below this line! -->
 

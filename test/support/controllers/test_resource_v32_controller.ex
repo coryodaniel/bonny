@@ -7,7 +7,7 @@ defmodule TestResourceV32Controller do
   require CRD
 
   use Bonny.ControllerV2,
-    for_resource: CRD.build_for_controller!(names: Bonny.API.CRD.kind_to_names("TestResourceV3")),
+    for_resource: "TestResourceV3",
     skip_observed_generations: true
 
   @impl Bonny.ControllerV2

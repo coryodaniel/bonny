@@ -10,6 +10,7 @@ defmodule Bonny.ControllerV2Test do
     defmodule V1Beta1 do
       use Version
 
+      @impl true
       def manifest(), do: defaults("v1beta1")
     end
 
