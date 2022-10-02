@@ -1,14 +1,38 @@
 # Controllers
 
 ```elixir
-Mix.install([
-  {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master", force: true}
-])
+Mix.install(
+  [
+    {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
+  ],
+  force: true
+)
 
 Application.put_env(:bonny, :group, "example.com")
+Application.put_env(:bonny, :versions, [YourOperator.API.V1])
 Application.put_env(:bonny, :operator_name, "livebook-operator")
 
-defmodule V1 do
+# Dummy implementations used further down to prevent compilation warnings.
+defmodule LivebookEventHandlerImpl do
+  defmacro __using__(_) do
+    quote do
+      @impl true
+      def add(_res), do: :ok
+
+      @impl true
+      def modify(_res), do: :ok
+
+      @impl true
+      def delete(_res), do: :ok
+
+      @impl true
+      def reconcile(_res), do: :ok
+    end
+  end
+end
+
+# A Version used in this livebook
+defmodule YourOperator.API.V1.Apple do
   use Bonny.API.Version
 
   @impl true
@@ -18,7 +42,7 @@ end
 
 ## Creating your first Controller
 
-Use `mix bonny.gen.controller` to create a controller. You are going to be asked whether you want to create a CRD for this controller or not. It defaults to `yes`, as in most cases you probably want to define a custom resource which you're goint to control with your controller. However, your controller could also act upon events on other resources like `configmaps`, `deployments` or even custom resources defined by other operators. The mix task will then guide you through the creation of controller and if applicable a CRD version (see [versions.livemd](versions.livemd)).
+Use `mix bonny.gen.controller` to create a controller. You are going to be asked whether you want to create a CRD for this controller or not. It defaults to `yes`, as in most cases you probably want to define a custom resource which you're goint to control with your controller. However, your controller could also act upon events on other resources like `configmaps`, `deployments` or even custom resources defined by other operators. The mix task will then guide you through the creation of controller and if applicable a CRD version (see [crd_versions.livemd](crd_versions.livemd)).
 
 ## Controlled Resource
 
@@ -35,23 +59,49 @@ defmodule AppleController do
       group: "example.com",
       scope: :Namespaced,
       names: Bonny.API.CRD.kind_to_names("Apple"),
-      versions: [V1]
+      versions: [YourOperator.API.V1.Apple]
     }
+
+  #  for this livebook only to prevent compilation warnings.
+  use LivebookEventHandlerImpl
 end
 
 AppleController.crd_manifest()
 ```
 
-Note that these example throw compiler warnings because we haven't declared the action handlers. Let's ignore them for now.
+Instead of defining the full CRD, you can use the `Bonny.API.CRD.build_for_controller!/1` macro. It will define ommitted fields with defaults and guessed values:
 
-Instead of defining the full CRD, you can use the `Bonny.API.CRD.build_for_controller!/1` macro. It will make an educated guess for the names using the controller module name and take the group form `config.exs`. You only have to pass the versions (which are handled in a [separate guide](versions.livemd)).
+* API Group and Versions (`:group` and `:versions`) are taken from the application config
+* For CRD names, Bonny makes an educated guess using the controller's name. (e.g. `AppleController` => `Apple`)
 
 ```elixir
 defmodule AppleController do
   require Bonny.API.CRD
 
   use Bonny.ControllerV2,
-    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1])
+    for_resource:
+      Bonny.API.CRD.build_for_controller!(
+        names: Bonny.API.CRD.kind_to_names("Peach"),
+        versions: [YourOperator.API.V1.Apple]
+      )
+
+  #  for this livebook only to prevent compilation warnings.
+  use LivebookEventHandlerImpl
+end
+
+AppleController.crd_manifest()
+```
+
+Finally, you can ommit `:for_resources` completely if you want to let Bonny do the work.
+
+```elixir
+defmodule AppleController do
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2
+
+  #  for this livebook only to prevent compilation warnings.
+  use LivebookEventHandlerImpl
 end
 
 AppleController.crd_manifest()
@@ -67,6 +117,9 @@ defmodule DeploymentController do
 
   use Bonny.ControllerV2,
     for_resource: Bonny.API.ResourceEndpoint.new!("apps/v1", "Deployment")
+
+  #  for this livebook only to prevent compilation warnings.
+  use LivebookEventHandlerImpl
 end
 
 function_exported?(DeploymentController, :crd_manifest, 0)
@@ -94,11 +147,10 @@ A controller must implements the `behaviour` defined by `Bonny.ControllerV2`. Th
 If you used `mix bonny.gen.controller` to create the controller, `add/1` and `modify/1` are delegated to a function `apply/1`. Feel free to change this default behaviour.
 
 ```elixir
-defmodule Apple do
+defmodule AppleController do
   require Bonny.API.CRD
 
-  use Bonny.ControllerV2,
-    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1])
+  use Bonny.ControllerV2
 
   @impl true
   def add(resource) do
@@ -154,11 +206,15 @@ If your controller creates other resources for your custom resource (e.g. pods, 
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-defmodule Orange do
+defmodule OrangeController do
   require Bonny.API.CRD
 
   use Bonny.ControllerV2,
-    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1])
+    for_resource:
+      Bonny.API.CRD.build_for_controller!(
+        # the only version we defined is an apple resource
+        versions: [YourOperator.API.V1.Apple]
+      )
 
   @impl true
   def add(resource) do
@@ -169,6 +225,7 @@ defmodule Orange do
       #  ...
     }
     |> add_owner_reference(resource)
+    |> IO.inspect()
 
     # |> K8s.Client.create()
     # |> then(&(K8s.Client.run(conn(), &1))
@@ -189,7 +246,7 @@ end
 Let's see the resulting resource:
 
 ```elixir
-Orange.add(%{
+OrangeController.add(%{
   "apiVersion" => "example.com/v1",
   "kind" => "Orange",
   "metadata" => %{
@@ -215,26 +272,22 @@ Your controller might need special permissions on the kubernetes cluster. Maybe 
 You can define such rules one by one using the `rbac_rule` macro. These rules have to be defined as a tuple in the form `{apiGroup :: binary(), resources :: list(), verb :: list()}`:
 
 ```elixir
-defmodule Pear do
+defmodule PearController do
   require Bonny.API.CRD
 
   use Bonny.ControllerV2,
-    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1])
+    for_resource:
+      Bonny.API.CRD.build_for_controller!(
+        # the only version we defined is an apple resource
+        versions: [YourOperator.API.V1.Apple]
+      )
 
   # Additional RBAC Rules
   rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
   rbac_rule({"v1", ["pods"], ["get", "watch", "list"]})
 
-  @impl true
-  def add(_resource), do: :ok
-
-  @impl true
-  def modify(_resource), do: :ok
-  @impl true
-  def delete(_resource), do: :ok
-
-  @impl true
-  def reconcile(_resource), do: :ok
+  #  for this livebook only to prevent compilation warnings.
+  use LivebookEventHandlerImpl
 end
 
 # When generating the manifest, an auto-generated function `rules/0` is called.
@@ -250,26 +303,32 @@ Bonny supports skipping observed generations of you set the `skip_observed_gener
 Behind the scenes, if you set `skip_observed_generations: true`, Bonny adds the status subresource and a field `.status.observedGeneration` to the stored version in your CRD. At runtime, whenever your action callbacks return `:ok`, Bonny updates the status subresource and sets that field to equal `.metadata.generation`.
 
 ```elixir
-defmodule Plum do
+defmodule PlumController do
   require Bonny.API.CRD
 
   use Bonny.ControllerV2,
-    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1]),
+    for_resource:
+      Bonny.API.CRD.build_for_controller!(
+        # the only version we defined is an apple resource
+        versions: [YourOperator.API.V1.Apple]
+      ),
     skip_observed_generations: true
 
-  @impl true
-  def add(_resource), do: :ok
-  @impl true
-  def modify(_resource), do: :ok
-
-  @impl true
-  def delete(_resource), do: :ok
-
-  @impl true
-  def reconcile(_resource), do: :ok
+  #  for this livebook only to prevent compilation warnings.
+  use LivebookEventHandlerImpl
 end
 
-Plum.crd_manifest()
+plum_version_manifest = Plum.crd_manifest() |> get_in([:spec, :versions]) |> hd()
+```
+
+```elixir
+# subresource was added
+plum_version_manifest.subresources
+```
+
+```elixir
+# schema was added
+plum_version_manifest.schema.openAPIV3Schema.properties.status
 ```
 
 ### Some important remarks

@@ -200,7 +200,7 @@ defmodule Bonny.ControllerV2 do
             file: __ENV__.file,
             line: __ENV__.line,
             description:
-              "The option `:for_resource` is required and has to a struct of type `%Bonny.API.ResourceEndpoint{}` or `%Bonny.API.CRD{}`."
+              "If declared, the option `:for_resource` must be a string or a struct of type `%Bonny.API.ResourceEndpoint{}` or `%Bonny.API.CRD{}`."
       end
     end
   end

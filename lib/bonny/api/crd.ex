@@ -52,18 +52,22 @@ defmodule Bonny.API.CRD do
     scope: :Namespaced
   ]
 
-  def get_versions() do
-    Bonny.Config.versions()
-  end
-
   @doc """
   Creates a new %Bonny.API.CRD{} struct from the given values. `:scope` is
   optional and defaults to `:Namespaced`.
   """
   @spec new!(keyword()) :: t()
   def new!(fields) do
+    fields =
+      fields
+      |> Keyword.put_new_lazy(:versions, fn -> get_versions(fields[:names].kind) end)
+
+    struct!(__MODULE__, fields)
+  end
+
+  defp get_versions(kind) do
     versions = Bonny.Config.versions()
-    possible_version_modules = Enum.map(versions, &Module.concat(&1, fields[:names].kind))
+    possible_version_modules = Enum.map(versions, &Module.concat(&1, kind))
 
     version_modules =
       Enum.filter(possible_version_modules, &match?({:module, _}, Code.ensure_compiled(&1)))
@@ -72,14 +76,10 @@ defmodule Bonny.API.CRD do
       do:
         raise(RuntimeError,
           message:
-            "No API Version module exists for the given kind \"#{fields[:names].kind}\". Make sure you define at least one of the following modules: #{inspect(possible_version_modules)}"
+            "No API Version module exists for the given kind \"#{kind}\". Make sure you define at least one of the following modules: #{inspect(possible_version_modules)}"
         )
 
-    fields =
-      fields
-      |> Keyword.put(:versions, version_modules)
-
-    struct!(__MODULE__, fields)
+    version_modules
   end
 
   @doc """
@@ -154,7 +154,7 @@ defmodule Bonny.API.CRD do
 
       stored_versions_count != 1 ->
         raise ArgumentError,
-              "One single version of a CRD has to be the hub. In your CRD \"#{crd.names.kind}\", #{stored_versions_count} versions define `hub: true`."
+              "One single version of a CRD has to be the storage version. In your CRD \"#{crd.names.kind}\", #{stored_versions_count} versions define `storage: true`. Change the `manifest/0` function and set `storage: true` in a single one of them."
 
       true ->
         crd

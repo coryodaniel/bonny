@@ -1,0 +1,214 @@
+# CRD Versions
+
+```elixir
+Mix.install(
+  [
+    {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
+  ],
+  force: true
+)
+
+Application.put_env(:bonny, :group, "example.com")
+Application.put_env(:bonny, :operator_name, "livebook-operator")
+
+# Dummy implementations used further down to prevent compilation warnings.
+defmodule LivebookEventHandlerImpl do
+  defmacro __using__(_) do
+    quote do
+      @impl true
+      def add(_res), do: :ok
+
+      @impl true
+      def modify(_res), do: :ok
+
+      @impl true
+      def delete(_res), do: :ok
+
+      @impl true
+      def reconcile(_res), do: :ok
+    end
+  end
+end
+```
+
+## API Groups and API Versions
+
+Since API Version `apiextensions.k8s.io/v1`, resources of kind `CustomResourceDefinition` 
+contain a [list of versions](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#create-a-customresourcedefinition) in `.spec.versions`. This could lead to the assumption that versioning is done at the resource level. However, this is not the case. The following quote is taken from the [Kubernetes API documentation](https://kubernetes.io/docs/concepts/overview/kubernetes-api/#api-groups-and-versioning):
+
+> Versioning is done at the API level rather than at the resource or field level to ensure that the API presents a clear, consistent view of system resources and behavior, and to enable controlling access to end-of-life and/or experimental APIs.
+
+We can take from this that a Kubernetes operator is expected to define one or multiple consistent versions of its API. Bonny therefore expects you to define a list of api versions 
+in the application configuration (`config/config.exs` resp. `config/bonny.exs`).
+
+If you're using `mix bonny.init` to initialize your operator, you will be asked to enter a verions. This is gonna be the first version of your operator's API.
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+config :bonny,
+  versions: [YourOperator.API.V1]
+```
+
+```elixir
+# For this livebook:
+Application.put_env(:bonny, :versions, [YourOperator.API.V1])
+```
+
+The config field takes a list of Elixir module atoms. **Note that these modules don't have to exist!** The module names are going to be used as prefixes for your actual CRD versions (e.g. `YourOperator.API.V1.CronTab`).
+
+## CRD Controllers and Versions
+
+When defining a V2 controller (`use Bonny.ControllerV2`), you can ommit the `:for_resource` options in order to let bonny make assumptions on the CRD (for a documentation on the `:for_resource` option, refer to the [controllers user guide](controllers.livemd)). Note however hat in this case, bonny is going to look for CRD API Version modules inside your application and if you haven't defined them, the controller won't compile:
+
+```elixir
+defmodule YourOperator.Controller.WidgetController do
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2
+end
+```
+
+We're going to look at version declaration in more detail in just a moment.  For now, let's just define a simple API version `v1` for the `CronTab` custom resource with just defaults for all the fields. You do this by defining a module that starts with the API declared in the application configuration (`YourOperator.API.V1`), followed by the CRD name (`CronTab`). The module must `use Bonny.API.Version` which expects you to implement `manifest/0`.
+
+```elixir
+defmodule YourOperator.API.V1.CronTab do
+  use Bonny.API.Version
+
+  @impl Bonny.API.Version
+  def manifest(), do: struct!(defaults(), storage: true)
+end
+
+YourOperator.API.V1.CronTab.manifest()
+```
+
+Now, if we define a `CronTabController`, Bonny finds this version and add it to the CRD manifest.
+
+```elixir
+defmodule YourOperator.Controller.CronTabController do
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2
+
+  #  for this livebook only to prevent compilation warnings.
+  use LivebookEventHandlerImpl
+end
+
+YourOperator.Controller.CronTabController.crd_manifest()
+```
+
+You _can_ define the version modules explicitely when defining a controller. This way, the versions defined in your application configuration won't be consulted. As an example, we can re-define our `WidgetController` from above but this time configure it to use the API Version defined for the `CronTab` custom resource.
+
+```elixir
+defmodule YourOperator.Controller.WidgetController do
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2,
+    for_resource: Bonny.API.CRD.build_for_controller!(versions: [YourOperator.API.V1.CronTab])
+
+  #  for this livebook only to prevent compilation warnings.
+  use LivebookEventHandlerImpl
+end
+
+YourOperator.Controller.WidgetController.crd_manifest()
+```
+
+## API Declaration
+
+Our `V1.CronTab` module called the `defaults/0` macro from `manifest/0`. This macro helps initializing a generic version with no schema, subresources or additional printer columns. The `storage` flag is set to false (see [Multi-Version APIs](#multi-version-apis) further down). For the other flags `:served` and `:deprecated` such as the field `:deprecatedWarning`, assumptions are made.
+
+An operator run in production might want to define at least a `:schema`, probably `:additionalPrinterColumns` and maybe `:subresources`. All these fields such as flags can be overriden in `manifest/0`.
+
+```elixir
+defmodule YourOperator.API.V1Alpha1.Widget do
+  use Bonny.API.Version
+
+  @impl true
+  def manifest() do
+    struct!(
+      defaults(),
+      storage: true,
+      schema: %{
+        openAPIV3Schema: %{
+          type: :object,
+          properties: %{
+            spec: %{
+              type: :object,
+              properties: %{
+                foos_requested: %{type: :integer}
+              }
+            },
+            status: %{
+              type: :object,
+              properties: %{
+                foos_implemented: %{type: :integer}
+              }
+            }
+          }
+        }
+      },
+      additionalPrinterColumns: [
+        %{
+          name: "requested_foos",
+          type: :integer,
+          description: "Number of foos requested",
+          jsonPath: ".spec.foos_requested"
+        },
+        %{
+          name: "implemented_foos",
+          type: :integer,
+          description: "Number of foos implemented",
+          jsonPath: ".status.foos_implemented"
+        }
+      ],
+      subresources: %{
+        status: %{}
+      }
+    )
+  end
+end
+
+YourOperator.API.V1Alpha1.Widget.manifest()
+```
+
+## Multi-Version APIs
+
+There is some [documentation](https://book.kubebuilder.io/multiversion-tutorial/tutorial.html) about multi-version apis for the kubebuilder. Obviousely, that one is for creating a kubernetes controller in Go, but it's a good read nontheless. This is how it begins:
+
+> Most projects start out with an alpha API that changes release to release. However, eventually, most projects will need to move to a more stable API. Once your API is stable though, you can't make breaking changes to it. That's where API versions come into play.
+
+As described in the first section, if your operator supports multiple versions, they have to be defined in the application config.
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+config :bonny,
+  versions: [YourOperator.API.V1, YourOperator.API.V2]
+```
+
+### Conversion
+
+Webhooks are currently not implemented in Bonny. There is the module [`bonny_plug`](https://hexdocs.pm/bonny_plug/readme.html) that can be used to implement them. There might be a neater integration of the two in the future, though.
+
+Bonny already lets you define a version as the `hub`. The only thing this does right now is it sets the `storage` flag to `true` in the generated manifest.
+
+```elixir
+defmodule YourOperator.API.V1.CronTab do
+  use Bonny.API.Version,
+    hub: true
+
+  @impl Bonny.API.Version
+  # storage: true not needed here.
+  def manifest(), do: defaults()
+end
+
+YourOperator.API.V1.CronTab.manifest()
+```
+
+### Storage Versions
+
+Even if you define multiple versions for the same resource, Kubernetes is only going to store the data in one version - the **storage version**.
+
+> Note that multiple versions may exist in storage if they were written before the storage version changes -- changing the storage version only affects how objects are created/updated after the change.
+
+As mentioned above, there are to ways to define the storage version, by passing `hub: true` as an option to `use Bonny.API.Version` or by setting `storage: true` in `manifest/0`.

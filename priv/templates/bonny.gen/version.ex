@@ -17,7 +17,7 @@ defmodule <%= String.replace_prefix("#{crd_version}", "Elixir.", "") %>.<%= crd_
             spec: %{
               type: :object,
               properties: %{
-                foos: %{type: integer}
+                foos: %{type: :integer}
               }
             },
             status: %{

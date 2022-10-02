@@ -50,16 +50,15 @@ mkdir lib/your_operator/api/v1 lib/your_operator/api/v1alpha1
 ```
 
 Next, for each CRD your operator generates, add a module inside those folders.
-**Note that only one version of the same custom resource can be marked as the `hub`.**
+**Note that one and only one version of the same custom resource has to be flagged with `storage: true`.**
 
 ```elixir
 # lib/your_operator/api/v1/cron_tab.ex
 defmodule YourOperator.API.V1.CronTab do
-  use Bonny.API.Version,
-    hub: true
+  use Bonny.API.Version
 
   @impl Bonny.API.Version
-  def manifest(), do: default()
+  def manifest(), do: struct!(default(), storage: true)
 end
 ```
 

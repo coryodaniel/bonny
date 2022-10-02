@@ -19,12 +19,11 @@ defmodule Bonny.API.Version do
   `hub` option.
 
   ```
-  defmodule MyOperator.API.CronTab.V1 do
-    use Bonny.API.Version,
-      hub: true
+  defmodule MyOperator.API.V1.CronTab do
+    use Bonny.API.Version
 
     def manifest() do
-      defaults()
+      struct!(defaults(), storage: true)
     end
   ```
 
@@ -32,13 +31,13 @@ defmodule Bonny.API.Version do
 
 
   ```
-  defmodule MyOperator.API.CronTab.V1 do
-    use Bonny.API.Version,
-      hub: true
+  defmodule MyOperator.API.V1.CronTab do
+    use Bonny.API.Version
 
     def manifest() do
       struct!(
         defaults(),
+        storage: true,
         schema: %{
           openAPIV3Schema: %{
             type: :object,

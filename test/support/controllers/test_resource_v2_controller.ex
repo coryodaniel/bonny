@@ -12,7 +12,7 @@ defmodule TestResourceV2Controller do
   require CRD
 
   use Bonny.ControllerV2,
-    for_resource: CRD.build_for_controller!(versions: [V1])
+    for_resource: CRD.build_for_controller!(versions: [Bonny.Test.API.V1.TestResourceV2])
 
   rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
 

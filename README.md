@@ -147,6 +147,7 @@ Have a look at the guides that come with this repository. Some can even be opene
 
 - [Mix Tasks](guides/mix_tasks.md)
 - [Controllers](guides/controllers.livemd)
+- [CRD Versions](guides/crd_versions.livemd)
 - [Migrations](guides/migrations.md)
 - [Testing Bonny (for collaborators)](guides/testing.livemd)
 
