@@ -162,6 +162,10 @@ defmodule Mix.Tasks.Bonny.Init do
     "init/customizer.ex"
     |> Mix.Bonny.template()
     |> Mix.Bonny.render_template("lib/mix/tasks/bonny.gen.controller/customizer.ex", input)
+
+    "init/customizer_test.exs"
+    |> Mix.Bonny.template()
+    |> Mix.Bonny.render_template("test/mix/tasks/bonny.gen.controller/customizer_test.exs", input)
   end
 
   defp import_bonny_config_in_main_config() do
