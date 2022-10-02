@@ -34,4 +34,6 @@ config :bonny,
   labels: %{},
 
   # Operator deployment resources. These are the defaults.
-  resources: <%= inspect(assigns[:resources]) %>
+  resources: <%= inspect(assigns[:resources]) %>,
+
+  manifest_override_callback: &Mix.Tasks.Bonny.Gen.Manifest.<%= assigns[:app_name] %>Customizer.override/1

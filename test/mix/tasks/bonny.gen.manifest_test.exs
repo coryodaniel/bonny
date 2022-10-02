@@ -53,5 +53,20 @@ defmodule Mix.Tasks.Bonny.Gen.ManifestTest do
       assert output =~ "Deployment"
       assert output =~ "quay.io/foo/bar"
     end
+
+    test "calls manifest override callback if defined" do
+      output =
+        capture_io(fn ->
+          Manifest.run(["--out", "-"])
+        end)
+
+      sa =
+        output
+        |> String.replace(~r/^.*?\n---/s, "\n---")
+        |> YamlElixir.read_all_from_string!()
+        |> Enum.find(&(&1["kind"] == "ServiceAccount"))
+
+      assert "bonny" == K8s.Resource.FieldAccessors.label(sa, "test")
+    end
   end
 end

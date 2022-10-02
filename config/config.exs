@@ -21,7 +21,8 @@ if config_env() == :test do
     group: "example.com",
     versions: [Bonny.Test.API.V1],
     get_conn: {Bonny.K8sMock, :conn},
-    api_version: "apiextensions.k8s.io/v1"
+    api_version: "apiextensions.k8s.io/v1",
+    manifest_override_callback: &Mix.Tasks.Bonny.Gen.Manifest.TestCustomizer.override/1
 end
 
 if config_env() == :dev do
