@@ -42,7 +42,7 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
 
   @spec run(list()) :: any()
   def run(args) do
-    Mix.Task.run("loadpaths", args)
+    Mix.Task.run("compile")
 
     {opts, _, _} =
       Mix.Bonny.parse_args(args, @default_opts, switches: @switches, aliases: @aliases)
