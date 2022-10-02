@@ -2,7 +2,7 @@
 
 ## Migrating from 0.5 to a newer version
 
-This version of Bonny introduces a new controller module `Bonny.ControllerV2` and deprecates the old `Bonny.Controller`
+This version of Bonny introduces a new controller module `Bonny.ControllerV2` and deprecates the old `Bonny.Controller`.
 Follow these steps to migrate your operator to work with `Bonny.ControllerV2`.
 
 ### Add API Versions to Application Configuration
