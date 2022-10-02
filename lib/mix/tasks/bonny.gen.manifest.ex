@@ -49,7 +49,8 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
 
     manifest =
       opts
-      |> resource_manifests
+      |> resource_manifests()
+      |> apply_overrides()
       |> Ymlr.documents!()
 
     out = opts[:out] || "manifest.yaml"
@@ -73,5 +74,15 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
         Operator.service_account(namespace),
         Operator.cluster_role_binding(namespace)
       ]
+  end
+
+  defp apply_overrides(manifests) do
+    case Application.get_env(:bonny, :manifest_override_callback) do
+      callback when is_function(callback, 1) ->
+        Enum.map(manifests, callback)
+
+      _ ->
+        manifests
+    end
   end
 end
