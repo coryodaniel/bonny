@@ -3,11 +3,6 @@ import Config
 if config_env() == :test do
   config :logger, level: :none
 
-  config :k8s,
-    discovery_driver: K8s.Discovery.Driver.File,
-    discovery_opts: [config: "test/support/discovery/tests.json"],
-    http_provider: K8s.Client.DynamicHTTPProvider
-
   config :bonny,
     controllers: [
       Widget,
