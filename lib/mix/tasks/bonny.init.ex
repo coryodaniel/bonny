@@ -191,7 +191,7 @@ defmodule Mix.Tasks.Bonny.Init do
     """
 
     Mix.Bonny.prepend_or_create_with(
-      "config/config.exs",
+      "test/test_helper.exs",
       content_to_prepend,
       new_file_content,
       check
