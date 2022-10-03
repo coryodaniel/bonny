@@ -4,8 +4,7 @@
 Mix.install(
   [
     {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"},
-    :inflex,
-    {:k8s, git: "https://github.com/coryodaniel/k8s.git", branch: "develop", override: true}
+    :inflex
   ]
   # force: true
 )
