@@ -1,0 +1,359 @@
+# Testing
+
+```elixir
+Mix.install(
+  [
+    {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"},
+    :inflex
+  ]
+  # force: true
+)
+
+Application.put_env(:bonny, :group, "example.com")
+Application.put_env(:bonny, :operator_name, "livebook-operator")
+
+ExUnit.start(autorun: false)
+```
+
+## The Controller to Test
+
+In this guide we're going to create a simple CRD controller and write a test for it. The controller's custom resource is called `ConfigMapToPluralize` and we expect the controller to map the resource to a `ConfigMap` on the cluster. The `ConfigMap` should contain the same fields as the `ConfigMapToPluralize` but the fielt's values are pluralized.
+
+### Example
+
+For the following `ConfigMapToPluralize` resource:
+
+```yaml
+apiVersion: example.com/v1
+kind: ConfigMapToPluralize
+metadata:
+  name: foo
+  namespace: default
+data:
+  first: House
+  second: Hero
+```
+
+the controller will create the following `ConfigMap`:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foo
+  namespace: default
+data:
+  first: Houses
+  second: Heroes
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+### The CRD API V1
+
+Let's define the API version `V1` for the `ConfigMapToPluralize` CRD. It defines a schema with a property `.data` which is an object allowing for arbitrary fields with string values.
+
+```elixir
+defmodule V1.ConfigMapToPluralize do
+  use Bonny.API.Version,
+    hub: true
+
+  def manifest() do
+    struct!(
+      defaults(),
+      schema: %{
+        openAPIV3Schema: %{
+          type: :object,
+          properties: %{
+            data: %{
+              type: :object,
+              additionalProperties: %{
+                type: :string
+              },
+              "x-kubernetes-preserve-unknown-fields": true
+            }
+          }
+        }
+      }
+    )
+  end
+end
+```
+
+### The Controller
+
+The `ConfigMapToPluralizeController` delegates `add/1` and `modify/1` to `reconcile/1` where the `ConfigMap` with pluralized field values is created and sent to the Kubernetes API.
+
+```elixir
+defmodule ConfigMapToPluralizeController do
+  require Bonny.API.CRD
+
+  use Bonny.ControllerV2,
+    for_resource: Bonny.API.CRD.build_for_controller!(versions: [V1.ConfigMapToPluralize])
+
+  @impl Bonny.ControllerV2
+  defdelegate add(resource), to: __MODULE__, as: :reconcile
+
+  @impl Bonny.ControllerV2
+  defdelegate modify(resource), to: __MODULE__, as: :reconcile
+
+  @impl Bonny.ControllerV2
+  def reconcile(resource) do
+    name = K8s.Resource.FieldAccessors.name(resource)
+    namespace = K8s.Resource.FieldAccessors.namespace(resource)
+
+    new_data =
+      resource
+      |> Map.get("data")
+      |> Enum.map(fn {key, value} ->
+        {key, Inflex.pluralize(value)}
+      end)
+      |> Enum.into(%{})
+
+    cm =
+      %{
+        "apiVersion" => "v1",
+        "kind" => "ConfigMap",
+        "metadata" => %{
+          "name" => name,
+          "namespace" => namespace
+        },
+        "data" => new_data
+      }
+      |> add_owner_reference(resource)
+
+    op = K8s.Client.apply(cm)
+
+    case K8s.Client.run(conn(), op) do
+      {:ok, _} ->
+        :ok
+
+      error ->
+        IO.inspect(error)
+        :error
+    end
+  end
+
+  @impl Bonny.ControllerV2
+  def delete(_resource) do
+    # since we added the owner reference above, there's nothing to do here.
+    # Kubernetes will delete the referencing objects i.e. the ConfigMap for us.
+    :ok
+  end
+end
+```
+
+## Prepare for Testing
+
+Bonny uses the `:k8s` library to talk to Kubernetes. Whenever Bonny needs to open a connection to Kubernetes, it calls the function defined in the application configuration under `.bonny.get_conn` to initialize a `%K8s.Conn{}` object.
+
+For unit tests, we want to mock all HTTP calls to Kubernetes and use pre-defined resource discovery.
+
+If you have used `mix bonny.init` to initialize your operator, you will find a module `YourOperator.K8sConn` with a function `get/1` in your code base. Note that it already comes with an implementation for `:dev` so there is nothing you need to do.
+
+For the demo in this livebook however, we have to set this configuration manually:
+
+```elixir
+defmodule Conn do
+  def conn do
+    %K8s.Conn{
+      discovery_driver: K8s.Discovery.Driver.File,
+      discovery_opts: [
+        config: Path.join(__DIR__, "../priv/templates/bonny.gen/init/discovery.json")
+      ],
+      http_provider: K8s.Client.DynamicHTTPProvider
+    }
+  end
+end
+
+Application.put_env(:bonny, :get_conn, {Conn, :conn})
+```
+
+Next we need to start `:k8s`' `DynamicHTTPProvider`. This usually goes inside `test_helper.exs` and if you've used `mix bonny.init` to initialize your operator, it has already been done for you.
+
+```elixir
+K8s.Client.DynamicHTTPProvider.start_link(nil)
+```
+
+## Writing Tests
+
+Before we can write the actual tests, we need to implement the logic for mocking HTTP calls to Kubernetes. This module is usually defined in the same file as the test itself.
+
+### Implementing the HTTP Mock
+
+The HTTP Mock module has to define the. `request/5` function which will be called by the `:k8s` library. It is easiest to first implement a fallback which logs the function binidings. When you then first run your test, can check what arguments are sent to `request/5` by your controller and implement the `request/5` function for those arguments.
+
+```elixir
+defmodule ConfigMapToPluralizeControllerTest.HTTPMock do
+  import ExUnit.Assertions
+
+  # Mocks applying a ConfigMap with name test-1 in default namespace
+  def request(
+        :patch,
+        "api/v1/namespaces/default/configmaps/test-1",
+        raw_config_map,
+        _headers,
+        _opts
+      ) do
+    config_map = Jason.decode!(raw_config_map)
+
+    # assert that the fields were pluralized
+    assert "Houses" == config_map["data"]["first"]
+    assert "Heroes" == config_map["data"]["second"]
+
+    {
+      :ok,
+      %HTTPoison.Response{
+        status_code: 200,
+        body: raw_config_map,
+        headers: [{"Content-Type", "application/json"}]
+      }
+    }
+  end
+
+  # Fallback
+  def request(_method, _url, _body, _headers, _opts) do
+    IO.puts("Call to #{__MODULE__}.request/5 not handled:")
+    IO.inspect(binding())
+    {:error, %HTTPoison.Error{reason: "request not mocked"}}
+  end
+end
+```
+
+Note the two assertions inside `request/5`. This works but it's not very nice. We discuss an alternative way further down.
+
+### Implementing the actual Tests
+
+In a `setup` function we first register the `HTTPMock` module with the `DynamicHTTPProvider`. The test itself then just calls `add/1` on our controller, passing it a `ConfigMapToPluralize`. Together with the two assertions from above, our test for `add/1` is complete.
+
+```elixir
+defmodule ConfigMapToPluralizeControllerTest do
+  use ExUnit.Case, async: true
+
+  #  Module Under Test
+  alias ConfigMapToPluralizeController, as: MUT
+  alias ConfigMapToPluralizeControllerTest.HTTPMock
+
+  setup do
+    K8s.Client.DynamicHTTPProvider.register(self(), HTTPMock)
+
+    [
+      cm_to_pluralize: %{
+        "apiVersion" => "example.com/v1",
+        "kind" => "ConfigMapToPluralize",
+        "metadata" => %{
+          "namespace" => "default",
+          "name" => "test-1"
+        },
+        "data" => %{
+          "first" => "House",
+          "second" => "Hero"
+        }
+      }
+    ]
+  end
+
+  describe "add/1" do
+    test "runs successfully and pluralizes the fields", %{cm_to_pluralize: resource} do
+      assert :ok == MUT.add(resource)
+    end
+  end
+end
+
+ExUnit.run()
+```
+
+### Alternative Implementation with Asserts inside Tests
+
+Having assertions inside the `HTTPMock` is not very nice. We can move them back to our test if we send the whole `ConfigMap` resource map to `self()`. In the test we can then assert its reception.
+
+Now we can add a second test checking for the owner reference.
+
+```elixir
+defmodule ConfigMapToPluralizeControllerTestV2 do
+  use ExUnit.Case, async: true
+
+  #  Module Under Test
+  alias ConfigMapToPluralizeController, as: MUT
+
+  defmodule HTTPMock do
+    # Mocks applying a ConfigMap with name test-1 in default namespace
+    def request(
+          :patch,
+          "api/v1/namespaces/default/configmaps/test-1",
+          raw_config_map,
+          _headers,
+          _opts
+        ) do
+      # send the decoded ConfigMap to myself
+      send(self(), Jason.decode!(raw_config_map))
+
+      {
+        :ok,
+        %HTTPoison.Response{
+          status_code: 200,
+          body: raw_config_map,
+          headers: [{"Content-Type", "application/json"}]
+        }
+      }
+    end
+  end
+
+  setup do
+    K8s.Client.DynamicHTTPProvider.register(self(), HTTPMock)
+
+    [
+      cm_to_pluralize: %{
+        "apiVersion" => "example.com/v1",
+        "kind" => "ConfigMapToPluralize",
+        "metadata" => %{
+          "namespace" => "default",
+          "name" => "test-1",
+          "uid" => "b02b1a00-435a-11ed-b878-0242ac120002"
+        },
+        "data" => %{
+          "first" => "House",
+          "second" => "Hero"
+        }
+      }
+    ]
+  end
+
+  describe "add/1" do
+    test "runs successfully and pluralizes the fields", %{cm_to_pluralize: resource} do
+      assert :ok == MUT.add(resource)
+
+      assert_received(%{
+        "apiVersion" => "v1",
+        "kind" => "ConfigMap",
+        "data" => %{
+          "first" => "Houses",
+          "second" => "Heroes"
+        }
+      })
+    end
+
+    test "adds the owner reference", %{cm_to_pluralize: resource} do
+      assert :ok == MUT.add(resource)
+
+      assert_received(%{
+        "apiVersion" => "v1",
+        "kind" => "ConfigMap",
+        "metadata" => %{
+          "ownerReferences" => [
+            %{
+              "apiVersion" => "example.com/v1",
+              "kind" => "ConfigMapToPluralize",
+              "name" => "test-1",
+              "namespace" => "default",
+              "uid" => "b02b1a00-435a-11ed-b878-0242ac120002"
+            }
+          ]
+        }
+      })
+    end
+  end
+end
+
+ExUnit.run()
+```

@@ -70,7 +70,7 @@ defmodule Mix.Bonny do
         Mix.Generator.create_file(target, new_file_content)
         :ok
 
-      !(File.read!(target) =~ check) && mode == :append ->
+      !(File.read!(target) =~ check) ->
         add_content(mode, target, content_to_add)
 
       true ->

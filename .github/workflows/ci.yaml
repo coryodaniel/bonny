@@ -74,7 +74,7 @@ jobs:
         run: |
           MIX_ENV=test mix compile
           MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
-          TEST_WAIT_TIMEOUT=10000 TEST_KUBECONFIG=$KUBECONFIG mix coveralls.github --include integration
+          TEST_WAIT_TIMEOUT=50000 TEST_KUBECONFIG=$KUBECONFIG mix coveralls.github --include integration --timeout 60000
 
       # Create PLTs if no cache was found
       - name: Create PLTs
