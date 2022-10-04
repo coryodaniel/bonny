@@ -47,8 +47,8 @@ defmodule Bonny.API.CRD do
 
   defstruct [
     :names,
+    :group,
     :versions,
-    group: Bonny.Config.group(),
     scope: :Namespaced
   ]
 
@@ -61,6 +61,7 @@ defmodule Bonny.API.CRD do
     fields =
       fields
       |> Keyword.put_new_lazy(:versions, fn -> get_versions(fields[:names].kind) end)
+      |> Keyword.put_new(:group, Bonny.Config.group())
 
     struct!(__MODULE__, fields)
   end
