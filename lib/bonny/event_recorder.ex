@@ -1,76 +1,70 @@
 defmodule Bonny.EventRecorder do
   @moduledoc """
   Records kubernetes events regarding objects controlled by this operator.
-
-
   """
 
   use Agent
 
-  alias Bonny.Resource
+  alias Bonny.Event
 
   @api_version "events.k8s.io/v1"
   @kind "Event"
 
-  @type event_type :: :Normal | :Warning
+  @typedoc """
+  A map to identify an event.
+  """
+  @type event_key :: %{
+          action: binary(),
+          reason: binary(),
+          reporting_controller: binary(),
+          regarding: binary(),
+          related: binary()
+        }
 
+  @spec start_link(Keyword.t()) :: Agent.on_start()
   def start_link(opts) do
-    name = Keyword.fetch!(opts, :name)
-    conn = Keyword.fetch!(opts, :conn)
-    Agent.start_link(fn -> %{conn: conn} end, name: name)
+    Agent.start_link(fn -> %{} end, Keyword.take(opts, [:name]))
   end
 
   @doc """
   Create a kubernetes event in the cluster.
   Documentation: https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/event-v1/
   """
-  @spec event(
-          atom(),
-          Resource.t(),
-          Resource.t() | nil,
-          event_type(),
-          binary(),
-          binary(),
-          binary()
-        ) ::
-          :ok
-  def event(agent_name, regarding, related \\ nil, event_type, reason, action, message) do
-    ref_regarding = Resource.resource_reference(regarding)
-    ref_related = Resource.resource_reference(related)
-    event_time = DateTime.utc_now()
-    reporting_controller = Bonny.Config.name()
-    reporting_instance = Bonny.Config.instance_name()
-    conn = Agent.get(agent_name, &Map.fetch!(&1, :conn))
-    unix_nano = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
+  @spec emit(Event.t(), atom(), K8s.Conn.t()) :: :ok
+  def emit(event, agent_name, conn) do
+    event_time = event.now
+    unix_nano = event.now |> DateTime.to_unix(:nanosecond)
+    key = event_key(event)
 
-    event = %{
+    event_manifest = %{
       "apiVersion" => @api_version,
       "kind" => @kind,
       "metadata" => %{
-        "namespace" => Map.get(ref_regarding, "namespace", "default"),
-        "name" => "#{Map.fetch!(ref_regarding, "name")}.#{unix_nano}"
+        "namespace" => Map.get(event.regarding, "namespace", "default"),
+        "name" => "#{Map.fetch!(event.regarding, "name")}.#{unix_nano}"
       },
       "eventTime" => event_time,
-      "reportingController" => reporting_controller,
-      "reportingInstance" => reporting_instance,
-      "action" => action,
-      "reason" => reason,
-      "regarding" => ref_regarding,
-      "related" => ref_related,
-      "note" => message,
-      "type" => event_type
+      "reportingController" => event.reporting_controller,
+      "reportingInstance" => event.reporting_instance,
+      "action" => event.action,
+      "reason" => event.reason,
+      "regarding" => event.regarding,
+      "related" => event.related,
+      "note" => event.message,
+      "type" => event.event_type
     }
 
-    key = key(event)
-
-    event =
-      get_cache(agent_name, key, event)
+    event_manifest =
+      get_cache(agent_name, key, event_manifest)
       |> increment_series_count()
 
-    apply_op = K8s.Client.apply(event, field_manager: reporting_controller, force: true)
+    apply_op =
+      K8s.Client.apply(event_manifest, field_manager: event.reporting_controller, force: true)
+
     {:ok, _} = K8s.Client.run(conn, apply_op)
 
-    put_cache(agent_name, key, event)
+    put_cache(agent_name, key, event_manifest)
+
     :ok
   end
 
@@ -93,13 +87,14 @@ defmodule Bonny.EventRecorder do
 
   defp increment_series_count(event), do: event
 
-  defp key(event) do
+  @spec event_key(Event.t()) :: event_key()
+  defp event_key(event) do
     %{
-      action: event["action"],
-      reason: event["reason"],
-      reporting_controller: event["reportingController"],
-      regarding: event["regarding"],
-      related: event["related"]
+      action: event.action,
+      reason: event.reason,
+      reporting_controller: event.reporting_controller,
+      regarding: event.regarding,
+      related: event.related
     }
   end
 end

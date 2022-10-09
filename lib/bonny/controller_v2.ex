@@ -253,14 +253,17 @@ defmodule Bonny.ControllerV2 do
   """
   defmacro event(regarding, related \\ nil, event_type, reason, action, message) do
     quote do
-      Bonny.EventRecorder.event(
-        __MODULE__.EventRecorder,
+      Bonny.Event.new!(
         unquote(regarding),
         unquote(related),
         unquote(event_type),
         unquote(reason),
         unquote(action),
         unquote(message)
+      )
+      |> Bonny.EventRecorder.emit(
+        __MODULE__.EventRecorder,
+        conn()
       )
     end
   end
@@ -356,8 +359,7 @@ defmodule Bonny.ControllerV2 do
        when action in [:add, :modify, :delete] do
     action_string = action |> Atom.to_string() |> String.capitalize()
 
-    Bonny.EventRecorder.event(
-      :"#{controller}.EventRecorder",
+    Bonny.Event.new!(
       resource,
       nil,
       :Normal,
@@ -365,6 +367,7 @@ defmodule Bonny.ControllerV2 do
       Atom.to_string(action),
       message || "Resource #{action} was successful."
     )
+    |> Bonny.EventRecorder.emit(Module.concat(controller, EventRecorder), controller.conn())
 
     resource
   end
@@ -373,8 +376,7 @@ defmodule Bonny.ControllerV2 do
        when action in [:add, :modify, :delete] do
     action_string = action |> Atom.to_string() |> String.capitalize()
 
-    Bonny.EventRecorder.event(
-      :"#{controller}.EventRecorder",
+    Bonny.Event.new!(
       resource,
       nil,
       :Normal,
@@ -382,6 +384,7 @@ defmodule Bonny.ControllerV2 do
       Atom.to_string(action),
       message || "Resource #{action} failed."
     )
+    |> Bonny.EventRecorder.emit(Module.concat(controller, EventRecorder), controller.conn())
 
     resource
   end
