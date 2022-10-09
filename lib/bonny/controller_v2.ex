@@ -378,7 +378,7 @@ defmodule Bonny.ControllerV2 do
       resource,
       nil,
       :Normal,
-      "Successful" <> action_string,
+      "Failed" <> action_string,
       Atom.to_string(action),
       message || "Resource #{action} failed."
     )
