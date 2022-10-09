@@ -1,4 +1,4 @@
-defmodule Bonny.Operator do
+defmodule Bonny.Mix.Operator do
   @moduledoc """
   Encapsulates Kubernetes resource manifests for an operator
   """

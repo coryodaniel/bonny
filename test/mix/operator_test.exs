@@ -1,7 +1,7 @@
-defmodule Bonny.OperatorTest do
+defmodule Bonny.Mix.OperatorTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Bonny.Operator
+  alias Bonny.Mix.Operator
 
   test "cluster_role/0" do
     manifest = Operator.cluster_role()

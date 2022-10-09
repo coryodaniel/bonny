@@ -32,7 +32,7 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
   """
 
   use Mix.Task
-  alias Bonny.Operator
+  alias Bonny.Mix.Operator
 
   @default_opts [namespace: "default", local: false]
   @switches [out: :string, namespace: :string, image: :string, local: :boolean]

@@ -31,7 +31,9 @@ config :bonny,
   service_account_name: "<%= assigns[:service_account_name] %>",
 
   # Labels to apply to the operator's resources.
-  labels: %{},
+  labels: %{
+    "k8s-app" => "<%= assigns[:operator_name] %>"
+  },
 
   # Operator deployment resources. These are the defaults.
   resources: <%= inspect(assigns[:resources]) %>,
