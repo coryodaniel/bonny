@@ -57,10 +57,10 @@ defmodule Bonny.MixProject do
       {:inflex, "~> 2.0"},
       {:jason, "~> 1.1"},
       {:k8s, "~> 1.1"},
-      {:telemetry, "~> 1.0"},
-      #  2.0 only supports Elixir >= 1.11
-      {:ymlr, "~> 3.0"},
       {:owl, "~> 0.5.1", runtime: false},
+      {:pluggable, "~> 1.0"},
+      {:telemetry, "~> 1.0"},
+      {:ymlr, "~> 3.0"},
 
       # Dev deps
       {:mix_test_watch, "~> 1.1", only: :dev, runtime: false},
