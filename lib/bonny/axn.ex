@@ -136,4 +136,27 @@ defmodule Bonny.Axn do
     new_status = fun.(current_status)
     struct!(axn, status: new_status)
   end
+
+  @doc """
+  Emits the events created for this Axn.
+  """
+  @spec emit_events(t(), atom()) :: :ok
+  def emit_events(%__MODULE__{events: events, conn: conn}, agent_name) do
+    events
+    |> List.wrap()
+    |> Enum.each(&Bonny.EventRecorder.emit(&1, agent_name, conn))
+  end
+
+  @doc """
+  Applies the status subresource for the given Axn.
+  :noop is returned.
+  """
+  @spec apply_status(t()) :: any()
+  def apply_status(%__MODULE__{status: nil}), do: :noop
+
+  def apply_status(%__MODULE__{resource: resource, conn: conn, status: status}) do
+    resource
+    |> Map.put("status", status)
+    |> Resource.apply_status(conn)
+  end
 end

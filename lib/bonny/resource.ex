@@ -134,25 +134,37 @@ defmodule Bonny.Resource do
     do: Map.update!(resource, "metadata", &Map.delete(&1, "managedFields"))
 
   @doc """
-  Applies the status subresource of the given resource. Requires to pass the
-  plural form of the resource kind.
+  Applies the given resource to the cluster.
+  """
+  @spec apply(t(), K8s.Conn.t(), Keyword.t()) :: K8s.Client.Runner.Base.result_t()
+  def apply(resource, conn, opts) do
+    opts = Keyword.merge([field_manager: Bonny.Config.name(), force: true], opts)
+    op = K8s.Client.apply(resource, opts)
+    K8s.Client.run(conn, op)
+  end
+
+  @doc """
+  Applies the status subresource of the given resource to the cluster.
   If the given resource doesn't contain a status object, nothing is done and
   :noop is returned.
   """
-  @spec apply_status(t(), binary(), K8s.Conn.t()) :: K8s.Client.Runner.Base.result_t() | :noop
-  def apply_status(resource, resource_type, conn)
+  @spec apply_status(t(), K8s.Conn.t(), Keyword.t()) :: K8s.Client.Runner.Base.result_t() | :noop
+  def apply_status(resource, conn, opts \\ [])
+
+  def apply_status(resource, conn, opts)
       when is_map_key(resource, "status") or is_map_key(resource, :status) do
+    opts = Keyword.merge([field_manager: Bonny.Config.name(), force: true], opts)
+
     op =
       K8s.Client.apply(
         resource["apiVersion"],
-        resource_type <> "/status",
+        {resource["kind"], "Status"},
         [
           namespace: get_in(resource, ~w(metadata namespace)),
           name: get_in(resource, ~w(metadata name))
         ],
         drop_managed_fields(resource),
-        field_manager: Bonny.Config.name(),
-        force: true
+        opts
       )
 
     K8s.Client.run(conn, op)

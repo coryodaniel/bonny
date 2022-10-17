@@ -165,6 +165,7 @@ defmodule Bonny.ResourceTest do
 
       resource = %{
         "apiVersion" => "example.com/v1",
+        "kind" => "Widget",
         "metadata" => %{
           "name" => "foo",
           "namespace" => "default"
@@ -185,7 +186,7 @@ defmodule Bonny.ResourceTest do
           "ref" => ref |> :erlang.ref_to_list() |> List.to_string()
         })
 
-      assert {:ok, _} = MUT.apply_status(resource, "widgets", conn)
+      assert {:ok, _} = MUT.apply_status(resource, conn)
       assert_receive {^ref, "status applied"}
     end
 
@@ -193,7 +194,7 @@ defmodule Bonny.ResourceTest do
       conn: conn,
       resource: resource
     } do
-      assert :noop == MUT.apply_status(resource, "widgets", conn)
+      assert :noop == MUT.apply_status(resource, conn)
     end
   end
 end
