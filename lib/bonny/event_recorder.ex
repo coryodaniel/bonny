@@ -23,7 +23,8 @@ defmodule Bonny.EventRecorder do
 
   @spec start_link(Keyword.t()) :: Agent.on_start()
   def start_link(opts) do
-    Agent.start_link(fn -> %{} end, Keyword.take(opts, [:name]))
+    operator = opts[:operator] || raise "EventRecorder expects :operator to be defined."
+    Agent.start_link(fn -> %{} end, name: agent_name(operator))
   end
 
   @doc """
@@ -31,7 +32,8 @@ defmodule Bonny.EventRecorder do
   Documentation: https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/event-v1/
   """
   @spec emit(Event.t(), atom(), K8s.Conn.t()) :: :ok
-  def emit(event, agent_name, conn) do
+  def emit(event, operator, conn) do
+    agent_name = agent_name(operator)
     event_time = event.now
     unix_nano = event.now |> DateTime.to_unix(:nanosecond)
     key = event_key(event)
@@ -97,4 +99,6 @@ defmodule Bonny.EventRecorder do
       related: event.related
     }
   end
+
+  defp agent_name(operator), do: Module.concat(__MODULE__, operator)
 end

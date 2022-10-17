@@ -31,7 +31,10 @@ defmodule Bonny.Pluggable.SetObservedGeneration do
   @impl true
   def call(%Bonny.Axn{resource: resource} = axn, opts) do
     observed_generation_key = Keyword.fetch!(opts, :observed_generation_key)
-    generation = resource["metadata"]["generation"]
-    update_status(axn, &put_in(&1, observed_generation_key, generation))
+
+    case resource["metadata"]["generation"] do
+      nil -> axn
+      generation -> update_status(axn, &put_in(&1, observed_generation_key, generation))
+    end
   end
 end

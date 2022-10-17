@@ -39,6 +39,6 @@ defmodule Bonny.Axn.Test do
 
   @spec axn(atom(), Bonny.Resource.t(), K8s.Conn.t(), atom()) :: Bonny.Axn.t()
   def axn(action, resource \\ @default_resource, conn \\ Bonny.Config.conn(), handler \\ nil) do
-    Bonny.Axn.new!(conn, action, resource, handler)
+    Bonny.Axn.new!(conn: conn, action: action, resource: resource, handler: handler)
   end
 end

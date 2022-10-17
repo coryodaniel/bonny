@@ -13,7 +13,8 @@ defmodule Bonny.Axn do
           status: map() | nil,
           assigns: map(),
           halted: boolean(),
-          handler: atom() | nil
+          handler: atom(),
+          operator: atom() | nil
         }
 
   @enforce_keys [:conn, :resource, :action]
@@ -22,22 +23,16 @@ defmodule Bonny.Axn do
     :conn,
     :resource,
     :status,
+    :handler,
     assigns: %{},
     decendants: [],
     events: [],
     halted: false,
-    handler: nil
+    operator: nil
   ]
 
   @spec new!(Keyword.t()) :: t()
   def new!(fields), do: struct!(__MODULE__, fields)
-
-  @spec new!(K8s.Conn.t(), atom(), Resource.t(), atom(), Keyword.t()) :: t()
-  def new!(conn, action, resource, handler, fields \\ []) do
-    fields
-    |> Keyword.merge(conn: conn, action: action, resource: resource, handler: handler)
-    |> new!()
-  end
 
   @spec event(
           t(),
@@ -142,11 +137,11 @@ defmodule Bonny.Axn do
   @doc """
   Emits the events created for this Axn.
   """
-  @spec emit_events(t(), atom()) :: :ok
-  def emit_events(%__MODULE__{events: events, conn: conn}, agent_name) do
+  @spec emit_events(t()) :: :ok
+  def emit_events(%__MODULE__{events: events, conn: conn, operator: operator}) do
     events
     |> List.wrap()
-    |> Enum.each(&Bonny.EventRecorder.emit(&1, agent_name, conn))
+    |> Enum.each(&Bonny.EventRecorder.emit(&1, operator, conn))
   end
 
   @doc """
@@ -159,6 +154,8 @@ defmodule Bonny.Axn do
   def apply_status(%__MODULE__{status: nil}, _), do: :noop
 
   def apply_status(%__MODULE__{resource: resource, conn: conn, status: status}, apply_opts) do
+    dbg(status)
+
     resource
     |> Map.put("status", status)
     |> Resource.apply_status(conn, apply_opts)
@@ -169,7 +166,7 @@ defmodule Bonny.Axn do
   If no status was specified, :noop is returned.
   """
   @spec apply_decendants(t(), Keyword.t()) :: :ok
-  def apply_decendants(%__MODULE__{decendants: decendants, conn: conn}, apply_opts) do
+  def apply_decendants(%__MODULE__{decendants: decendants, conn: conn}, apply_opts \\ []) do
     decendants
     |> List.wrap()
     |> Enum.each(&Resource.apply(&1, conn, apply_opts))
