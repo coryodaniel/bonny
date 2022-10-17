@@ -12,7 +12,8 @@ defmodule Bonny.Axn do
           resource: Resource.t(),
           status: map() | nil,
           assigns: map(),
-          halted: boolean()
+          halted: boolean(),
+          handler: atom() | nil
         }
 
   @enforce_keys [:conn, :resource, :action]
@@ -24,16 +25,17 @@ defmodule Bonny.Axn do
     assigns: %{},
     decendants: [],
     events: [],
-    halted: false
+    halted: false,
+    handler: nil
   ]
 
   @spec new!(Keyword.t()) :: t()
   def new!(fields), do: struct!(__MODULE__, fields)
 
-  @spec new!(K8s.Conn.t(), atom(), Resource.t(), Keyword.t()) :: t()
-  def new!(conn, action, resource, fields \\ []) do
+  @spec new!(K8s.Conn.t(), atom(), Resource.t(), atom(), Keyword.t()) :: t()
+  def new!(conn, action, resource, handler, fields \\ []) do
     fields
-    |> Keyword.merge(conn: conn, action: action, resource: resource)
+    |> Keyword.merge(conn: conn, action: action, resource: resource, handler: handler)
     |> new!()
   end
 
@@ -106,13 +108,13 @@ defmodule Bonny.Axn do
   defp add_event(axn, event), do: %__MODULE__{axn | events: [event | axn.events]}
 
   @doc """
-  Instructs bonny to apply a decending object.
+  Adds a decending object to be applied.
   Owner reference will be added automatically.
   Adding the owner reference can be disabled by passing the option
   `ommit_owner_ref: true`.
   """
-  @spec apply_decendant(t(), Resource.t(), Keyword.t()) :: t()
-  def apply_decendant(axn, decendant, opts \\ []) do
+  @spec add_decendant(t(), Resource.t(), Keyword.t()) :: t()
+  def add_decendant(axn, decendant, opts \\ []) do
     decendant =
       if opts[:ommit_owner_ref],
         do: decendant,
@@ -148,15 +150,28 @@ defmodule Bonny.Axn do
   end
 
   @doc """
-  Applies the status subresource for the given Axn.
-  :noop is returned.
+  Applies the status to the resource's status subresource in the cluster.
+  If no status was specified, :noop is returned.
   """
-  @spec apply_status(t()) :: any()
-  def apply_status(%__MODULE__{status: nil}), do: :noop
+  @spec apply_status(t(), Keyword.t()) :: K8s.Client.Runner.Base.result_t() | :noop
+  def apply_status(axn, apply_opts \\ [])
 
-  def apply_status(%__MODULE__{resource: resource, conn: conn, status: status}) do
+  def apply_status(%__MODULE__{status: nil}, _), do: :noop
+
+  def apply_status(%__MODULE__{resource: resource, conn: conn, status: status}, apply_opts) do
     resource
     |> Map.put("status", status)
-    |> Resource.apply_status(conn)
+    |> Resource.apply_status(conn, apply_opts)
+  end
+
+  @doc """
+  Applies the dependants to the cluster.
+  If no status was specified, :noop is returned.
+  """
+  @spec apply_decendants(t(), Keyword.t()) :: :ok
+  def apply_decendants(%__MODULE__{decendants: decendants, conn: conn}, apply_opts) do
+    decendants
+    |> List.wrap()
+    |> Enum.each(&Resource.apply(&1, conn, apply_opts))
   end
 end
