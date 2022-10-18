@@ -12,7 +12,6 @@ defmodule Bonny.Pluggable.SetObservedGeneration do
   """
 
   @behaviour Pluggable
-  import Bonny.Axn
 
   @impl true
   def init(opts \\ []) do
@@ -34,7 +33,7 @@ defmodule Bonny.Pluggable.SetObservedGeneration do
 
     case resource["metadata"]["generation"] do
       nil -> axn
-      generation -> update_status(axn, &put_in(&1, observed_generation_key, generation))
+      generation -> Bonny.Axn.update_status(axn, &put_in(&1, observed_generation_key, generation))
     end
   end
 end

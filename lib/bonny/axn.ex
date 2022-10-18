@@ -176,37 +176,39 @@ defmodule Bonny.Axn do
 
   @doc """
   Applies the dependants to the cluster.
-  If no status was specified, :noop is returned.
+  If `:create_events` is true, will create an event for each successful apply.
+  Always creates events upon failed applies.
 
   ## Options
 
-  `:events_for` - List of actions (`:add`, `:modify`, `:delete`, `:reconcile`) ofr which
-    success events should be created. Defaults to `[]` (none).
+  `:create_events` - Whether events should be created upon success. Defaults to `true`
 
   All further options are passed to `K8s.Client.apply/2`
   """
   @spec apply_descendants(t(), Keyword.t()) :: list(K8s.Client.Runner.Base.result_t())
   def apply_descendants(axn, opts \\ []) do
-    {events_for, apply_opts} = Keyword.pop(opts, :events_for, [])
-    %__MODULE__{descendants: descendants, conn: conn, action: action} = axn
+    {create_events, apply_opts} = Keyword.pop(opts, :create_events, [])
+    %__MODULE__{descendants: descendants, conn: conn} = axn
 
     descendants
     |> List.wrap()
     |> Resource.apply_async(conn, apply_opts)
-    |> Enum.map(fn
-      {_, {:ok, descendant}} ->
-        if action in events_for do
-          axn
+    |> Enum.reduce(axn, fn
+      {_, {:ok, descendant}}, acc ->
+        if create_events do
+          acc
           |> success_event(
             reason: "Successfully applied descendant",
             message:
               "Successfully applied #{K8s.Resource.FieldAccessors.kind(descendant)} #{K8s.Resource.FieldAccessors.name(descendant)} to the cluster.",
             related: descendant
           )
+        else
+          acc
         end
 
-      {descendant, {:error, _}} ->
-        axn
+      {descendant, {:error, _}}, acc ->
+        acc
         |> clear_events()
         |> failed_event(
           reason: "Applying descendant failed",

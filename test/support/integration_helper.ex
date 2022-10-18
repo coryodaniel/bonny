@@ -1,6 +1,8 @@
 defmodule Bonny.Test.IntegrationHelper do
   @moduledoc "Kubernetes integration helpers for test suite"
 
+  alias Bonny.Test.ResourceHelper
+
   @kinds %{
     v1: "TestResource",
     v2: "TestResourceV2",
@@ -34,8 +36,8 @@ defmodule Bonny.Test.IntegrationHelper do
       namespace: default
       name: #{name}
     spec:
-      pid: "#{pid |> :erlang.pid_to_list() |> List.to_string()}"
-      ref: "#{ref |> :erlang.ref_to_list() |> List.to_string()}"
+      pid: "#{ResourceHelper.pid_to_string(pid)}"
+      ref: "#{ResourceHelper.ref_to_string(ref)}"
     """
     |> YamlElixir.read_from_string!()
     |> put_in(~w(metadata labels), labels)
