@@ -105,8 +105,9 @@ defmodule Bonny.Operator do
 
       def handle_event(axn, _opts) do
         result = axn.handler.call(axn, [])
-        # TODO: really? Probably do directly in controller...
-        Bonny.Axn.apply_decendants(result)
+
+        # TODO: Create steps for these:
+        Bonny.Axn.apply_descendants(result)
         Bonny.Axn.apply_status(result)
         Bonny.Axn.emit_events(result)
 

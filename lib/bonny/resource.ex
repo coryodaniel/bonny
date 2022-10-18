@@ -144,6 +144,18 @@ defmodule Bonny.Resource do
   end
 
   @doc """
+  Applies the given resource to the cluster.
+  """
+  @spec apply_async(list(t()), K8s.Conn.t(), Keyword.t()) ::
+          list({Resource.t(), K8s.Client.Runner.Base.result_t()})
+  def apply_async(resources, conn, opts) do
+    opts = Keyword.merge([field_manager: Bonny.Config.name(), force: true], opts)
+    ops = Enum.map(resources, &K8s.Client.apply(&1, opts))
+    results = K8s.Client.async(conn, ops)
+    Enum.zip(resources, results)
+  end
+
+  @doc """
   Applies the status subresource of the given resource to the cluster.
   If the given resource doesn't contain a status object, nothing is done and
   :noop is returned.

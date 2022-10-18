@@ -1,4 +1,11 @@
 defmodule Bonny.Axn do
+  @moduledoc """
+  Describes a resource event action.
+
+  This is the token passed to all steps of your operator and controller
+  pipeline.
+  """
+
   @derive Pluggable.Token
 
   alias Bonny.Event
@@ -7,7 +14,7 @@ defmodule Bonny.Axn do
   @type t :: %__MODULE__{
           action: atom(),
           conn: K8s.Conn.t(),
-          decendants: list(Resource.t()),
+          descendants: list(Resource.t()),
           events: list(Bonny.Event.t()),
           resource: Resource.t(),
           status: map() | nil,
@@ -25,7 +32,7 @@ defmodule Bonny.Axn do
     :status,
     :handler,
     assigns: %{},
-    decendants: [],
+    descendants: [],
     events: [],
     halted: false,
     operator: nil
@@ -103,19 +110,25 @@ defmodule Bonny.Axn do
   defp add_event(axn, event), do: %__MODULE__{axn | events: [event | axn.events]}
 
   @doc """
+  Empties the list of events without emitting them.
+  """
+  @spec clear_events(t()) :: t()
+  def clear_events(axn), do: %{axn | events: []}
+
+  @doc """
   Adds a decending object to be applied.
   Owner reference will be added automatically.
   Adding the owner reference can be disabled by passing the option
   `ommit_owner_ref: true`.
   """
-  @spec add_decendant(t(), Resource.t(), Keyword.t()) :: t()
-  def add_decendant(axn, decendant, opts \\ []) do
-    decendant =
+  @spec add_descendant(t(), Resource.t(), Keyword.t()) :: t()
+  def add_descendant(axn, descendant, opts \\ []) do
+    descendant =
       if opts[:ommit_owner_ref],
-        do: decendant,
-        else: Resource.add_owner_reference(decendant, axn.resource)
+        do: descendant,
+        else: Resource.add_owner_reference(descendant, axn.resource)
 
-    %__MODULE__{axn | decendants: [decendant | axn.decendants]}
+    %__MODULE__{axn | descendants: [descendant | axn.descendants]}
   end
 
   @doc """
@@ -164,11 +177,42 @@ defmodule Bonny.Axn do
   @doc """
   Applies the dependants to the cluster.
   If no status was specified, :noop is returned.
+
+  ## Options
+
+  `:events_for` - List of actions (`:add`, `:modify`, `:delete`, `:reconcile`) ofr which
+    success events should be created. Defaults to `[]` (none).
+
+  All further options are passed to `K8s.Client.apply/2`
   """
-  @spec apply_decendants(t(), Keyword.t()) :: :ok
-  def apply_decendants(%__MODULE__{decendants: decendants, conn: conn}, apply_opts \\ []) do
-    decendants
+  @spec apply_descendants(t(), Keyword.t()) :: list(K8s.Client.Runner.Base.result_t())
+  def apply_descendants(axn, opts \\ []) do
+    {events_for, apply_opts} = Keyword.pop(opts, :events_for, [])
+    %__MODULE__{descendants: descendants, conn: conn, action: action} = axn
+
+    descendants
     |> List.wrap()
-    |> Enum.each(&Resource.apply(&1, conn, apply_opts))
+    |> Resource.apply_async(conn, apply_opts)
+    |> Enum.map(fn
+      {_, {:ok, descendant}} ->
+        if action in events_for do
+          axn
+          |> success_event(
+            reason: "Successfully applied descendant",
+            message:
+              "Successfully applied #{K8s.Resource.FieldAccessors.kind(descendant)} #{K8s.Resource.FieldAccessors.name(descendant)} to the cluster.",
+            related: descendant
+          )
+        end
+
+      {descendant, {:error, _}} ->
+        axn
+        |> clear_events()
+        |> failed_event(
+          reason: "Applying descendant failed",
+          message:
+            "Failed to apply #{K8s.Resource.FieldAccessors.kind(descendant)} #{K8s.Resource.FieldAccessors.name(descendant)} to the cluster."
+        )
+    end)
   end
 end
