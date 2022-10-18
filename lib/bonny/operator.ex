@@ -103,11 +103,13 @@ defmodule Bonny.Operator do
         Bonny.Operator.Supervisor.start_link(controllers, __MODULE__, init_args)
       end
 
+      @doc """
+      Runs the controller pipeline for the current action event.
+      """
       def handle_event(axn, _opts) do
         result = axn.handler.call(axn, [])
 
         # TODO: Create steps for these:
-        Bonny.Axn.apply_descendants(result)
         Bonny.Axn.apply_status(result)
         Bonny.Axn.emit_events(result)
 

@@ -15,22 +15,20 @@ defmodule Bonny.Pluggable.SetObservedGeneration do
 
   @impl true
   def init(opts \\ []) do
-    Keyword.update(opts, :observed_generation_key, ["observedGeneration"], fn keys ->
-      [last_key | rest] = Enum.reverse(keys)
+    observed_generation_key = Keyword.get(opts, :observed_generation_key, ["observedGeneration"])
 
-      rest
-      |> Enum.map(fn
-        key when is_binary(key) -> Access.key(key, %{})
-        other -> other
-      end)
-      |> Enum.reverse([last_key])
+    [last_key | rest] = Enum.reverse(observed_generation_key)
+
+    rest
+    |> Enum.map(fn
+      key when is_binary(key) -> Access.key(key, %{})
+      other -> other
     end)
+    |> Enum.reverse([last_key])
   end
 
   @impl true
-  def call(%Bonny.Axn{resource: resource} = axn, opts) do
-    observed_generation_key = Keyword.fetch!(opts, :observed_generation_key)
-
+  def call(%Bonny.Axn{resource: resource} = axn, observed_generation_key) do
     case resource["metadata"]["generation"] do
       nil -> axn
       generation -> Bonny.Axn.update_status(axn, &put_in(&1, observed_generation_key, generation))

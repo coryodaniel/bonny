@@ -16,11 +16,10 @@ defmodule Bonny.Pluggable.ApplyDescendants do
   @behaviour Pluggable
 
   @impl true
-  def init(opts \\ []), do: opts
+  def init(opts \\ []), do: Keyword.get(opts, :events_for_actions, [:add, :modify])
 
   @impl true
-  def call(axn, opts) do
-    events_for_actions = opts[:events_for_actions] || [:add, :modify]
+  def call(axn, events_for_actions) do
     Bonny.Axn.apply_descendants(axn, create_events: axn.action in events_for_actions)
   end
 end
