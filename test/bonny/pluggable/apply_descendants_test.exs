@@ -75,7 +75,7 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
     opts = MUT.init()
 
     axn(:add)
-    |> Bonny.Axn.add_descendant(descendant)
+    |> Bonny.Axn.register_descendant(descendant)
     |> MUT.call(opts)
 
     assert_receive %{
@@ -91,7 +91,7 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
     # event is added for :add per default
     axn =
       axn(:add)
-      |> Bonny.Axn.add_descendant(descendant)
+      |> Bonny.Axn.register_descendant(descendant)
       |> MUT.call(opts)
 
     assert 1 == length(axn.events)
@@ -100,7 +100,7 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
     # no event is added for :reconcile per default
     axn =
       axn(:reconcile)
-      |> Bonny.Axn.add_descendant(descendant)
+      |> Bonny.Axn.register_descendant(descendant)
       |> MUT.call(opts)
 
     assert Enum.empty?(axn.events)
@@ -112,7 +112,7 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
     # event is added for :add
     axn =
       axn(:add)
-      |> Bonny.Axn.add_descendant(descendant)
+      |> Bonny.Axn.register_descendant(descendant)
       |> MUT.call(opts)
 
     assert 1 == length(axn.events)
@@ -121,7 +121,7 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
     # no event is added for :modify
     axn =
       axn(:modify)
-      |> Bonny.Axn.add_descendant(descendant)
+      |> Bonny.Axn.register_descendant(descendant)
       |> MUT.call(opts)
 
     assert Enum.empty?(axn.events)
@@ -133,7 +133,7 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
     # event is added for :add
     axn =
       axn(:reconcile)
-      |> Bonny.Axn.add_descendant(descendant)
+      |> Bonny.Axn.register_descendant(descendant)
       |> MUT.call(opts)
 
     assert 1 == length(axn.events)

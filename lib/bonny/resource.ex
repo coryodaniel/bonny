@@ -147,7 +147,7 @@ defmodule Bonny.Resource do
   Applies the given resource to the cluster.
   """
   @spec apply_async(list(t()), K8s.Conn.t(), Keyword.t()) ::
-          list({Resource.t(), K8s.Client.Runner.Base.result_t()})
+          list({t(), K8s.Client.Runner.Base.result_t()})
   def apply_async(resources, conn, opts) do
     opts = Keyword.merge([field_manager: Bonny.Config.name(), force: true], opts)
     ops = Enum.map(resources, &K8s.Client.apply(&1, opts))
