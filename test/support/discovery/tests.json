@@ -36,5 +36,19 @@
       "namespaced": false,
       "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
     }
+  ],
+  "v1": [
+    {
+      "kind": "ConfigMap",
+      "name": "configmaps",
+      "namespaced": true,
+      "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "configmaps/status",
+      "namespaced": true,
+      "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
+    }
   ]
 }

@@ -3,8 +3,12 @@ defmodule Bonny.AxnTest do
 
   alias Bonny.Axn, as: MUT
 
+  alias Bonny.Test.ResourceHelper
+
   setup do
     conn = Bonny.Config.conn()
+
+    ref = make_ref()
 
     resource = %{
       "apiVersion" => "v1",
@@ -28,13 +32,16 @@ defmodule Bonny.AxnTest do
         "uid" => "bar-uid"
       },
       "data" => %{
-        "bar" => "lorem ipsum"
+        "bar" => "lorem ipsum",
+        "ref" => ResourceHelper.to_string(ref),
+        "pid" => ResourceHelper.to_string(self())
       }
     }
 
     [
       axn: MUT.new!(action: :add, resource: resource, conn: conn),
-      related: related
+      related: related,
+      ref: ref
     ]
   end
 
@@ -281,6 +288,14 @@ defmodule Bonny.AxnTest do
   end
 
   describe "update_status/2" do
+    test "raises StatusAlreadyAppliedError if status already applied", %{axn: axn} do
+      assert_raise Bonny.Axn.StatusAlreadyAppliedError, fn ->
+        axn
+        |> MUT.apply_status()
+        |> MUT.update_status(&Function.identity/1)
+      end
+    end
+
     test "Passes an empty map to the update function if neither axn nor axn.resource contain a status",
          %{axn: axn} do
       MUT.update_status(
@@ -316,6 +331,168 @@ defmodule Bonny.AxnTest do
         end)
 
       assert axn.status == :result
+    end
+  end
+
+  describe "apply_status/2" do
+    defmodule ApplyStatusK8sMock do
+      require Logger
+      import K8s.Test.HTTPHelper
+      alias Bonny.Test.ResourceHelper
+
+      def request(
+            :patch,
+            "api/v1/namespaces/default/configmaps/foo/status",
+            body,
+            _headers,
+            _opts
+          ) do
+        resource = Jason.decode!(body)
+        send(self(), resource["status"]["ref"] |> ResourceHelper.string_to_ref())
+        render(resource)
+      end
+
+      def request(_method, _url, _body, _headers, _opts) do
+        Logger.error("Call to #{__MODULE__}.request/5 not handled: #{inspect(binding())}")
+        {:error, %HTTPoison.Error{reason: "request not mocked"}}
+      end
+    end
+
+    setup do
+      K8s.Client.DynamicHTTPProvider.register(self(), ApplyStatusK8sMock)
+    end
+
+    test "applies the status to the cluster", %{axn: axn, ref: ref} do
+      axn
+      |> MUT.update_status(fn _ -> %{"ref" => ResourceHelper.to_string(ref)} end)
+      |> MUT.apply_status()
+
+      assert_receive ^ref
+    end
+
+    test "calls registered callbacks", %{axn: axn, ref: ref} do
+      axn
+      |> MUT.register_before_apply_status(fn resource, axn ->
+        assert is_struct(axn, Bonny.Axn)
+        send(self(), {:callback, resource["status"]["ref"] |> ResourceHelper.string_to_ref()})
+        resource
+      end)
+      |> MUT.update_status(fn _ -> %{"ref" => ResourceHelper.to_string(ref)} end)
+      |> MUT.apply_status()
+
+      assert_receive {:callback, ^ref}
+      assert_receive ^ref
+    end
+
+    test "raises when alredy applied", %{axn: axn, ref: ref} do
+      assert_raise Bonny.Axn.StatusAlreadyAppliedError, fn ->
+        axn
+        |> MUT.update_status(fn _ -> %{"ref" => ResourceHelper.to_string(ref)} end)
+        |> MUT.apply_status()
+        |> MUT.apply_status()
+      end
+    end
+  end
+
+  describe "register_descendant/3" do
+    test "registers a descendant with owner reference", %{axn: axn, related: related} do
+      %{descendants: [registered_descendant | others]} = MUT.register_descendant(axn, related)
+
+      assert Enum.empty?(others)
+
+      assert K8s.Resource.FieldAccessors.name(registered_descendant) ==
+               K8s.Resource.FieldAccessors.name(related)
+
+      assert K8s.Resource.FieldAccessors.namespace(registered_descendant) ==
+               K8s.Resource.FieldAccessors.namespace(related)
+
+      assert K8s.Resource.FieldAccessors.kind(registered_descendant) ==
+               K8s.Resource.FieldAccessors.kind(related)
+
+      assert K8s.Resource.FieldAccessors.api_version(registered_descendant) ==
+               K8s.Resource.FieldAccessors.api_version(related)
+
+      assert is_list(registered_descendant["metadata"]["ownerReferences"])
+      assert length(registered_descendant["metadata"]["ownerReferences"]) == 1
+    end
+
+    test "Ommits owner reference if requested", %{axn: axn, related: related} do
+      %{descendants: [registered_descendant | _]} =
+        MUT.register_descendant(axn, related, ommit_owner_ref: true)
+
+      assert is_nil(registered_descendant["metadata"]["ownerReferences"])
+    end
+
+    test "raises DescendantsAlreadyAppliedError if descendants already applied", %{
+      axn: axn,
+      related: related
+    } do
+      assert_raise Bonny.Axn.DescendantsAlreadyAppliedError, fn ->
+        axn
+        |> MUT.apply_descendants()
+        |> MUT.register_descendant(related)
+      end
+    end
+  end
+
+  describe "apply_descendant/2" do
+    defmodule ApplyDescendantsK8sMock do
+      require Logger
+      import K8s.Test.HTTPHelper
+      alias Bonny.Test.ResourceHelper
+
+      def request(
+            :patch,
+            "api/v1/namespaces/default/configmaps/bar",
+            body,
+            _headers,
+            _opts
+          ) do
+        resource = Jason.decode!(body)
+        ref = resource["data"]["ref"] |> ResourceHelper.string_to_ref()
+        pid = resource["data"]["pid"] |> ResourceHelper.string_to_pid()
+        send(pid, ref)
+        render(resource)
+      end
+
+      def request(_method, _url, _body, _headers, _opts) do
+        Logger.error("Call to #{__MODULE__}.request/5 not handled: #{inspect(binding())}")
+        {:error, %HTTPoison.Error{reason: "request not mocked"}}
+      end
+    end
+
+    setup do
+      K8s.Client.DynamicHTTPProvider.register(self(), ApplyDescendantsK8sMock)
+    end
+
+    test "applies descendants", %{axn: axn, related: related, ref: ref} do
+      axn
+      |> MUT.register_descendant(related)
+      |> MUT.apply_descendants()
+
+      assert_receive ^ref
+    end
+
+    test "raises if already applied", %{axn: axn} do
+      assert_raise Bonny.Axn.DescendantsAlreadyAppliedError, fn ->
+        axn
+        |> MUT.apply_descendants()
+        |> MUT.apply_descendants()
+      end
+    end
+
+    test "runs registered callbacks", %{axn: axn, related: related, ref: ref} do
+      axn
+      |> MUT.register_before_apply_descendants(fn resources, axn ->
+        assert is_struct(axn, Bonny.Axn)
+        send(self(), {:callback, hd(resources)["data"]["ref"] |> ResourceHelper.string_to_ref()})
+        resources
+      end)
+      |> MUT.register_descendant(related)
+      |> MUT.apply_descendants()
+
+      assert_receive {:callback, ^ref}
+      assert_receive ^ref
     end
   end
 end
