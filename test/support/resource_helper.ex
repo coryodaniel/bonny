@@ -15,4 +15,34 @@ defmodule Bonny.Test.ResourceHelper do
 
   @spec string_to_pid(binary()) :: pid()
   def string_to_pid(pid), do: pid |> String.to_charlist() |> :erlang.list_to_pid()
+
+  @spec widget(keyword()) :: Bonny.Resource.t()
+  def widget(opts \\ []) do
+    %{
+      "apiVersion" => "example.com/v1",
+      "kind" => "Widget",
+      "metadata" => %{
+        "name" => Keyword.get(opts, :name, "foo"),
+        "namespace" => "default",
+        "uid" => "foo-uid",
+        "generation" => 1
+      },
+      "spec" => Keyword.get(opts, :spec, %{"foo" => "lorem ipsum"})
+    }
+  end
+
+  @spec cog(keyword()) :: Bonny.Resource.t()
+  def cog(opts \\ []) do
+    %{
+      "apiVersion" => "example.com/v1",
+      "kind" => "Cog",
+      "metadata" => %{
+        "name" => Keyword.get(opts, :name, "bar"),
+        "namespace" => "default",
+        "uid" => "bar-uid",
+        "generation" => 1
+      },
+      "spec" => Keyword.get(opts, :spec, %{"foo" => "lorem ipsum"})
+    }
+  end
 end

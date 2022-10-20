@@ -23,22 +23,10 @@ defmodule Bonny.Axn.Test do
     end
   end
 
-  @default_resource %{
-    "apiVersion" => "example.com/v1",
-    "kind" => "Widget",
-    "metadata" => %{
-      "name" => "foo",
-      "namespace" => "default",
-      "uid" => "foo-uid",
-      "generation" => 1
-    },
-    "spec" => %{
-      "foo" => "lorem ipsum"
-    }
-  }
+  @default_resource Bonny.Test.ResourceHelper.widget()
 
   @spec axn(atom(), Bonny.Resource.t(), K8s.Conn.t(), atom()) :: Bonny.Axn.t()
-  def axn(action, resource \\ @default_resource, conn \\ Bonny.Config.conn(), handler \\ nil) do
-    Bonny.Axn.new!(conn: conn, action: action, resource: resource, handler: handler)
+  def axn(action, resource \\ @default_resource, conn \\ Bonny.Config.conn(), controller \\ nil) do
+    Bonny.Axn.new!(conn: conn, action: action, resource: resource, controller: controller)
   end
 end

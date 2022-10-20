@@ -13,7 +13,7 @@ defmodule Bonny.Axn do
     * `resource` - the resource the action was applied to
     * `conn` - the connection to the cluster the event occurred
     * `operator` - the operator that discovered and dispatched the event
-    * `handler` - the controller handling the event
+    * `controller` - the controller handling the event
 
   ## Reaction fields
 
@@ -52,7 +52,7 @@ defmodule Bonny.Axn do
           assigns: assigns(),
           private: assigns(),
           halted: boolean(),
-          handler: atom(),
+          controller: atom(),
           operator: atom() | nil,
           states: states()
         }
@@ -63,7 +63,7 @@ defmodule Bonny.Axn do
     :conn,
     :resource,
     :status,
-    :handler,
+    :controller,
     assigns: %{},
     private: %{},
     descendants: [],
@@ -228,8 +228,8 @@ defmodule Bonny.Axn do
   """
   @spec update_status(t(), (map() -> map())) :: t()
 
-  def update_status(axn, _) when are_descendants_applied(axn) do
-    raise DescendantsAlreadyAppliedError
+  def update_status(axn, _) when is_status_applied(axn) do
+    raise StatusAlreadyAppliedError
   end
 
   def update_status(axn, fun) do
@@ -267,7 +267,9 @@ defmodule Bonny.Axn do
     raise StatusAlreadyAppliedError
   end
 
-  def apply_status(%__MODULE__{status: nil} = axn, _), do: axn
+  def apply_status(%__MODULE__{status: nil} = axn, _) do
+    mark_status_applied(axn)
+  end
 
   def apply_status(axn, apply_opts) do
     axn.resource
