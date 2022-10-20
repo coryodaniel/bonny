@@ -43,7 +43,7 @@ defmodule Bonny.Axn do
   @type states :: integer()
 
   @type t :: %__MODULE__{
-          action: atom(),
+          action: :add | :modify | :reconcile | :delete,
           conn: K8s.Conn.t(),
           descendants: list(Resource.t()),
           events: list(Bonny.Event.t()),

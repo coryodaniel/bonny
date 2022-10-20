@@ -22,7 +22,7 @@ defmodule Bonny.Operator do
 
   ## Operators
 
-  An operator is defined with the help of `Bonyy.Operator`. The step `:dispatch_to_controller`
+  An operator is defined with the help of `Bonyy.Operator`. The step `:delegate_to_controller`
   has do be part of the pipeline. It is the step that calls the handling controller
   for a given action event:
 
@@ -30,7 +30,7 @@ defmodule Bonny.Operator do
         use Bonny.Operator, default_watching_namespace: "default"
 
         # step ...
-        step :dispatch_to_controller
+        step :delegate_to_controller
         # step ...
 
         def controllers(watching_namespace, _opts) do
@@ -106,7 +106,7 @@ defmodule Bonny.Operator do
       @doc """
       Runs the controller pipeline for the current action event.
       """
-      def dispatch_to_controller(axn, _opts) do
+      def delegate_to_controller(axn, _opts) do
         result = axn.controller.call(axn, [])
 
         # TODO: Create steps for these:
