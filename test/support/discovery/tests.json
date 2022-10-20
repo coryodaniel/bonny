@@ -50,5 +50,13 @@
       "namespaced": true,
       "verbs": ["create", "delete", "get", "list", "patch", "update", "watch"]
     }
+  ],
+  "events.k8s.io/v1": [
+    {
+      "kind": "Event",
+      "name": "events",
+      "namespaced": false,
+      "verbs": ["create", "get", "list", "watch"]
+    }
   ]
 }
