@@ -272,12 +272,24 @@ defmodule Bonny.Axn do
   end
 
   def apply_status(axn, apply_opts) do
-    axn.resource
-    |> Map.put("status", axn.status)
-    |> run_before_apply_status(axn)
-    |> Resource.apply_status(axn.conn, apply_opts)
+    result =
+      axn.resource
+      |> Map.put("status", axn.status)
+      |> run_before_apply_status(axn)
+      |> Resource.apply_status(axn.conn, apply_opts)
 
-    mark_status_applied(axn)
+    case result do
+      {:ok, _} ->
+        mark_status_applied(axn)
+
+      _ ->
+        axn
+        |> failed_event(
+          reason: "Failed applying status",
+          message: "The status subresource could not be applied."
+        )
+        |> mark_status_applied()
+    end
   end
 
   @doc """

@@ -11,36 +11,30 @@ defmodule TestResourceV2Controller do
   alias Bonny.API.CRD
   require CRD
 
-  use Bonny.ControllerV2,
-    for_resource: CRD.build_for_controller!(versions: [Bonny.Test.API.V1.TestResourceV2])
+  use Bonny.ControllerV2
 
-  rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
+  step(Bonny.Pluggable.SkipObservedGenerations)
+  step(:handle_action)
+  step(Bonny.Pluggable.SetObservedGeneration)
 
-  @impl true
-  @spec conn() :: K8s.Conn.t()
-  def conn(), do: Bonny.Test.IntegrationHelper.conn()
+  def handle_action(axn, _opts) do
+    respond(axn.resource, axn.action)
 
-  @impl true
-  def add(resource), do: respond(resource, :added)
-
-  @impl true
-  def modify(resource), do: respond(resource, :modified)
-
-  @impl true
-  def delete(resource), do: respond(resource, :deleted)
-
-  @impl true
-  def reconcile(resource), do: respond(resource, :reconciled)
-
-  defp parse_pid(pid), do: pid |> String.to_charlist() |> :erlang.list_to_pid()
-  defp parse_ref(ref), do: ref |> String.to_charlist() |> :erlang.list_to_ref()
+    success_event(axn)
+  end
 
   defp respond(resource, action) do
-    pid = resource |> get_in(["spec", "pid"]) |> parse_pid()
-    ref = resource |> get_in(["spec", "ref"]) |> parse_ref()
+    pid = resource |> get_in(["spec", "pid"]) |> Bonny.Test.ResourceHelper.string_to_pid()
+    ref = resource |> get_in(["spec", "ref"]) |> Bonny.Test.ResourceHelper.string_to_ref()
     name = resource |> get_in(["metadata", "name"])
 
     send(pid, {ref, action, name})
     :ok
+  end
+
+  def rbac_rules() do
+    [
+      to_rbac_rule({"example.com/v1", "testresourcev2s/status", "*"})
+    ]
   end
 end

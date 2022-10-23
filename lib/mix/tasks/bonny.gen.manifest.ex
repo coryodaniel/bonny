@@ -68,9 +68,11 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
   end
 
   defp resource_manifests(%{namespace: namespace}) do
-    Operator.crds() ++
+    operators = Operator.find_operators()
+
+    Operator.crds(operators) ++
       [
-        Operator.cluster_role(),
+        Operator.cluster_role(operators),
         Operator.service_account(namespace),
         Operator.cluster_role_binding(namespace)
       ]

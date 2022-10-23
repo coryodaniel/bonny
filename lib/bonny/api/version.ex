@@ -145,7 +145,9 @@ defmodule Bonny.API.Version do
   defmacro __using__(opts) do
     quote do
       @behaviour Bonny.API.Version
-      import Bonny.API.Version, only: [defaults: 0, defaults: 1]
+      import Bonny.API.Version,
+        only: [defaults: 0, defaults: 1, add_observed_generation_status: 1]
+
       @hub Keyword.get(unquote(opts), :hub, false)
     end
   end

@@ -18,7 +18,7 @@ defmodule Bonny.Operator.Supervisor do
       controllers
       |> Enum.map(fn controller ->
         opts = Keyword.merge(controller, operator: operator, conn: conn)
-        Supervisor.child_spec({Bonny.ControllerV3, opts}, id: opts[:query])
+        Supervisor.child_spec({Bonny.ControllerV2, opts}, id: opts[:query])
       end)
 
     Supervisor.init([event_recorder_child | controller_children], strategy: :one_for_one)

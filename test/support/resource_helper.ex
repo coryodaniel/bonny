@@ -45,4 +45,23 @@ defmodule Bonny.Test.ResourceHelper do
       "spec" => Keyword.get(opts, :spec, %{"foo" => "lorem ipsum"})
     }
   end
+
+  @test_resource_kinds %{v1: "TestResource", v2: "TestResourceV2"}
+  @spec test_resource(binary(), atom(), pid(), reference(), keyword()) :: map()
+  def test_resource(name, version, pid, ref, opts \\ []) do
+    labels = Keyword.get(opts, :labels, %{})
+
+    """
+    apiVersion: example.com/v1
+    kind: #{@test_resource_kinds[version]}
+    metadata:
+      namespace: default
+      name: #{name}
+    spec:
+      pid: "#{pid_to_string(pid)}"
+      ref: "#{ref_to_string(ref)}"
+    """
+    |> YamlElixir.read_from_string!()
+    |> put_in(~w(metadata labels), labels)
+  end
 end

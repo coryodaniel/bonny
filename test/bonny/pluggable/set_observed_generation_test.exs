@@ -20,21 +20,25 @@ defmodule Bonny.Pluggable.SetObservedGenerationTest do
   test "default options" do
     opts = MUT.init()
 
-    # generation already observed
     assert MUT.call(gen_test_axn(1), opts).status["observedGeneration"] == 1
+  end
+
+  test "noop if no observed generation" do
+    opts = MUT.init()
+
+    axn = gen_test_axn(nil)
+    assert MUT.call(axn, opts) == axn
   end
 
   test "custom key for observed generation" do
     opts = MUT.init(observed_generation_key: ~w(int observedGeneration))
 
-    # generation already observed
     assert MUT.call(gen_test_axn(1), opts).status["int"]["observedGeneration"] == 1
   end
 
   test "custom key for observed generation built with Access.key()" do
     opts = MUT.init(observed_generation_key: [Access.key("int", %{}), "observedGeneration"])
 
-    # generation already observed
     assert MUT.call(gen_test_axn(1), opts).status["int"]["observedGeneration"] == 1
   end
 end

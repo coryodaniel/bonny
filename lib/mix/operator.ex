@@ -4,8 +4,8 @@ defmodule Bonny.Mix.Operator do
   """
 
   @doc "ClusterRole manifest"
-  @spec cluster_role() :: map()
-  def cluster_role() do
+  @spec cluster_role(list(atom)) :: map()
+  def cluster_role(operators) do
     %{
       apiVersion: "rbac.authorization.k8s.io/v1",
       kind: "ClusterRole",
@@ -13,14 +13,12 @@ defmodule Bonny.Mix.Operator do
         name: Bonny.Config.service_account(),
         labels: labels()
       },
-      rules: rules()
+      rules: Enum.uniq(base_rules() ++ legacy_rules() ++ operator_rules(operators))
     }
   end
 
-  @doc "ClusterRole rules"
-  @spec rules() :: list(map())
-  def rules() do
-    base_rules = [
+  defp base_rules() do
+    [
       %{
         apiGroups: ["apiextensions.k8s.io"],
         resources: ["customresourcedefinitions"],
@@ -32,7 +30,10 @@ defmodule Bonny.Mix.Operator do
         verbs: ["*"]
       }
     ]
+  end
 
+  @spec legacy_rules() :: list(map())
+  defp legacy_rules() do
     resource_rules =
       Enum.map(Bonny.Config.controllers(), fn controller ->
         resource_endpoint = controller.resource_endpoint()
@@ -46,7 +47,44 @@ defmodule Bonny.Mix.Operator do
 
     controller_rules = Enum.flat_map(Bonny.Config.controllers(), & &1.rules())
 
-    Enum.uniq(base_rules ++ resource_rules ++ controller_rules)
+    resource_rules ++ controller_rules
+  end
+
+  defp operator_rules(operators) do
+    crds = Enum.flat_map(operators, & &1.crds())
+
+    controllers = Enum.flat_map(operators, & &1.controllers("default", []))
+
+    Enum.flat_map(controllers, fn %{controller: controller, query: query} ->
+      crd_rules =
+        case find_matching_crd(query, crds) do
+          nil ->
+            []
+
+          crd ->
+            [
+              %{
+                apiGroups: [query.api_version],
+                resources: [crd.names.plural],
+                verbs: ["*"]
+              },
+              %{
+                apiGroups: [query.api_version],
+                resources: [crd.names.plural <> "/status"],
+                verbs: ["*"]
+              }
+            ]
+        end
+
+      crd_rules ++ controller.rbac_rules()
+    end)
+  end
+
+  defp find_matching_crd(query, crds) do
+    Enum.find(crds, fn %Bonny.API.CRD{names: names, versions: versions, group: group} ->
+      query.name in [names.plural, names.singular, names.kind] &&
+        Enum.any?(versions, &(group <> "/" <> &1.manifest().name == query.api_version))
+    end)
   end
 
   @doc "ServiceAccount manifest"
@@ -64,23 +102,20 @@ defmodule Bonny.Mix.Operator do
   end
 
   @doc "CRD manifests"
-  @spec crds() :: list(map())
-  def crds() do
-    Enum.flat_map(Bonny.Config.controllers(), fn controller ->
-      attributes = controller.module_info(:attributes)
+  @spec crds(list(atom())) :: list(map())
+  def crds(operators) do
+    legacy_crds =
+      Enum.flat_map(
+        Bonny.Config.controllers(),
+        &[Bonny.CRD.to_manifest(&1.crd(), Bonny.Config.api_version())]
+      )
 
-      cond do
-        Enum.member?(attributes, {:behaviour, [Bonny.Controller]}) ->
-          [Bonny.CRD.to_manifest(controller.crd(), Bonny.Config.api_version())]
+    operator_crds =
+      Enum.flat_map(operators, fn operator ->
+        Enum.map(operator.crds(), &Bonny.API.CRD.to_manifest/1)
+      end)
 
-        Enum.member?(attributes, {:behaviour, [Bonny.ControllerV2]}) and
-            function_exported?(controller, :crd_manifest, 0) ->
-          [controller.crd_manifest()]
-
-        true ->
-          []
-      end
-    end)
+    legacy_crds ++ operator_crds
   end
 
   @doc "ClusterRoleBinding manifest"
@@ -187,5 +222,21 @@ defmodule Bonny.Mix.Operator do
       env_field_ref("BONNY_POD_IP", "status.podIP"),
       env_field_ref("BONNY_POD_SERVICE_ACCOUNT", "spec.serviceAccountName")
     ]
+  end
+
+  @spec find_operators() :: list(atom())
+  def find_operators() do
+    {:ok, modules} =
+      Mix.Project.config()
+      |> Keyword.fetch!(:app)
+      |> :application.get_key(:modules)
+
+    Enum.filter(modules, &(Bonny.Operator in get_module_behaviours(&1)))
+  end
+
+  defp get_module_behaviours(module) do
+    module.module_info(:attributes)
+    |> Keyword.get_values(:behaviour)
+    |> List.flatten()
   end
 end

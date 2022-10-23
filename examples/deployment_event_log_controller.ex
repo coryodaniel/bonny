@@ -6,27 +6,12 @@ defmodule DeploymentEventLogController do
   This controller simply logs lifecycle events on Deployments.
   """
   require Logger
-  use Bonny.ControllerV2,
-    for_resource: Bonny.API.ResourceEndpoint.new!("apps/v1", "Deployment")
+  use Bonny.ControllerV2
 
-  @impl true
-  def reconcile(resource) do
-    track_event(:reconcile, resource)
-  end
+  step :handle_event
 
-  @impl true
-  def add(resource) do
-    track_event(:add, resource)
-  end
-
-  @impl true
-  def modify(resource) do
-    track_event(:modify, resource)
-  end
-
-  @impl true
-  def delete(resource) do
-    track_event(:delete, resource)
+  def handle_event(%Bonny.Axn{resource: resource, action: action}, _opts) do
+    track_event(action, resource)
   end
 
   def track_event(type, resource) do

@@ -179,7 +179,7 @@ defmodule Bonny.Resource do
         opts
       )
 
-    {:ok, _} = K8s.Client.run(conn, op)
+    K8s.Client.run(conn, op)
   end
 
   def apply_status(_, _, _), do: :noop

@@ -9,61 +9,52 @@ defmodule Bonny.ControllerV2IntegrationTest do
   use ExUnit.Case, async: true
 
   alias Bonny.Test.IntegrationHelper
+  alias Bonny.Test.ResourceHelper
 
   setup_all do
-    Supervisor.start_link(
-      [TestResourceV2Controller, TestResourceV3Controller, ConfigMapController],
-      strategy: :one_for_one
-    )
+    timeout =
+      "TEST_WAIT_TIMEOUT"
+      |> System.get_env("5000")
+      |> String.to_integer()
 
-    # give the watcher time to initialize:
-    :timer.sleep(500)
+    conn = IntegrationHelper.conn()
 
     on_exit(fn ->
-      conn = IntegrationHelper.conn()
-
       delete_v2_op =
         K8s.Client.delete_all("example.com/v1", "TestResourceV2", namespace: "default")
 
-      delete_v3_op =
-        K8s.Client.delete_all("example.com/v1", "TestResourceV3", namespace: "default")
-
       {:ok, _} = K8s.Client.run(conn, delete_v2_op)
-      {:ok, _} = K8s.Client.run(conn, delete_v3_op)
     end)
 
-    :ok
+    start_link_supervised!({Bonny.Test.Operator, conn: conn})
+
+    [timeout: timeout]
   end
 
   setup do
     ref = make_ref()
 
-    resource_name =
-      "test-#{ref |> :erlang.ref_to_list() |> List.to_string() |> String.replace(~r(\D), "")}"
+    resource_name = "test-#{ref |> ResourceHelper.to_string() |> String.replace(~r(\D), "")}"
 
     conn = IntegrationHelper.conn()
 
-    timeout =
-      "TEST_WAIT_TIMEOUT"
-      |> System.get_env("2000")
-      |> String.to_integer()
-
-    [conn: conn, resource_name: resource_name, timeout: timeout, ref: ref]
+    [conn: conn, resource_name: resource_name, ref: ref]
   end
 
   @tag :integration
-  test "creating resource triggers add/1", %{
+  test "creating resource triggers controller", %{
     conn: conn,
     resource_name: resource_name,
     timeout: timeout,
     ref: ref
   } do
-    resource = IntegrationHelper.create_test_resource(resource_name, :v2, self(), ref)
+    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
+
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
 
     assert_receive(
-      {^ref, :added, ^resource_name},
+      {^ref, :add, ^resource_name},
       timeout
     )
   end
@@ -75,24 +66,24 @@ defmodule Bonny.ControllerV2IntegrationTest do
     timeout: timeout,
     ref: ref
   } do
-    resource = IntegrationHelper.create_test_resource(resource_name, :v2, self(), ref)
+    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
 
     assert_receive(
-      {^ref, :added, ^resource_name},
+      {^ref, :add, ^resource_name},
       timeout
     )
 
     apply_op =
       resource
-      |> put_in(["metadata", "labels"], %{"some" => "label"})
+      |> put_in(["spec", "rand"], "rand")
       |> K8s.Client.apply(field_manager: Bonny.Config.name())
 
     {:ok, _} = K8s.Client.run(conn, apply_op)
 
     assert_receive(
-      {^ref, :modified, ^resource_name},
+      {^ref, :modify, ^resource_name},
       timeout
     )
   end
@@ -104,12 +95,13 @@ defmodule Bonny.ControllerV2IntegrationTest do
     timeout: timeout,
     ref: ref
   } do
-    resource = IntegrationHelper.create_test_resource(resource_name, :v2, self(), ref)
+    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
     create_op = K8s.Client.create(resource)
+
     {:ok, _} = K8s.Client.run(conn, create_op)
 
     assert_receive(
-      {^ref, :added, ^resource_name},
+      {^ref, :add, ^resource_name},
       timeout
     )
 
@@ -117,70 +109,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     {:ok, _} = K8s.Client.run(conn, delete_op)
 
     assert_receive(
-      {^ref, :deleted, ^resource_name},
-      timeout
-    )
-
-    # create again so on_exit can delete it again
-    {:ok, _} = K8s.Client.run(conn, create_op)
-  end
-
-  @tag :integration
-  test "reconcile/1 is called", %{
-    conn: conn,
-    resource_name: resource_name,
-    timeout: timeout,
-    ref: ref
-  } do
-    resource =
-      IntegrationHelper.create_test_resource(resource_name, :v3, self(), ref,
-        labels: %{"version" => "3.2"}
-      )
-
-    create_op = K8s.Client.create(resource)
-    {:ok, _} = K8s.Client.run(conn, create_op)
-
-    start_supervised(TestResourceV32Controller)
-
-    assert_receive(
-      {^ref, :reconciled, ^resource_name},
-      timeout
-    )
-  end
-
-  @tag :integration
-  test "works for core resource controller", %{
-    conn: conn,
-    resource_name: resource_name,
-    timeout: timeout,
-    ref: ref
-  } do
-    resource = %{
-      "apiVersion" => "v1",
-      "kind" => "ConfigMap",
-      "metadata" => %{
-        "name" => resource_name,
-        "namespace" => "default"
-      },
-      "data" => %{
-        "pid" => "#{self() |> :erlang.pid_to_list() |> List.to_string()}",
-        "ref" => "#{ref |> :erlang.ref_to_list() |> List.to_string()}"
-      }
-    }
-
-    create_op = K8s.Client.create(resource)
-    {:ok, _} = K8s.Client.run(conn, create_op)
-
-    assert_receive(
-      {^ref, :added, ^resource_name},
-      timeout
-    )
-
-    delete_op = K8s.Client.delete(resource)
-    {:ok, _} = K8s.Client.run(conn, delete_op)
-
-    assert_receive(
-      {^ref, :deleted, ^resource_name},
+      {^ref, :delete, ^resource_name},
       timeout
     )
 
@@ -195,17 +124,12 @@ defmodule Bonny.ControllerV2IntegrationTest do
     timeout: timeout,
     ref: ref
   } do
-    resource =
-      IntegrationHelper.create_test_resource(resource_name, :v3, self(), ref,
-        labels: %{"version" => "3.1"}
-      )
+    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
 
-    # create
-    create_op = K8s.Client.create(resource)
-    {:ok, added_resource} = K8s.Client.run(conn, create_op)
+    {:ok, added_resource} = K8s.Client.run(conn, K8s.Client.create(resource))
 
     assert_receive(
-      {^ref, :added, ^resource_name},
+      {^ref, :add, ^resource_name},
       timeout
     )
 
@@ -215,7 +139,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
       K8s.Client.wait_until(conn, get_op,
         find: ["status", "observedGeneration"],
         eval: added_resource["metadata"]["generation"],
-        timeout: timeout
+        timeout: Integer.floor_div(timeout, 1000)
       )
 
     # update
@@ -227,7 +151,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     {:ok, updated_resource} = K8s.Client.run(conn, apply_op)
 
     assert_receive(
-      {^ref, :modified, ^resource_name},
+      {^ref, :modify, ^resource_name},
       timeout
     )
 
@@ -242,110 +166,35 @@ defmodule Bonny.ControllerV2IntegrationTest do
   end
 
   @tag :integration
-  test "reconciling resource sets observedGeneration", %{
+  test "creating resource creates success event", %{
     conn: conn,
     resource_name: resource_name,
     timeout: timeout,
     ref: ref
   } do
-    resource =
-      IntegrationHelper.create_test_resource(resource_name, :v3, self(), ref,
-        labels: %{"version" => "3.2"}
-      )
+    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
 
-    create_op = K8s.Client.create(resource)
-    {:ok, added_reource} = K8s.Client.run(conn, create_op)
-
-    start_supervised(TestResourceV32Controller)
+    {:ok, created_resource} = K8s.Client.run(conn, K8s.Client.create(resource))
 
     assert_receive(
-      {^ref, :reconciled, ^resource_name},
+      {^ref, :add, ^resource_name},
       timeout
     )
 
-    get_op = K8s.Client.get(resource)
+    list_event_opt =
+      K8s.Client.list("events.k8s.io/v1", "Event")
+      |> K8s.Operation.put_query_param(
+        :fieldSelector,
+        "regarding.uid=#{created_resource["metadata"]["uid"]}"
+      )
 
     {:ok, _} =
-      K8s.Client.wait_until(conn, get_op,
-        find: ["status", "observedGeneration"],
-        eval: added_reource["metadata"]["generation"],
-        timeout: timeout
+      K8s.Client.wait_until(conn, list_event_opt,
+        find: ["items", Access.all(), "regarding", "uid"],
+        eval: fn uids ->
+          created_resource["metadata"]["uid"] in uids
+        end,
+        timeout: Integer.floor_div(timeout, 1000)
       )
-  end
-
-  @tag :integration
-  test "action callbacks are not triggered if spec does not change", %{
-    conn: conn,
-    resource_name: resource_name,
-    timeout: timeout,
-    ref: ref
-  } do
-    resource =
-      IntegrationHelper.create_test_resource(resource_name, :v3, self(), ref,
-        labels: %{"version" => "3.1"}
-      )
-
-    create_op = K8s.Client.create(resource)
-    {:ok, added_resource} = K8s.Client.run(conn, create_op)
-
-    assert_receive(
-      {^ref, :added, ^resource_name},
-      timeout
-    )
-
-    get_op = K8s.Client.get(resource)
-
-    {:ok, _} =
-      K8s.Client.wait_until(conn, get_op,
-        find: ["status", "observedGeneration"],
-        eval: added_resource["metadata"]["generation"],
-        timeout: timeout
-      )
-
-    # updating metadata does not change the generation
-    apply_op =
-      resource
-      |> put_in(~w(metadata labels), %{"some" => "label"})
-      |> K8s.Client.apply(field_manager: Bonny.Config.name())
-
-    {:ok, updated_resource} = K8s.Client.run(conn, apply_op)
-    refute_receive({^ref, :modified, ^resource_name}, 1000)
-
-    # updating status does not change the generation
-    {_, updated_resource} =
-      updated_resource
-      |> put_in([Access.key("status", %{}), "rand"], "foo")
-      |> pop_in(~w(metadata managedFields))
-
-    apply_op =
-      K8s.Client.apply(
-        "example.com/v1",
-        "testresourcev3s/status",
-        [namespace: "default", name: resource_name],
-        updated_resource,
-        field_manager: Bonny.Config.name()
-      )
-
-    {:ok, _} = K8s.Client.run(conn, apply_op)
-    refute_receive({^ref, :modified, ^resource_name}, 1000)
-  end
-
-  # Skipped by default - run with --only reliability
-  @tag :reliability
-  test "callbacks are called reliably", %{conn: conn, timeout: timeout} do
-    Enum.each(1..1000, fn run ->
-      ref = make_ref()
-      resource_name = "test-rel-#{run}"
-
-      resource = IntegrationHelper.create_test_resource(resource_name, :v2, self(), ref)
-
-      create_op = K8s.Client.create(resource)
-      {:ok, _} = K8s.Client.run(conn, create_op)
-
-      assert_receive(
-        {^ref, :added, ^resource_name},
-        timeout
-      )
-    end)
   end
 end

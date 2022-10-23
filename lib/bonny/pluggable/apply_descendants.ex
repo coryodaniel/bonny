@@ -7,10 +7,14 @@ defmodule Bonny.Pluggable.ApplyDescendants do
     * `:events_for_actions` - List of actions for which events will be created
       upon successful apply. Defaults to `[:add, :modify]` (Reconcile actions
       are triggered regularly which would create lots of events for no actions.)
+    * `:force` and `:field_manager` - Options forwarded to `K8s.Client.apply()`.
 
   ## Examples
 
-      step Bonny.Pluggable.ApplyDescendants, events_for_actions: [:add, :modify, :reconcile]
+      step Bonny.Pluggable.ApplyDescendants,
+        events_for_actions: [:add, :modify, :reconcile],
+        field_manager: "MyOperator",
+        force: true
   """
 
   @behaviour Pluggable

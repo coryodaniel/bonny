@@ -2,8 +2,8 @@ defmodule Bonny.Operator do
   @moduledoc ~S"""
   Defines a Bonny operator.
 
-  The operator deifnes custom resources and (their) controllers
-  and serves as the entry point to the watching and handling
+  The operator resource defines custom resources, watch queries and their
+  controllers and serves as the entry point to the watching and handling
   processes.
 
   Overall, an operator has the following responsibilities:
@@ -22,11 +22,11 @@ defmodule Bonny.Operator do
 
   ## Operators
 
-  An operator is defined with the help of `Bonyy.Operator`. The step `:delegate_to_controller`
-  has do be part of the pipeline. It is the step that calls the handling controller
-  for a given action event:
+  An operator is defined with the help of `Bonyy.Operator`. The step
+  `:delegate_to_controller` has do be part of the pipeline. It is the step that
+  calls the handling controller for a given action event:
 
-      defmodule YourOperatorApp.Operator do
+      defmodule MyOperatorApp.Operator do
         use Bonny.Operator, default_watching_namespace: "default"
 
         # step ...
@@ -36,7 +36,8 @@ defmodule Bonny.Operator do
         def controllers(watching_namespace, _opts) do
           [
             %{
-              query: K8s.Client.list("your-controller.io", "YourCustomResource", namespace: nil)
+              query: K8s.Client.list("my-controller.io", "MyCustomResource", namespace: nil)
+              controller: MyOperator.Controller.MyCustomResourceController
             }
           ]
         end
@@ -54,7 +55,7 @@ defmodule Bonny.Operator do
           query: K8s.Operation.t()
         }
 
-  @callback controllers(binary(), Keyword.t()) :: controller_spec()
+  @callback controllers(binary(), Keyword.t()) :: list(controller_spec())
   @callback crds() :: list(Bonny.API.CRD.t())
 
   defmacro __using__(opts) do
@@ -64,13 +65,29 @@ defmodule Bonny.Operator do
       @behaviour Bonny.Operator
 
       unquote(server(opts))
+
+      @before_compile Bonny.Operator
+    end
+  end
+
+  def __before_compile__(env) do
+    if !Enum.any?(
+         Module.get_attribute(env.module, :steps),
+         &(elem(&1, 0) == :delegate_to_controller)
+       ) do
+      raise CompileError,
+        description:
+          "Operators must define a step :delegate_to_controller. Add it to #{env.module}."
     end
   end
 
   defp server(opts) do
     quote location: :keep do
       @default_watch_namespace unquote(opts)[:default_watch_namespace] ||
-                                 raise("operator expects :default_watch_namespace to be given")
+                                 raise(CompileError,
+                                   description:
+                                     "operator expects :default_watch_namespace to be given"
+                                 )
 
       @doc """
       Returns the child specification to start the operator
@@ -107,13 +124,8 @@ defmodule Bonny.Operator do
       Runs the controller pipeline for the current action event.
       """
       def delegate_to_controller(axn, _opts) do
-        result = axn.controller.call(axn, [])
-
-        # TODO: Create steps for these:
-        Bonny.Axn.apply_status(result)
-        Bonny.Axn.emit_events(result)
-
-        result
+        axn
+        |> axn.controller.call([])
       end
     end
   end
@@ -127,5 +139,6 @@ defmodule Bonny.Operator do
       operator: operator
     )
     |> operator.call([])
+    |> Bonny.Axn.emit_events()
   end
 end

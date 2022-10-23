@@ -8,10 +8,7 @@ if config_env() == :test do
       Widget,
       Cog,
       V1.Whizbang,
-      TestResource,
-      TestResourceV2Controller,
-      TestResourceV3Controller,
-      ConfigMapController
+      TestResource
     ],
     group: "example.com",
     versions: [Bonny.Test.API.V1],

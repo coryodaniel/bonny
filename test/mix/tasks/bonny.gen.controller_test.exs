@@ -166,7 +166,7 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
           ~r/.*Don't forget to add the controller to the list of controllers in your application config.*/,
           ""
         )
-        |> Code.eval_string()
+        |> Code.compile_string()
     end
 
     test "generated modules compile (deployment)", %{deployment_no_args: input} do
@@ -182,7 +182,7 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
           ~r/.*Don't forget to add the controller to the list of controllers in your application config.*/,
           ""
         )
-        |> Code.eval_string()
+        |> Code.compile_string()
     end
 
     test "generated modules compile (sealed secret)", %{sealed_secret_no_args: input} do
@@ -209,11 +209,8 @@ defmodule Mix.Tasks.Bonny.Gen.ControllerTest do
           Controller.run(["--out", "-"])
         end)
 
-      assert output =~ "def add(%{} = resource), do: apply(resource)"
-      assert output =~ "def modify(%{} = resource), do: apply(resource)"
-      assert output =~ "def delete(%{} = resource) do"
-      assert output =~ "def delete(%{} = resource) do"
-      assert output =~ "defp apply(resource) do"
+      assert output =~ "step :handle_event"
+      assert output =~ "def handle_event("
     end
 
     test "generates a test file", %{

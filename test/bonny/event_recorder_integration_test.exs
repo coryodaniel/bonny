@@ -7,7 +7,7 @@ defmodule Bonny.EventRecorderIntegrationTest do
 
   setup_all do
     conn = IntegrationHelper.conn()
-    Supervisor.start_link([{MUT, name: MUT}], strategy: :one_for_one)
+    start_supervised!({MUT, operator: __MODULE__})
 
     on_exit(fn ->
       delete_op =
@@ -35,9 +35,9 @@ defmodule Bonny.EventRecorderIntegrationTest do
       {:ok, resource} = K8s.Client.run(conn, apply_op)
 
       event = Bonny.Event.new!(resource, nil, :Normal, "testing", "test", "All good")
-      MUT.emit(event, MUT, conn)
-      MUT.emit(event, MUT, conn)
-      MUT.emit(event, MUT, conn)
+      MUT.emit(event, __MODULE__, conn)
+      MUT.emit(event, __MODULE__, conn)
+      MUT.emit(event, __MODULE__, conn)
 
       #  get the event where regarding.uid == the uid of the resource
       get_op =

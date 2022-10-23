@@ -37,16 +37,34 @@ defmodule Bonny.ControllerV2 do
 
   use Supervisor
 
+  @type api :: binary()
+  @type resource :: binary()
+  @type verb :: binary()
+  @type rbac_rule :: %{apiGroups: list(api()), resources: list(resource()), verbs: list(verb())}
+
+  @callback rbac_rules() :: list(rbac_rule)
+
   @doc false
   defmacro __using__(_opts) do
     quote do
       use Pluggable.StepBuilder
       import Bonny.Axn
+      import Bonny.ControllerV2, only: [to_rbac_rule: 1]
+      @behaviour Bonny.ControllerV2
 
-      def rules(), do: []
+      def rbac_rules(), do: []
 
-      defoverridable rules: 0
+      defoverridable rbac_rules: 0
     end
+  end
+
+  @spec to_rbac_rule({api | list(api), resource | list(resource), verb | list(verb)}) :: rbac_rule
+  def to_rbac_rule({api, resources, verbs}) do
+    %{
+      apiGroups: List.wrap(api),
+      resources: List.wrap(resources),
+      verbs: List.wrap(verbs)
+    }
   end
 
   def start_link(init_args) do
@@ -70,10 +88,9 @@ defmodule Bonny.ControllerV2 do
       |> Task.async_stream(&Bonny.Operator.run({:reconcile, &1}, controller, operator, conn))
 
     children = [
+      {Bonny.Server.AsyncStreamRunner, id: Watcher, stream: watcher_stream},
       {Bonny.Server.AsyncStreamRunner,
-       id: Watcher, stream: watcher_stream, termination_delay: 5_000},
-      {Bonny.Server.AsyncStreamRunner,
-       id: Reconciler, stream: reconciler_stream, termination_delay: 30_000}
+       id: Reconciler, stream: reconciler_stream, termination_delay: 30_001}
     ]
 
     Supervisor.init(
