@@ -25,7 +25,7 @@ defmodule Mix.Tasks.Bonny.Gen.Controller do
   @aliases [o: :out, h: :help]
 
   @shortdoc "Generate a new CRD Controller for this operator"
-  @spec run([binary()]) :: nil | :ok
+  @spec run([binary()]) :: Keyword.t()
   def run(args) do
     Mix.Bonny.no_umbrella!()
 

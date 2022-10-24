@@ -38,8 +38,8 @@ defmodule Bonny.Resource do
       "uid" => get_in(resource, ~w(metadata uid))
     }
 
-    namespace = K8s.Resource.FieldAccessors.namespace(resource)
-    if namespace, do: Map.put(ref, "namespace", namespace), else: ref
+    namespace = get_in(resource, ~w(metadata namespace))
+    if is_nil(namespace), do: ref, else: Map.put(ref, "namespace", namespace)
   end
 
   @doc """
