@@ -29,10 +29,9 @@ if config_env() == :dev do
     ]
 
   config :bonny,
-    get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "k3d-k8s-ex"]]},
+    get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "k3d-bonny-ex"]]},
     versions: [Bonny.API.V1],
     controllers: [
-      DeploymentEventLogController,
       TestScheduler
     ]
 

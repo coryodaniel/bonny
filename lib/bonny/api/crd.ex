@@ -8,8 +8,6 @@ defmodule Bonny.API.CRD do
   `build_for_controller!/1` macro.
   """
 
-  alias Bonny.API.ResourceEndpoint, as: APIDefinition
-
   @kind "CustomResourceDefinition"
   @api_version "apiextensions.k8s.io/v1"
 
@@ -123,27 +121,6 @@ defmodule Bonny.API.CRD do
       },
       spec: spec
     }
-  end
-
-  @doc """
-  The resource endpoint for this CRD.
-  """
-  @spec resource_endpoint(t()) :: Bonny.API.ResourceEndpoint.t()
-  def resource_endpoint(crd) do
-    manifest = to_manifest(crd)
-
-    APIDefinition.new!(
-      group: manifest.spec.group,
-      resource_type: manifest.spec.names.plural,
-      scope: manifest.spec.scope,
-      version: stored_version(manifest)
-    )
-  end
-
-  defp stored_version(manifest) do
-    manifest.spec.versions
-    |> Enum.find(&(&1.storage == true))
-    |> Map.get(:name)
   end
 
   defp assert_single_storage!(crd) do

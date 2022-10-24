@@ -35,7 +35,7 @@ defmodule Mix.Bonny do
 
   @spec render_template(binary(), binary(), keyword()) :: term()
   def render_template(source, "-", bindings) do
-    EEx.eval_file(source, bindings) |> IO.puts()
+    EEx.eval_file(source, bindings, trim: true) |> IO.puts()
   end
 
   def render_template(source, target, bindings),

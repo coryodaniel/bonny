@@ -42,7 +42,7 @@ defmodule Bonny.Config do
   """
   @spec instance_name() :: binary
   def instance_name() do
-    System.get_env("BONNY_POD_NAME") || name()
+    Application.get_env(:bonny, :instance_name) || name()
   end
 
   @doc """

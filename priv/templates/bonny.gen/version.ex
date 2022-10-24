@@ -1,6 +1,6 @@
-defmodule <%= String.replace_prefix("#{crd_version}", "Elixir.", "") %>.<%= crd_name %> do
+defmodule <%= @app_name %>.API.<%= @version %>.<%= @name %> do
   @moduledoc """
-  <%= app_name %>: <%= crd_name %> CRD <%= crd_version %> version.
+  <%= @app_name %>: <%= @name %> CRD <%= @version %> version.
 
   Modify the `manifest/0` function in order to override the defaults,
   e.g. to define an openAPIV3 schema, add subresources or additional
@@ -10,6 +10,7 @@ defmodule <%= String.replace_prefix("#{crd_version}", "Elixir.", "") %>.<%= crd_
   def manifest() do
     struct!(
       defaults(),
+      name: "<%= String.downcase(@version) %>",
       schema: %{
         openAPIV3Schema: %{
           type: :object,
@@ -41,6 +42,9 @@ defmodule <%= String.replace_prefix("#{crd_version}", "Elixir.", "") %>.<%= crd_
 
   @impl true
   def manifest() do
-    defaults()
+    struct!(
+      defaults(),
+      name: "<%= String.downcase(@version) %>"
+    )
   end
 end

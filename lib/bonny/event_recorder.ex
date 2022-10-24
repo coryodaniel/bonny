@@ -42,7 +42,6 @@ defmodule Bonny.EventRecorder do
       "apiVersion" => @api_version,
       "kind" => @kind,
       "metadata" => %{
-        "namespace" => Map.get(event.regarding, "namespace", "default"),
         "name" => "#{Map.fetch!(event.regarding, "name")}.#{unix_nano}"
       },
       "eventTime" => event_time,
@@ -55,6 +54,11 @@ defmodule Bonny.EventRecorder do
       "note" => event.message,
       "type" => event.event_type
     }
+
+    ns = event.regarding["namespace"]
+
+    event_manifest =
+      if ns, do: put_in(event_manifest, ~w(metadata namespace), ns), else: event_manifest
 
     event_manifest =
       get_cache(agent_name, key, event_manifest)

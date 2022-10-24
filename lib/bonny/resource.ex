@@ -31,13 +31,15 @@ defmodule Bonny.Resource do
   def resource_reference(nil), do: nil
 
   def resource_reference(resource) do
-    %{
+    ref = %{
       "apiVersion" => K8s.Resource.FieldAccessors.api_version(resource),
-      "namespace" => K8s.Resource.FieldAccessors.namespace(resource),
       "kind" => K8s.Resource.FieldAccessors.kind(resource),
       "name" => K8s.Resource.FieldAccessors.name(resource),
       "uid" => get_in(resource, ~w(metadata uid))
     }
+
+    namespace = K8s.Resource.FieldAccessors.namespace(resource)
+    if namespace, do: Map.put(ref, "namespace", namespace), else: ref
   end
 
   @doc """
