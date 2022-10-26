@@ -26,7 +26,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
       {:ok, _} = K8s.Client.run(conn, delete_v2_op)
     end)
 
-    start_link_supervised!({Bonny.Test.Operator, conn: conn})
+    {:ok, _} = Supervisor.start_link([{Bonny.Test.Operator, conn: conn}], strategy: :one_for_one)
 
     [timeout: timeout]
   end
