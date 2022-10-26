@@ -9,7 +9,7 @@ defmodule Bonny.API.CRDTest do
   defmodule V1 do
     use Version
 
-    def manifest(), do: struct!(defaults("v1"), storage: true)
+    def manifest(), do: struct!(defaults(), storage: true, name: "v1")
   end
 
   doctest MUT

@@ -208,9 +208,9 @@ defmodule Bonny.AxnTest do
     end
   end
 
-  describe "failed_event/2" do
+  describe "failure_event/2" do
     test "creates default event", %{axn: axn} do
-      result_axn = MUT.failed_event(axn)
+      result_axn = MUT.failure_event(axn)
 
       assert 1 == length(result_axn.events)
 
@@ -236,7 +236,7 @@ defmodule Bonny.AxnTest do
 
     test "creates event with custom messages", %{axn: axn} do
       result_axn =
-        MUT.failed_event(axn, message: "Custom Success Message", reason: "Custom Reason")
+        MUT.failure_event(axn, message: "Custom Success Message", reason: "Custom Reason")
 
       assert 1 == length(result_axn.events)
 
@@ -262,7 +262,7 @@ defmodule Bonny.AxnTest do
 
     test "does not override other fields", %{axn: axn, related: related} do
       result_axn =
-        MUT.failed_event(axn, action: "modify", event_type: :Warning, regarding: related)
+        MUT.failure_event(axn, action: "modify", event_type: :Warning, regarding: related)
 
       assert 1 == length(result_axn.events)
 
@@ -384,6 +384,19 @@ defmodule Bonny.AxnTest do
       assert_receive ^ref
     end
 
+    test "does not call registered callbacks if status is nil", %{axn: axn, ref: ref} do
+      axn
+      |> MUT.register_before_apply_status(fn resource, axn ->
+        assert is_struct(axn, Bonny.Axn)
+        send(self(), {:callback, resource["status"]["ref"] |> ResourceHelper.string_to_ref()})
+        resource
+      end)
+      |> MUT.apply_status()
+
+      refute_receive {:callback, ^ref}
+      refute_receive ^ref
+    end
+
     test "raises when alredy applied", %{axn: axn, ref: ref} do
       assert_raise Bonny.Axn.StatusAlreadyAppliedError, fn ->
         axn
@@ -417,8 +430,8 @@ defmodule Bonny.AxnTest do
     end
 
     test "Ommits owner reference if requested", %{axn: axn, related: related} do
-      %{descendants: [registered_descendant | _]} =
-        MUT.register_descendant(axn, related, ommit_owner_ref: true)
+      %{descendants: [registered_descendant | []]} =
+        MUT.register_descendant(axn, related, omit_owner_ref: true)
 
       assert is_nil(registered_descendant["metadata"]["ownerReferences"])
     end

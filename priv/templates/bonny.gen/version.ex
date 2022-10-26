@@ -42,9 +42,8 @@ defmodule <%= @app_name %>.API.<%= @version %>.<%= @name %> do
 
   @impl true
   def manifest() do
-    struct!(
-      defaults(),
-      name: "<%= String.downcase(@version) %>"
-    )
+    defaults()
+    |> struct!(name: "<%= String.downcase(@version) %>")
+    |> add_observed_generation_status()
   end
 end

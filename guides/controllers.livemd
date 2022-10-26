@@ -3,422 +3,269 @@
 ```elixir
 Mix.install(
   [
-    {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
+    :kino,
+    # {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"},
+    {:bonny, path: "/Users/mruoss/src/community/bonny"}
   ],
   force: true
 )
 
-Application.put_env(:bonny, :group, "example.com")
-Application.put_env(:bonny, :versions, [YourOperator.API.V1])
-Application.put_env(:bonny, :operator_name, "livebook-operator")
-
-# Dummy implementations used further down to prevent compilation warnings.
-defmodule LivebookEventHandlerImpl do
-  defmacro __using__(_) do
-    quote do
-      @impl true
-      def add(_res), do: :ok
-
-      @impl true
-      def modify(_res), do: :ok
-
-      @impl true
-      def delete(_res), do: :ok
-
-      @impl true
-      def reconcile(_res), do: :ok
-    end
-  end
-end
-
-# A Version used in this livebook
-defmodule YourOperator.API.V1.Apple do
-  use Bonny.API.Version
-
-  @impl true
-  def manifest(), do: defaults()
-end
+Application.put_env(:bonny, :operator_name, "livebook")
 ```
 
 ## Creating your first Controller
 
-Use `mix bonny.gen.controller` to create a controller. You are going to be asked whether you want to create a CRD for this controller or not. It defaults to `yes`, as in most cases you probably want to define a custom resource which you're goint to control with your controller. However, your controller could also act upon events on other resources like `configmaps`, `deployments` or even custom resources defined by other operators. The mix task will then guide you through the creation of controller and if applicable a CRD version (see [crd_versions.livemd](crd_versions.livemd)).
+When running `mix bonny.init`, the task asks you to define CRDs and controllers already. It is optional but I advise to do so as it initializes your operator them. To create additional controllers, run `mix bonny.gen.controller`.
 
-## Controlled Resource
+`mix bonny.gen.controller` does not register the controller with your operator. (Note however, that `mix bonny.init`does!) In order for your controller to do something, you need to add an entry to the `controllers/2` callback in your operator. See the operators guide for more information about operators.
 
-A controller watches for events of a certain resource type and acts upon them. Therefore, when `use`-ing `Bonny.ControllerV2`, you have to to define WHICH resource endpoint to "monitor". You do this through the `for_resource` options.
+## Action Event Handlers
 
-### Defining Custom Resources
+A controller is a [`Pluggable`](https://hex.pm/packages/pluggable) step and uses `Pluggable.StepBuilder` underneath. When an action event is dispatched, the controller is called and all its steps are executed.Your task is to add steps to the controller which process the action event.
 
-To configure a controller for a custom resource, you pass a `%Bonny.API.CRD{}` struct with the `for_resource` option. This will automatically add a function `crd_manifest/0` to your controller which is used by `mix bonny.gen.manifest` to generate the CRD manifest.
-
-```elixir
-defmodule AppleController do
-  use Bonny.ControllerV2,
-    for_resource: %Bonny.API.CRD{
-      group: "example.com",
-      scope: :Namespaced,
-      names: Bonny.API.CRD.kind_to_names("Apple"),
-      versions: [YourOperator.API.V1.Apple]
-    }
-
-  #  for this livebook only to prevent compilation warnings.
-  use LivebookEventHandlerImpl
-end
-
-AppleController.crd_manifest()
-```
-
-Instead of defining the full CRD, you can use the `Bonny.API.CRD.build_for_controller!/1` macro. It will define ommitted fields with defaults and guessed values:
-
-* API Group and Versions (`:group` and `:versions`) are taken from the application config
-* For CRD names, Bonny makes an educated guess using the controller's name. (e.g. `AppleController` => `Apple`)
+If you used `mix bonny.gen.controller` to create the controller, a `handle_event/2` step and its implementation are added to your controller by the script. Besides that, `mix bonny.gen.controller` also adds steps for skipping observed generations. See the section about [skipping observed generations](#skipping-observed-generations) for more information on those.
 
 ```elixir
 defmodule AppleController do
-  require Bonny.API.CRD
-
-  use Bonny.ControllerV2,
-    for_resource:
-      Bonny.API.CRD.build_for_controller!(
-        names: Bonny.API.CRD.kind_to_names("Peach"),
-        versions: [YourOperator.API.V1.Apple]
-      )
-
-  #  for this livebook only to prevent compilation warnings.
-  use LivebookEventHandlerImpl
-end
-
-AppleController.crd_manifest()
-```
-
-Finally, you can ommit `:for_resources` completely if you want to let Bonny do the work.
-
-```elixir
-defmodule AppleController do
-  require Bonny.API.CRD
-
   use Bonny.ControllerV2
 
-  #  for this livebook only to prevent compilation warnings.
-  use LivebookEventHandlerImpl
-end
+  step(:handle_event)
 
-AppleController.crd_manifest()
-```
-
-### A Controller for other Resources
-
-To configure a controller for let's say a core resource, you pass a `%Bonny.API.ResourceEndpoint{}` struct with the `for_resource` option. Note that **no** `crd_manifest/0` function is generated for this controller.
-
-```elixir
-defmodule DeploymentController do
-  require Bonny.API.CRD
-
-  use Bonny.ControllerV2,
-    for_resource: Bonny.API.ResourceEndpoint.new!("apps/v1", "Deployment")
-
-  #  for this livebook only to prevent compilation warnings.
-  use LivebookEventHandlerImpl
-end
-
-function_exported?(DeploymentController, :crd_manifest, 0)
-```
-
-Note that the example above uses `Bonny.API.ResourceEndpoint.new!/3` to define the resource endpoint.
-
-```elixir
-Bonny.API.ResourceEndpoint.new!("apps/v1", "Deployment")
-```
-
-```elixir
-Bonny.API.ResourceEndpoint.new!("rbac.authorization.k8s.io/v1", "ClusterRole", :Cluster)
-```
-
-## Event Handlers
-
-A controller must implements the `behaviour` defined by `Bonny.ControllerV2`. This means it must implement the following action callbacks to handle the events:
-
-* `add/1` - Called upon the resource's creation.
-* `delete/1` - Called upon the resource's deletion.
-* `modify/1` - Called upon the resource's modification.
-* `reconcile/1` - Called on a regular basis in case we missed an action or state diverges.
-
-If you used `mix bonny.gen.controller` to create the controller, `add/1` and `modify/1` are delegated to a function `apply/1`. Feel free to change this default behaviour.
-
-```elixir
-defmodule AppleController do
-  require Bonny.API.CRD
-
-  use Bonny.ControllerV2
-
-  @impl true
-  def add(resource) do
-    # Do your work (e.g. create further resources)
-    IO.inspect(resource)
-    :ok
+  # apply the resource
+  def handle_event(%Bonny.Axn{action: action} = axn, _opts)
+      when action in [:add, :modify, :reconcile] do
+    IO.inspect(axn.resource)
+    success_event(axn)
   end
 
-  @impl true
-  def modify(resource) do
-    # Do your work (e.g. create further resources)
-    IO.inspect(resource)
-    :ok
-  end
-
-  @impl true
-  def delete(resource) do
-    # Do your work (e.g. create further resources)
-    IO.inspect(resource)
-    :ok
-  end
-
-  @impl true
-  def reconcile(resource) do
-    # Do your work (e.g. create further resources)
-    IO.inspect(resource)
-    :ok
+  # delete the resource
+  def handle_event(%Bonny.Axn{action: :delete} = axn, _opts) do
+    IO.inspect(axn.resource)
+    axn
   end
 end
 ```
 
-### Return Values for Event Handlers
+The step(s) you implement are called with a `%Bonny.Axn{}` token. It contains the `action` which triggered this event, the `resource` the event regards and other fields. Use pattern matching or a adispatch mechanism to handle the four different action types:
 
-Your event handlers should return one of the following atoms or tuples:
+* `add/1` - resource was created in the cluster.
+* `delete/1` - resource was deleted from the cluster.
+* `modify/1` - resource was modified in the cluster.
+* `reconcile/1` - Called on a regular basis in case we missed an action or to fix diverged state.
 
-* `:ok` or `:error`  
-  Let Bonny know about success or filure.
-* `{:ok, "Custom event message"}` or `{:error, "Custom event message"}`  
-  (See section [Kubernetes Events](#kubernetes-events))
-* `{:ok, resource_with_status}` or `{:error, resource_with_status}`  
-  If you decide to set values inside the status subresource (`.status.*`), you can return the resource. Bonny is gonna apply the status for you.
-* `{:ok, "Custom event message", resource_with_status}` or `{:error, "Custom event message", resource_with_status}`  
-  The combination of the above.
+Your event handlers should return the struct it received as first parameter. However, your controller can use helper functions from the `Bonny.Axn` module to modify it before returning it.
 
-<!-- livebook:{"break_markdown":true} -->
+## Descending Resources
 
-### Features when creating further resources
+Your controller might create descending resources for its custom resource. For example, a `MyAppController` would create deployments and services for a `MyApp` resource.
 
-#### Owner Reference
+Use `Bonny.Axn.register_descendant/3` to add such descendants. Descendants are not directly applied to the cluster. They are only registered within the `%Bonny.Axn{}` token. **Note that you need to add step `Bonny.Pluggable.ApplyDescendants` to either your controller or operator in order to apply descendants to the cluster.**
 
-If your controller creates other resources for your custom resource (e.g. pods, services,...), it is best practice to reference the owner(s). In kubernetes, you do this by adding an entry to `.metadata.ownerReferences`. In your controller's action callbacks, you can use `add_owner_reference/2` for this:
+### Owner Reference
+
+If your controller creates descending resources for your custom resource, it is good practice to reference the owner(s). In kubernetes, you do this by adding an entry to `.metadata.ownerReferences`. `Bonny.Axn.register_descendant/3` does that for you unless you pass `ommit_owner_ref: true` as option.
 
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-defmodule OrangeController do
-  require Bonny.API.CRD
+defmodule MyAppController do
+  use Bonny.ControllerV2
 
-  use Bonny.ControllerV2,
-    for_resource:
-      Bonny.API.CRD.build_for_controller!(
-        # the only version we defined is an apple resource
-        versions: [YourOperator.API.V1.Apple]
-      )
+  step(:handle_event)
 
-  @impl true
-  def add(resource) do
-    %{
-      "apiVersion" => "v1",
-      "kind" => "Pod",
-      "metadata" => %{"name" => "nginx", "namespace" => "default"}
-      #  ...
+  # apply the resource
+  def handle_event(%Bonny.Axn{action: action} = axn, _opts)
+      when action in [:add, :modify, :reconcile] do
+    depl = %{
+      "apiVersion" => "apps/v1",
+      "kind" => "Deployment",
+      "metadata" => %{"namespace" => "default", "name" => axn.resource["metadata"]["name"]}
+      # spec
     }
-    |> add_owner_reference(resource)
-    |> IO.inspect()
 
-    # |> K8s.Client.create()
-    # |> then(&(K8s.Client.run(conn(), &1))
-    :ok
+    svc = %{
+      "apiVersion" => "v1",
+      "kind" => "Service",
+      "metadata" => %{"namespace" => "default", "name" => axn.resource["metadata"]["name"]}
+      # spec
+    }
+
+    axn
+    |> Bonny.Axn.register_descendant(depl)
+    |> Bonny.Axn.register_descendant(svc)
+    |> success_event()
   end
 
-  @impl true
-  def modify(_resource), do: :ok
-
-  @impl true
-  def delete(_resource), do: :ok
-
-  @impl true
-  def reconcile(_resource), do: :ok
+  # delete the resource
+  def handle_event(%Bonny.Axn{action: :delete} = axn, _opts) do
+    # nothing to do because of owner reference
+    success_event(axn)
+  end
 end
 ```
 
-Let's see the resulting resource:
+Let's see the result of the above event handler:
 
 ```elixir
-OrangeController.add(%{
-  "apiVersion" => "example.com/v1",
-  "kind" => "Orange",
-  "metadata" => %{
-    "name" => "golden",
-    "namespace" => "default",
-    "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
+Bonny.Axn.new!(
+  action: :add,
+  conn: nil,
+  resource: %{
+    "apiVersion" => "example.com/v1",
+    "kind" => "MyApp",
+    "metadata" => %{
+      "name" => "foo",
+      "namespace" => "default",
+      "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
+    }
   }
-})
+)
+|> MyAppController.call([])
+|> Map.get(:descendants)
 ```
-
-#### Events
-
-See the section [Kubernetes Events](#kubernetes-events) below.
-
-## Customizing Versions in the resulting CRD
-
-Refer to the [Versions](versions.livemd) user guide if you want to define your own OpenAPIV3 schema, add additional printer columns, etc.
-
-## RBAC Rules
-
-Your controller might need special permissions on the kubernetes cluster. Maybe it needs to be able to read secrets. Or it has to be able to create pods. These permissions need to be reflected in the final manifest generated by `mix bonny.gen.manifest` through RBAC rules.
-
-You can define such rules one by one using the `rbac_rule` macro. These rules have to be defined as a tuple in the form `{apiGroup :: binary(), resources :: list(), verb :: list()}`:
-
-```elixir
-defmodule PearController do
-  require Bonny.API.CRD
-
-  use Bonny.ControllerV2,
-    for_resource:
-      Bonny.API.CRD.build_for_controller!(
-        # the only version we defined is an apple resource
-        versions: [YourOperator.API.V1.Apple]
-      )
-
-  # Additional RBAC Rules
-  rbac_rule({"", ["secrets"], ["get", "watch", "list"]})
-  rbac_rule({"v1", ["pods"], ["get", "watch", "list"]})
-
-  #  for this livebook only to prevent compilation warnings.
-  use LivebookEventHandlerImpl
-end
-
-# When generating the manifest, an auto-generated function `rules/0` is called.
-Pear.rules()
-```
-
-## Skipping Observed Generations
-
-One of the kubernetes operator best practices is observing generations. [This blog post explains it really well.](https://alenkacz.medium.com/kubernetes-operator-best-practices-implementing-observedgeneration-250728868792). It is extremly useful especially when you work with status subresources to not get another `modify` event for updating the status.
-
-Bonny supports skipping observed generations of you set the `skip_observed_generations` option to true (see below). If you do this, `add` and `modify` callbacks are not called if a generation has already been observed before.
-
-Behind the scenes, if you set `skip_observed_generations: true`, Bonny adds the status subresource and a field `.status.observedGeneration` to the stored version in your CRD. At runtime, whenever your action callbacks return `:ok`, Bonny updates the status subresource and sets that field to equal `.metadata.generation`.
-
-```elixir
-defmodule PlumController do
-  require Bonny.API.CRD
-
-  use Bonny.ControllerV2,
-    for_resource:
-      Bonny.API.CRD.build_for_controller!(
-        # the only version we defined is an apple resource
-        versions: [YourOperator.API.V1.Apple]
-      ),
-    skip_observed_generations: true
-
-  #  for this livebook only to prevent compilation warnings.
-  use LivebookEventHandlerImpl
-end
-
-plum_version_manifest = Plum.crd_manifest() |> get_in([:spec, :versions]) |> hd()
-```
-
-```elixir
-# subresource was added
-plum_version_manifest.subresources
-```
-
-```elixir
-# schema was added
-plum_version_manifest.schema.openAPIV3Schema.properties.status
-```
-
-### Some important remarks
-
-* When enabling skipping of observed generations, you MUST re-generate the manifest using `mix bonny.gen.manifest`.
-* Your `apply/1` (and/or `add/1` and `modify/1`) callbacks are not called if you change the metadata of a resource, e.g. labels or annotations (since only changing the spec increments the generation).
-* The `reconcile/1` action is meant to "fix" deviated states. Therefore it is always called, even if the reconciled generation has already been observed.
 
 ## Kubernetes Events
 
 Kubernetes events provide a way to report back to the client. A Kubernetes event always references the object to which the event relates. For a controller the regarding object would be the handled resource. The user can then use `kubectl describe` on the custom resource to see the events.
 
-For any `:add`, `:modify` or `:delete` action, Bonny creates events for the handled resource.
+Use `Bonny.Axn.success_event/2`, `Bonny.Axn.failure_event/2` or `Bonny.Axn.add_event/2` do register events in the `%Bonny.Axn{}` struct. Events are going to be applied to the cluster at the end of the Operator pipeline. There is no need to register a `step` for that.
 
-* If the handler returns `:ok` or one of the allowed result tuples with `:ok` as first element, an event of type `Normal` is created with a default or the given message.
-* If the handler returns `:error` or one of the allowed result tuples with `:error` as first element, an event of type `Warning` is created with a default or the given message.
+```elixir
+defmodule MyResourceController do
+  use Bonny.ControllerV2
+
+  step(:handle_event)
+
+  def handle_event(axn, _) when axn.action == :add do
+    Bonny.Axn.success_event(axn)
+  end
+
+  def handle_event(axn, _) when axn.action == :modify do
+    Bonny.Axn.failure_event(axn)
+  end
+end
+
+action = Kino.Input.select("Test Events", add: "Success", modify: "Failure")
+```
+
+```elixir
+resource = %{
+  "apiVersion" => "example.com/v1",
+  "kind" => "MyApp",
+  "metadata" => %{
+    "name" => "foo",
+    "namespace" => "default",
+    "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
+  }
+}
+
+action = Kino.Input.read(action)
+axn = Bonny.Axn.new!(action: action, conn: nil, resource: resource)
+MyResourceController.call(axn, []) |> Map.get(:events)
+```
+
+## RBAC Rules
+
+Your controller might need special permissions on the kubernetes cluster. Maybe it needs to be able to read secrets. Or it has to be able to create pods. These permissions need to be reflected in the final manifest generated by `mix bonny.gen.manifest` through RBAC rules.
+
+You can define such rules one by defining the `rbac_rules/0` callback. This callback should return a list of rbac rules of the following spec:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+@type rbac_rule :: %{
+  apiGroups: list(binary()), 
+  resources: list(binary()), 
+  binary()s: list(binary())}
+```
+
+You can use the helper function `to_rbac_rule/1` to convert a tuple to an rbac rule. Its spec is:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+  @spec to_rbac_rule({
+    binary() | list(binary()), 
+    binary() | list(binary()), 
+    binary() | list(binary())
+  }) :: rbac_rule
+```
+
+```elixir
+defmodule MySecondResourceController do
+  use Bonny.ControllerV2
+
+  @impl Bonny.ControllerV2
+  def rbac_rules() do
+    [
+      to_rbac_rule(
+        {"apps/v1", "Deployment", ["get", "list", "create", "update", "patch", "delete"]}
+      )
+    ]
+  end
+end
+
+MySecondResourceController.rbac_rules()
+```
+
+## Skipping Observed Generations
+
+One of the kubernetes operator best practices is observing generations. [This blog post explains it really well](https://alenkacz.medium.com/kubernetes-operator-best-practices-implementing-observedgeneration-250728868792). It is extremly useful especially when you work with status subresources to not get another `modify` event for updating the status.
+
+Bonny skips observed generations if you add the `Bonny.Pluggable.SkipObservedGenrations` step to your controller.
+
+`Bonny.Pluggable.SkipObservedGenrations` compares the current resource's fields `.metadata.generation` with the field defined by the `:observed_generation_key` option (`.status.observedGeneration` by default). It halts the pipeline if the two values match, i.e. if the resource generation had already been observed.
+
+You can define for which actions this rule applies by adding the option `:actions` when placing the step. By default this rule applies to `[:add, :modify]` actions.
+
+Finally, before the resource status is applied, the module copies the value in `.metadata.generation` to the field defined by the `:observed_generation_key` option (`.status.observedGeneration` by default).
 
 ### Example
 
-Assume the following handler for an `ADDED` event:
-
-<!-- livebook:{"force_markdown":true} -->
+This example shows how only `:reconcile` and `:delete` events are handled by the controller:
 
 ```elixir
-def add(resource) do
-  # do the work
-  {:ok, "All good over here."}
-end
-```
+defmodule MyThirdResourceController do
+  use Bonny.ControllerV2
 
-Now we can use `kubectl` to create and describe a resource:
+  step(Bonny.Pluggable.SkipObservedGenerations,
+    #  default
+    actions: [:add, :modify],
+    #  default
+    observed_generation_key: ["status", "observedGeneration"]
+  )
 
-```bash
-$ kubectl apply -f orange_named_carl.yaml
-orange.example.com/carl created
+  step(:handle_event)
 
-$ kubectl describe orange carl
-Name:         carl
-Namespace:    default
-...
-Events:
-  Type     Reason        Age    From             Message
-  ----     ------        ----   ----             -------
-  Normal  SuccessfulAdd  45s    ExampleOperator  All good over here.
-
-```
-
-<!-- livebook:{"break_markdown":true} -->
-
-### Manual Event Creation
-
-Besides the events described above which are created by Bonny, you can create your own events. This is especially useful when your controller creates further resources. For this purpose, Bonny adds functions `event/5` and `event/6` to your controller. You can call it from within any event handler:
-
-<!-- livebook:{"force_markdown":true} -->
-
-```elixir
-@doc """
-Creates a kubernetes event.
-
-  * regarding: regarding contains the object this Event is about.
-    In most cases it's an Object reporting controller implements,
-    e.g. ReplicaSetController implements ReplicaSets and this event
-    is emitted because it acts on some changes in a ReplicaSet object.
-  * related: the related related is the optional secondary object for
-    more complex actions. E.g. when regarding object triggers a creation
-    or deletion of related object.
-  * event_type: `:Normal` or `:Warning`
-  * reason: reason is why the action was taken. It is human-readable.
-    This field cannot be empty for new Events and it can have at most
-    128 characters.
-    e.g "SuccessfulResourceCreation"
-  * action: e.g. "Add"
-  * message: note is a human-readable description of the status of this operation
-"""
-event(regarding, related \\ nil, event_type, reason, action, message)
-```
-
-Note the second argument called `related`. This is where you would pass the resource that was created or modified within your event handler:
-
-<!-- livebook:{"force_markdown":true} -->
-
-```elixir
-def add(resource) do
-  pod = K8s.Client.create("v1", "pod", name: "foobar", namespace: resource["metadata"]["namespace"])
-  case K8s.Client.run(pod) do
-    {:ok, created_pod} ->
-      event(resource, created_pod, :Normal, "SuccessfulPodCreation", "The pod \"foobar\" was created successfully")
-      :ok
-    {:error, _} ->
-      {:error, "An error occurred during the creation of pod \"foobar\"."}
+  def handle_event(axn, _) do
+    IO.puts("handling #{axn.action} event.")
+    axn
   end
 end
+
+action =
+  Kino.Input.select("Test Events",
+    add: "add",
+    modify: "modify",
+    reconcile: "reconcile",
+    delete: "delete"
+  )
+```
+
+```elixir
+resource = %{
+  "apiVersion" => "example.com/v1",
+  "kind" => "MyApp",
+  "metadata" => %{
+    "name" => "foo",
+    "namespace" => "default",
+    "uid" => "e19b6f40-3293-11ed-a261-0242ac120002",
+    "generation" => 1
+  },
+  "status" => %{"observedGeneration" => 1}
+}
+
+axn = Bonny.Axn.new!(action: Kino.Input.read(action), conn: nil, resource: resource)
+MyThirdResourceController.call(axn, [])
+:ok
 ```

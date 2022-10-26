@@ -13,9 +13,8 @@ defmodule TestResourceV2Controller do
 
   use Bonny.ControllerV2
 
-  step(Bonny.Pluggable.SkipObservedGenerations)
-  step(:handle_action)
-  step(Bonny.Pluggable.SetObservedGeneration)
+  step Bonny.Pluggable.SkipObservedGenerations
+  step :handle_action
 
   def handle_action(axn, _opts) do
     respond(axn.resource, axn.action)

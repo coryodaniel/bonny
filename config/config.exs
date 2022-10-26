@@ -37,3 +37,8 @@ if config_env() == :dev do
 
   # config :elixir, :dbg_callback, {Macro, :dbg, []}
 end
+
+config :logger,
+  compile_time_purge_matching: [
+    [library: :k8s]
+  ]

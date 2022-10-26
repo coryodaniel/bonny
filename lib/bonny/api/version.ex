@@ -146,14 +146,14 @@ defmodule Bonny.API.Version do
     quote do
       @behaviour Bonny.API.Version
       import Bonny.API.Version,
-        only: [defaults: 0, defaults: 1, add_observed_generation_status: 1]
+        only: [defaults: 0, add_observed_generation_status: 1]
 
       @hub Keyword.get(unquote(opts), :hub, false)
     end
   end
 
-  defmacro defaults(name \\ nil) do
-    name = name || __extract_version__(__CALLER__.module)
+  defmacro defaults() do
+    name = __extract_version__(__CALLER__.module)
 
     quote do
       struct!(Bonny.API.Version,

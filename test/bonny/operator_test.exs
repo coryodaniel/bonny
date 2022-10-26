@@ -21,7 +21,7 @@ defmodule Bonny.OperatorTest do
     defmodule SomeOperator3 do
       use Bonny.Operator, default_watch_namespace: "default"
 
-      step(:delegate_to_controller)
+      step :delegate_to_controller
 
       def controllers(_, _), do: []
       def crds(), do: []

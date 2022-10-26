@@ -13,8 +13,12 @@ defmodule Bonny.Mix.Operator do
         name: Bonny.Config.service_account(),
         labels: labels()
       },
-      rules: Enum.uniq(base_rules() ++ legacy_rules() ++ operator_rules(operators))
+      rules: rbac_rules(operators)
     }
+  end
+
+  def rbac_rules(operators) do
+    Enum.uniq(base_rules() ++ legacy_rules() ++ operator_rules(operators))
   end
 
   defp base_rules() do

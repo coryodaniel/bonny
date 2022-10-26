@@ -2,9 +2,10 @@ defmodule Bonny.Test.Operator do
   @moduledoc false
   use Bonny.Operator, default_watch_namespace: "default"
 
-  step(:delegate_to_controller)
-  step(Bonny.Pluggable.ApplyStatus)
+  step :delegate_to_controller
+  step Bonny.Pluggable.ApplyStatus
 
+  @impl Bonny.Operator
   def controllers(watching_namespace, _opts) do
     [
       %{
@@ -14,6 +15,7 @@ defmodule Bonny.Test.Operator do
     ]
   end
 
+  @impl Bonny.Operator
   def crds() do
     [
       %Bonny.API.CRD{

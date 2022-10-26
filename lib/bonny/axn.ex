@@ -62,8 +62,8 @@ defmodule Bonny.Axn do
     :action,
     :conn,
     :resource,
-    :status,
     :controller,
+    status: nil,
     assigns: %{},
     private: %{},
     descendants: [],
@@ -159,8 +159,8 @@ defmodule Bonny.Axn do
   @doc """
   Registers a failure event to the `%Axn{}` token to be emitted by Bonny.
   """
-  @spec failed_event(t(), Keyword.t()) :: t()
-  def failed_event(axn, opts \\ []) do
+  @spec failure_event(t(), Keyword.t()) :: t()
+  def failure_event(axn, opts \\ []) do
     action_string = axn.action |> Atom.to_string() |> String.capitalize()
 
     event =
@@ -199,7 +199,7 @@ defmodule Bonny.Axn do
   Registers a decending object to be applied.
   Owner reference will be added automatically.
   Adding the owner reference can be disabled by passing the option
-  `ommit_owner_ref: true`.
+  `omit_owner_ref: true`.
   """
   @spec register_descendant(t(), Resource.t(), Keyword.t()) :: t()
   def register_descendant(axn, descendant, opts \\ [])
@@ -210,7 +210,7 @@ defmodule Bonny.Axn do
 
   def register_descendant(axn, descendant, opts) do
     descendant =
-      if opts[:ommit_owner_ref],
+      if opts[:omit_owner_ref],
         do: descendant,
         else: Resource.add_owner_reference(descendant, axn.resource)
 
@@ -282,9 +282,9 @@ defmodule Bonny.Axn do
       {:ok, _} ->
         mark_status_applied(axn)
 
-      _ ->
+      _other ->
         axn
-        |> failed_event(
+        |> failure_event(
           reason: "Failed applying status",
           message: "The status subresource could not be applied."
         )
@@ -335,7 +335,7 @@ defmodule Bonny.Axn do
       {descendant, {:error, _}}, acc ->
         acc
         |> clear_events()
-        |> failed_event(
+        |> failure_event(
           reason: "Applying descendant failed",
           message:
             "Failed to apply #{K8s.Resource.FieldAccessors.kind(descendant)} #{K8s.Resource.FieldAccessors.name(descendant)} to the cluster."

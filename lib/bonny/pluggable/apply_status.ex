@@ -1,6 +1,6 @@
 defmodule Bonny.Pluggable.ApplyStatus do
   @moduledoc """
-  Applies the status `%Bonny.Axn{}` struct to the status subresource.
+  Applies the status of the given `%Bonny.Axn{}` struct to the status subresource.
 
   ## Options
 

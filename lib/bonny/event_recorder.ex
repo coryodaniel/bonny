@@ -104,5 +104,5 @@ defmodule Bonny.EventRecorder do
     }
   end
 
-  defp agent_name(operator), do: Module.concat(__MODULE__, operator)
+  defp agent_name(operator), do: Module.concat(operator, EventRecorder)
 end

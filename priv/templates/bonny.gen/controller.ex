@@ -7,9 +7,8 @@ defmodule <%= app_name %>.Controller.<%= controller_name %> do
 
   step Bonny.Pluggable.SkipObservedGenerations
   step :handle_event
-  step Bonny.Pluggable.SetObservedGeneration
 
-  # apply the resource
+  # apply the resource
   def handle_event(%Bonny.Axn{action: action} = axn, _opts)
       when action in [:add, :modify, :reconcile] do
     IO.inspect(axn.resource)

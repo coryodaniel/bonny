@@ -140,7 +140,10 @@ defmodule Bonny.Resource do
   """
   @spec apply(t(), K8s.Conn.t(), Keyword.t()) :: K8s.Client.Runner.Base.result_t()
   def apply(resource, conn, opts) do
-    opts = Keyword.merge([field_manager: Bonny.Config.name(), force: true], opts)
+    opts =
+      Keyword.merge([force: true], opts)
+      |> Keyword.put_new_lazy(:field_manager, fn -> Bonny.Config.name() end)
+
     op = K8s.Client.apply(resource, opts)
     K8s.Client.run(conn, op)
   end
@@ -150,8 +153,11 @@ defmodule Bonny.Resource do
   """
   @spec apply_async(list(t()), K8s.Conn.t(), Keyword.t()) ::
           list({t(), K8s.Client.Runner.Base.result_t()})
-  def apply_async(resources, conn, opts) do
-    opts = Keyword.merge([field_manager: Bonny.Config.name(), force: true], opts)
+  def apply_async(resources, conn, opts \\ []) do
+    opts =
+      Keyword.merge([force: true], opts)
+      |> Keyword.put_new_lazy(:field_manager, fn -> Bonny.Config.name() end)
+
     ops = Enum.map(resources, &K8s.Client.apply(&1, opts))
     results = K8s.Client.async(conn, ops)
     Enum.zip(resources, results)
@@ -167,7 +173,9 @@ defmodule Bonny.Resource do
 
   def apply_status(resource, conn, opts)
       when is_map_key(resource, "status") or is_map_key(resource, :status) do
-    opts = Keyword.merge([field_manager: Bonny.Config.name(), force: true], opts)
+    opts =
+      Keyword.merge([force: true], opts)
+      |> Keyword.put_new_lazy(:field_manager, fn -> Bonny.Config.name() end)
 
     op =
       K8s.Client.apply(
