@@ -90,7 +90,7 @@ defmodule Bonny.ControllerV2 do
     children = [
       {Bonny.Server.AsyncStreamRunner, id: Watcher, stream: watcher_stream},
       {Bonny.Server.AsyncStreamRunner,
-       id: Reconciler, stream: reconciler_stream, termination_delay: 30_001}
+       id: Reconciler, stream: reconciler_stream, termination_delay: 30_000}
     ]
 
     Supervisor.init(
