@@ -150,7 +150,10 @@ defmodule Bonny.Operator do
   @spec maybe_remove_namespace_params(list(controller_spec()), binary() | :all) ::
           list(controller_spec())
   def maybe_remove_namespace_params(controllers, :all) do
-    pop_in(controllers, [Access.all(), :query, Access.key(:path_params), :namespace])
+    {_, controllers} =
+      pop_in(controllers, [Access.all(), :query, Access.key(:path_params, %{}), :namespace])
+
+    controllers
   end
 
   def maybe_remove_namespace_params(controllers, _), do: controllers
