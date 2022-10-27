@@ -110,7 +110,7 @@ defmodule Bonny.CRD do
       kind: @kind,
       metadata: %{
         name: "#{crd.names.plural}.#{crd.group}",
-        labels: Bonny.Operator.labels()
+        labels: Bonny.Config.labels()
       },
       spec: spec
     }

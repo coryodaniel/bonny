@@ -105,6 +105,9 @@
       ]
     }
   ],
+  <%= for {version, crds} <- @grouped_crds do %>
+  "<%= @api_group %>/<%= String.downcase(version) %>": <%= Jason.encode!(crds) %>,
+  <% end %>
   "events.k8s.io/v1": [
     {
       "kind": "Event",

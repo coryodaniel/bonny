@@ -3,80 +3,64 @@
 ```elixir
 Mix.install(
   [
-    {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
+    # {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
+    {:bonny, path: "/Users/mruoss/src/community/bonny"}
   ],
   force: true
 )
 
-Application.put_env(:bonny, :group, "example.com")
 Application.put_env(:bonny, :operator_name, "livebook-operator")
+```
 
-# Dummy implementations used further down to prevent compilation warnings.
-defmodule LivebookEventHandlerImpl do
-  defmacro __using__(_) do
-    quote do
-      @impl true
-      def add(_res), do: :ok
+## CRD Definition and Versions
 
-      @impl true
-      def modify(_res), do: :ok
+When defining your operator (`use Bonny.Operator`), you have to implement the callback `crds/0` where you define your custom resources. A custom resource definition (CRD) is represented by a `%Bonny.API.CRD{}` struct which defines 4 fields:
 
-      @impl true
-      def delete(_res), do: :ok
+* `:scope` - either `:Namespaced` or `:Cluster`
 
-      @impl true
-      def reconcile(_res), do: :ok
-    end
+* `:group` - The API group of your controller / this resource
+
+* `:names` - A map with 3-4 keys defining the names of this resource.
+
+  * `plural`: name to be used in the URL: `/apis/<group>/<version>/<plural>` - e.g. crontabs
+  * `singular`: singular name to be used as an alias on the CLI and for display - e.g. crontab
+  * `kind`: is normally the CamelCased singular type. Your resource manifests use this. - e.g. CronTab
+  * `shortnames`: allow shorter string to match your resource on the CLI - e.g. [ct]
+
+* `versions`: list of API Version modules for this Resource, defaults to the versions in config.exs
+
+```elixir
+defmodule MyOperator.Operator do
+  use Bonny.Operator, default_watch_namespace: "default"
+
+  step(:delegate_to_controller)
+
+  def controllers(_watching_namespace, _opts), do: []
+
+  def crds() do
+    [
+      %Bonny.API.CRD{
+        names: %{kind: "CronTab", plural: "crontabs", shortNames: ["ct"], singular: "crontab"},
+        group: "example.com",
+        versions: [MyOperator.API.V1.CronTab],
+        scope: :Namespaces
+      }
+    ]
   end
 end
 ```
 
-## API Groups and API Versions
-
-Since API Version `apiextensions.k8s.io/v1`, resources of kind `CustomResourceDefinition` 
-contain a [list of versions](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#create-a-customresourcedefinition) in `.spec.versions`. This could lead to the assumption that versioning is done at the resource level. However, this is not the case. The following quote is taken from the [Kubernetes API documentation](https://kubernetes.io/docs/concepts/overview/kubernetes-api/#api-groups-and-versioning):
-
-> Versioning is done at the API level rather than at the resource or field level to ensure that the API presents a clear, consistent view of system resources and behavior, and to enable controlling access to end-of-life and/or experimental APIs.
-
-We can take from this that a Kubernetes operator is expected to define one or multiple consistent versions of its API. Bonny therefore expects you to define a list of api versions 
-in the application configuration (`config/config.exs` resp. `config/bonny.exs`).
-
-If you're using `mix bonny.init` to initialize your operator, you will be asked to enter a verions. This is gonna be the first version of your operator's API.
-
-<!-- livebook:{"force_markdown":true} -->
+We're going to look at [version manifest declaration](#version-manifest-declaration) in more detail in just a moment.  For now, let's just define a simple API version `v1` for the `CronTab` custom resource with just defaults for all the fields. You do this by defining a module that starts with the API declared in the application configuration (`YourOperator.API.V1`), followed by the CRD name (`CronTab`). The module must `use Bonny.API.Version` which expects you to implement `manifest/0`.
 
 ```elixir
-config :bonny,
-  versions: [YourOperator.API.V1]
-```
-
-```elixir
-# For this livebook:
-Application.put_env(:bonny, :versions, [YourOperator.API.V1])
-```
-
-The config field takes a list of Elixir module atoms. **Note that these modules don't have to exist!** The module names are going to be used as prefixes for your actual CRD versions (e.g. `YourOperator.API.V1.CronTab`).
-
-## CRD Controllers and Versions
-
-When defining a V2 controller (`use Bonny.ControllerV2`), you can ommit the `:for_resource` options in order to let bonny make assumptions on the CRD (for a documentation on the `:for_resource` option, refer to the [controllers user guide](controllers.livemd)). Note however hat in this case, bonny is going to look for CRD API Version modules inside your application and if you haven't defined them, the controller won't compile:
-
-```elixir
-defmodule YourOperator.Controller.WidgetController do
-  require Bonny.API.CRD
-
-  use Bonny.ControllerV2
-end
-```
-
-We're going to look at version declaration in more detail in just a moment.  For now, let's just define a simple API version `v1` for the `CronTab` custom resource with just defaults for all the fields. You do this by defining a module that starts with the API declared in the application configuration (`YourOperator.API.V1`), followed by the CRD name (`CronTab`). The module must `use Bonny.API.Version` which expects you to implement `manifest/0`.
-
-```elixir
-defmodule YourOperator.API.V1.CronTab do
+defmodule MyOperator.API.V1.CronTab do
   use Bonny.API.Version
 
   @impl Bonny.API.Version
-  def manifest(), do: struct!(defaults(), storage: true)
+  def manifest() do
+    defaults()
+    |> struct!(name: "v1", storage: true)
+  end
 end
 
 YourOperator.API.V1.CronTab.manifest()
@@ -85,35 +69,15 @@ YourOperator.API.V1.CronTab.manifest()
 Now, if we define a `CronTabController`, Bonny finds this version and add it to the CRD manifest.
 
 ```elixir
-defmodule YourOperator.Controller.CronTabController do
-  require Bonny.API.CRD
+crds =
+  [MyOperator.Operator]
+  |> Bonny.Mix.Operator.crds()
+  |> Ymlr.documents!()
 
-  use Bonny.ControllerV2
-
-  #  for this livebook only to prevent compilation warnings.
-  use LivebookEventHandlerImpl
-end
-
-YourOperator.Controller.CronTabController.crd_manifest()
+IO.puts(crds)
 ```
 
-You _can_ define the version modules explicitely when defining a controller. This way, the versions defined in your application configuration won't be consulted. As an example, we can re-define our `WidgetController` from above but this time configure it to use the API Version defined for the `CronTab` custom resource.
-
-```elixir
-defmodule YourOperator.Controller.WidgetController do
-  require Bonny.API.CRD
-
-  use Bonny.ControllerV2,
-    for_resource: Bonny.API.CRD.build_for_controller!(versions: [YourOperator.API.V1.CronTab])
-
-  #  for this livebook only to prevent compilation warnings.
-  use LivebookEventHandlerImpl
-end
-
-YourOperator.Controller.WidgetController.crd_manifest()
-```
-
-## API Declaration
+## Version Manifest Declaration
 
 Our `V1.CronTab` module called the `defaults/0` macro from `manifest/0`. This macro helps initializing a generic version with no schema, subresources or additional printer columns. The `storage` flag is set to false (see [Multi-Version APIs](#multi-version-apis) further down). For the other flags `:served` and `:deprecated` such as the field `:deprecatedWarning`, assumptions are made.
 
@@ -171,20 +135,13 @@ end
 YourOperator.API.V1Alpha1.Widget.manifest()
 ```
 
+Note that the usage of `Bonny.API.Version` imports the helper `add_observed_generation_status/1` to your module. Use it to add the fields to your manifest required by the `Bonny.Pluggable.SkipObservedGeneartions` pluggable step. See the [controllers guide](./controllers.livemd#skipping-observed-generations) for further information on this.
+
 ## Multi-Version APIs
 
 There is some [documentation](https://book.kubebuilder.io/multiversion-tutorial/tutorial.html) about multi-version apis for the kubebuilder. Obviousely, that one is for creating a kubernetes controller in Go, but it's a good read nontheless. This is how it begins:
 
 > Most projects start out with an alpha API that changes release to release. However, eventually, most projects will need to move to a more stable API. Once your API is stable though, you can't make breaking changes to it. That's where API versions come into play.
-
-As described in the first section, if your operator supports multiple versions, they have to be defined in the application config.
-
-<!-- livebook:{"force_markdown":true} -->
-
-```elixir
-config :bonny,
-  versions: [YourOperator.API.V1, YourOperator.API.V2]
-```
 
 ### Conversion
 
@@ -199,7 +156,7 @@ defmodule YourOperator.API.V1.CronTab do
 
   @impl Bonny.API.Version
   # storage: true not needed here.
-  def manifest(), do: defaults()
+  def manifest(), do: defaults(name: "v1")
 end
 
 YourOperator.API.V1.CronTab.manifest()

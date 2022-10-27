@@ -9,9 +9,10 @@ defmodule Bonny.ControllerIntegrationTest do
   use ExUnit.Case, async: true
 
   alias Bonny.Test.IntegrationHelper
+  alias Bonny.Test.ResourceHelper
 
   setup_all do
-    Supervisor.start_link([TestResource], strategy: :one_for_one)
+    start_supervised!(TestResource)
     # give the watcher time to initialize:
     :timer.sleep(500)
 
@@ -48,7 +49,7 @@ defmodule Bonny.ControllerIntegrationTest do
     timeout: timeout,
     ref: ref
   } do
-    resource = IntegrationHelper.create_test_resource(resource_name, :v1, self(), ref)
+    resource = ResourceHelper.test_resource(resource_name, :v1, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
     assert_receive({^ref, :added, ^resource_name}, timeout)
@@ -61,7 +62,7 @@ defmodule Bonny.ControllerIntegrationTest do
     timeout: timeout,
     ref: ref
   } do
-    resource = IntegrationHelper.create_test_resource(resource_name, :v1, self(), ref)
+    resource = ResourceHelper.test_resource(resource_name, :v1, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
     assert_receive({^ref, :added, ^resource_name}, timeout)
@@ -82,7 +83,7 @@ defmodule Bonny.ControllerIntegrationTest do
     timeout: timeout,
     ref: ref
   } do
-    resource = IntegrationHelper.create_test_resource(resource_name, :v1, self(), ref)
+    resource = ResourceHelper.test_resource(resource_name, :v1, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
     assert_receive({^ref, :added, ^resource_name}, timeout)

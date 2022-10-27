@@ -32,7 +32,7 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
   """
 
   use Mix.Task
-  alias Bonny.Operator
+  alias Bonny.Mix.Operator
 
   @default_opts [namespace: "default", local: false]
   @switches [out: :string, namespace: :string, image: :string, local: :boolean]
@@ -68,9 +68,11 @@ defmodule Mix.Tasks.Bonny.Gen.Manifest do
   end
 
   defp resource_manifests(%{namespace: namespace}) do
-    Operator.crds() ++
+    operators = Operator.find_operators()
+
+    Operator.crds(operators) ++
       [
-        Operator.cluster_role(),
+        Operator.cluster_role(operators),
         Operator.service_account(namespace),
         Operator.cluster_role_binding(namespace)
       ]

@@ -1,37 +1,31 @@
 defmodule <%= app_name %>.Controller.<%= controller_name %>Test do
   @moduledoc false
   use ExUnit.Case, async: false
+  use Bonny.Axn.Test
+
   alias <%= app_name %>.Controller.<%= controller_name %>
 
-  describe "add/1" do
-    test "returns :ok" do
-      event = %{}
-      result = <%= controller_name %>.add(event)
-      assert result == :ok
-    end
+  test "add is handled and returns axn" do
+    axn = axn(:add)
+    result = <%= controller_name %>.call(axn, [])
+    assert is_struct(result, Bonny.Axn)
   end
 
-  describe "modify/1" do
-    test "returns :ok" do
-      event = %{}
-      result = <%= controller_name %>.modify(event)
-      assert result == :ok
-    end
+  test "modify is handled and returns axn" do
+    axn = axn(:modify)
+    result = <%= controller_name %>.call(axn, [])
+    assert is_struct(result, Bonny.Axn)
   end
 
-  describe "reconcile/1" do
-    test "returns :ok" do
-      event = %{}
-      result = <%= controller_name %>.reconcile(event)
-      assert result == :ok
-    end
+  test "reconcile is handled and returns axn" do
+    axn = axn(:reconcile)
+    result = <%= controller_name %>.call(axn, [])
+    assert is_struct(result, Bonny.Axn)
   end
 
-  describe "delete/1" do
-    test "returns :ok" do
-      event = %{}
-      result = <%= controller_name %>.delete(event)
-      assert result == :ok
-    end
+  test "delete is handled and returns axn" do
+    axn = axn(:delete)
+    result = <%= controller_name %>.call(axn, [])
+    assert is_struct(result, Bonny.Axn)
   end
 end

@@ -17,6 +17,7 @@ defmodule Mix.Tasks.Bonny.Init do
   }
   @rfc_1123_subdomain_check ~r/^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/
   @dns_1035_label_check ~r/^[a-z]([-a-z0-9]*[a-z0-9])?$/
+  @dns_1035_label_check_with_uppercase ~r/^[a-zA-Z]([-A-Za-z0-9]*[A-Za-z0-9])?$/
   def run(_args) do
     input =
       [
@@ -26,12 +27,23 @@ defmodule Mix.Tasks.Bonny.Init do
       ]
       |> get_input()
 
-    create_discovery_file()
+    input = create_controllers(input)
+    create_version_files(input)
+    create_operator_file(input)
+    create_application_file(input)
+    create_discovery_file(input)
     create_conn_file(input)
     create_config_file(input)
     import_bonny_config_in_main_config()
     add_dynamic_http_provder_to_test_helper()
     create_manifest_customizer(input)
+
+    Owl.IO.puts([
+      Owl.Data.tag(
+        "Don't forget to configure the generated application module #{input[:app_name]}.Application to mix.exs",
+        :yellow
+      )
+    ])
   end
 
   def get_input(input \\ []) do
@@ -54,30 +66,6 @@ defmodule Mix.Tasks.Bonny.Init do
         input
         |> Keyword.delete(:api_group)
         |> get_input()
-
-      is_nil(input[:version]) ->
-        version =
-          Owl.IO.input(
-            label:
-              "Please enter the API Version of your controller in Elixir module form, e.g. V1 or V1Alpha1"
-          )
-
-        next_input =
-          if valid_dns_1035_label?(String.downcase(version)) do
-            input
-            |> Keyword.put(
-              :version,
-              "#{Mix.Bonny.app_name()}.API.#{Mix.Bonny.ensure_module_name(version)}"
-            )
-          else
-            Mix.Bonny.error(
-              "Invalid value: #{inspect(input[:version])}. A DNS-1035 label must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character"
-            )
-
-            input
-          end
-
-        get_input(next_input)
 
       is_nil(input[:operator_name]) ->
         default = Mix.Bonny.hyphenated_app_name()
@@ -111,7 +99,7 @@ defmodule Mix.Tasks.Bonny.Init do
         define_resources? =
           Owl.IO.confirm(
             message:
-              ~s(Would you like to customize the resources? Defaults to #{inspect(@default_resources)}")
+              ~s(Would you like to customize the resources of your kubernets deployment? Defaults to #{inspect(@default_resources)}")
           )
 
         input
@@ -135,15 +123,209 @@ defmodule Mix.Tasks.Bonny.Init do
         |> Keyword.put(:define_resources?, false)
         |> get_input()
 
+      is_nil(input[:crd_done]) ->
+        proposition = if input[:crds], do: "another", else: "a"
+
+        if Owl.IO.confirm(
+             message: "Would you like to define #{proposition} custom resource?",
+             default: is_nil(input[:crds])
+           ) do
+          crd = get_crd_input()
+
+          input
+          |> Keyword.update(:crds, [crd], &[crd | &1])
+          |> get_input()
+        else
+          input
+          |> Keyword.put(:crds, List.wrap(input[:crds]))
+          |> Keyword.put(:crd_done, true)
+          |> get_input()
+        end
+
+      length(input[:crds]) > 0 && is_nil(input[:create_controllers]) ->
+        create_controllers =
+          Owl.IO.confirm(
+            message: "Would you like to create controllers for your custom resources?",
+            default: true
+          )
+
+        input
+        |> Keyword.put(:create_controllers, create_controllers)
+        |> get_input()
+
       true ->
         input
     end
   end
 
-  defp create_discovery_file() do
+  defp get_crd_input(input \\ []) do
+    cond do
+      is_nil(input[:name]) ->
+        crd_name = Owl.IO.input(label: "What's the name (kind) of the Custom Resource?")
+
+        input
+        |> Keyword.put(:name, crd_name)
+        |> get_crd_input()
+
+      !valid_dns_1035_label_with_uppdercase?(input[:name]) ->
+        Mix.Bonny.error(
+          "The CRD name you defined (#{input[:name]}) is not a valid kubernetes kind!"
+        )
+
+        input
+        |> Keyword.delete(:name)
+        |> get_crd_input()
+
+      is_nil(input[:version]) ->
+        version =
+          Owl.IO.input(
+            label:
+              "Please enter the API Version of your custom resource in Elixir module form, e.g. V1 or V1Alpha1"
+          )
+
+        next_input =
+          if valid_dns_1035_label?(String.downcase(version)) do
+            input
+            |> Keyword.put(
+              :version,
+              Mix.Bonny.ensure_module_name(version)
+            )
+          else
+            Mix.Bonny.error(
+              "Invalid value: #{inspect(input[:version])}. A DNS-1035 label must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character"
+            )
+
+            input
+          end
+
+        get_crd_input(next_input)
+
+      is_nil(input[:scope]) ->
+        scope =
+          Owl.IO.select(
+            [:Namespaced, :Cluster],
+            label: "What is the scope of your resource?",
+            render_as: &Atom.to_string/1
+          )
+
+        input
+        |> Keyword.put(:scope, scope)
+        |> get_crd_input()
+
+      true ->
+        input
+    end
+  end
+
+  defp create_controllers(input) do
+    controllers =
+      for crd <- input[:crds] do
+        controller_name = crd[:name] <> "Controller"
+        controller = Mix.Task.run("bonny.gen.controller", [controller_name])
+        Mix.Task.reenable("bonny.gen.controller")
+        Keyword.merge(controller, crd)
+      end
+
+    Keyword.put(input, :controllers, controllers)
+  end
+
+  defp create_version_files(input) do
+    for crd <- input[:crds] do
+      binding = Keyword.merge(crd, Keyword.take(input, [:app_name]))
+      version_out = crd_version_path(crd[:version], Macro.underscore(crd[:name]))
+
+      "version.ex"
+      |> Mix.Bonny.template()
+      |> Mix.Bonny.render_template(
+        version_out,
+        binding
+      )
+    end
+  end
+
+  defp create_operator_file(input) do
+    input =
+      input
+      |> update_in([:crds, Access.all()], fn crd ->
+        Bonny.API.CRD.new!(
+          names: Bonny.API.CRD.kind_to_names(crd[:name]),
+          scope: crd[:scope],
+          group: input[:api_group],
+          versions: [
+            Module.concat([String.to_atom(input[:app_name]), API, crd[:version], crd[:name]])
+          ]
+        )
+      end)
+      |> update_in([:controllers, Access.all()], fn controller ->
+        api_version = "#{input[:api_group]}/#{String.downcase(controller[:version])}"
+
+        controller_module =
+          Module.concat([input[:app_name], Controller, controller[:controller_name]])
+
+        if controller[:scope] == :Namespaced do
+          quote do
+            %{
+              query:
+                K8s.Client.list(unquote(api_version), unquote(controller[:name]),
+                  namespace: watching_namespace
+                ),
+              controller: unquote(controller_module)
+            }
+          end
+        else
+          quote do
+            %{
+              query: K8s.Client.list(unquote(api_version), unquote(controller[:name])),
+              controller: unquote(controller_module)
+            }
+          end
+        end
+      end)
+
+    output_file = "lib/#{input[:app_dir_name]}/operator.ex"
+
+    "init/operator.ex"
+    |> Mix.Bonny.template()
+    |> Mix.Bonny.render_template(
+      output_file,
+      input
+    )
+
+    Mix.Task.run("format", [output_file])
+  end
+
+  defp create_application_file(input) do
+    "init/application.ex"
+    |> Mix.Bonny.template()
+    |> Mix.Bonny.render_template(
+      "lib/#{input[:app_dir_name]}/application.ex",
+      input
+    )
+  end
+
+  defp create_discovery_file(input) do
+    grouped_crds =
+      Enum.group_by(
+        input[:crds],
+        & &1[:version],
+        fn crd ->
+          names = Bonny.API.CRD.kind_to_names(crd[:name])
+
+          %{
+            kind: names.kind,
+            name: names.plural,
+            namespaced: crd[:scope] == :Namespaced,
+            verbs: ["*"]
+          }
+        end
+      )
+
     "init/discovery.json"
     |> Mix.Bonny.template()
-    |> Mix.Bonny.copy("test/support/discovery.json")
+    |> Mix.Bonny.render_template("test/support/discovery.json",
+      grouped_crds: grouped_crds,
+      api_group: input[:api_group]
+    )
   end
 
   defp create_config_file(input) do
@@ -198,6 +380,13 @@ defmodule Mix.Tasks.Bonny.Init do
     )
   end
 
+  defp crd_version_path(version, crd) do
+    Path.join(["lib", Mix.Bonny.app_dir_name(), String.downcase(version), "#{crd}.ex"])
+  end
+
   defp valid_rfc_1123_subdomain?(string), do: String.match?(string, @rfc_1123_subdomain_check)
   defp valid_dns_1035_label?(string), do: String.match?(string, @dns_1035_label_check)
+
+  defp valid_dns_1035_label_with_uppdercase?(string),
+    do: String.match?(string, @dns_1035_label_check_with_uppercase)
 end

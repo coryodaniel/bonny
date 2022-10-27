@@ -5,4 +5,4 @@ Logger.configure(level: :error)
 K8s.Sys.Logger.attach()
 Bonny.Sys.Logger.attach()
 
-ExUnit.start(exclude: [:integration, :reliability])
+ExUnit.start(exclude: [:integration, :reliability, :skip])

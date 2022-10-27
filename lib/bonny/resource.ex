@@ -31,13 +31,15 @@ defmodule Bonny.Resource do
   def resource_reference(nil), do: nil
 
   def resource_reference(resource) do
-    %{
+    ref = %{
       "apiVersion" => K8s.Resource.FieldAccessors.api_version(resource),
-      "namespace" => K8s.Resource.FieldAccessors.namespace(resource),
       "kind" => K8s.Resource.FieldAccessors.kind(resource),
       "name" => K8s.Resource.FieldAccessors.name(resource),
       "uid" => get_in(resource, ~w(metadata uid))
     }
+
+    namespace = get_in(resource, ~w(metadata namespace))
+    if is_nil(namespace), do: ref, else: Map.put(ref, "namespace", namespace)
   end
 
   @doc """
@@ -134,25 +136,57 @@ defmodule Bonny.Resource do
     do: Map.update!(resource, "metadata", &Map.delete(&1, "managedFields"))
 
   @doc """
-  Applies the status subresource of the given resource. Requires to pass the
-  plural form of the resource kind.
+  Applies the given resource to the cluster.
+  """
+  @spec apply(t(), K8s.Conn.t(), Keyword.t()) :: K8s.Client.Runner.Base.result_t()
+  def apply(resource, conn, opts) do
+    opts =
+      Keyword.merge([force: true], opts)
+      |> Keyword.put_new_lazy(:field_manager, fn -> Bonny.Config.name() end)
+
+    op = K8s.Client.apply(resource, opts)
+    K8s.Client.run(conn, op)
+  end
+
+  @doc """
+  Applies the given resource to the cluster.
+  """
+  @spec apply_async(list(t()), K8s.Conn.t(), Keyword.t()) ::
+          list({t(), K8s.Client.Runner.Base.result_t()})
+  def apply_async(resources, conn, opts \\ []) do
+    opts =
+      Keyword.merge([force: true], opts)
+      |> Keyword.put_new_lazy(:field_manager, fn -> Bonny.Config.name() end)
+
+    ops = Enum.map(resources, &K8s.Client.apply(&1, opts))
+    results = K8s.Client.async(conn, ops)
+    Enum.zip(resources, results)
+  end
+
+  @doc """
+  Applies the status subresource of the given resource to the cluster.
   If the given resource doesn't contain a status object, nothing is done and
   :noop is returned.
   """
-  @spec apply_status(t(), binary(), K8s.Conn.t()) :: K8s.Client.Runner.Base.result_t() | :noop
-  def apply_status(resource, resource_type, conn)
+  @spec apply_status(t(), K8s.Conn.t(), Keyword.t()) :: K8s.Client.Runner.Base.result_t() | :noop
+  def apply_status(resource, conn, opts \\ [])
+
+  def apply_status(resource, conn, opts)
       when is_map_key(resource, "status") or is_map_key(resource, :status) do
+    opts =
+      Keyword.merge([force: true], opts)
+      |> Keyword.put_new_lazy(:field_manager, fn -> Bonny.Config.name() end)
+
     op =
       K8s.Client.apply(
         resource["apiVersion"],
-        resource_type <> "/status",
+        {resource["kind"], "Status"},
         [
           namespace: get_in(resource, ~w(metadata namespace)),
           name: get_in(resource, ~w(metadata name))
         ],
         drop_managed_fields(resource),
-        field_manager: Bonny.Config.name(),
-        force: true
+        opts
       )
 
     K8s.Client.run(conn, op)

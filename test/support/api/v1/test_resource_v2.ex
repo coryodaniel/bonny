@@ -14,12 +14,15 @@ defmodule Bonny.Test.API.V1.TestResourceV2 do
               type: :object,
               properties: %{
                 pid: %{type: :string},
-                ref: %{type: :string}
-              }
+                ref: %{type: :string},
+                rand: %{type: :string}
+              },
+              required: ["pid", "ref"]
             }
           }
         }
       }
     )
+    |> add_observed_generation_status()
   end
 end
