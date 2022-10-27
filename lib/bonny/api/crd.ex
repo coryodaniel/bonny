@@ -82,26 +82,6 @@ defmodule Bonny.API.CRD do
   end
 
   @doc """
-  This macro can be used from inside a controller to build a new
-  %Bonny.API.CRD{} struct. It's going to derive the CRD names from the
-  controller's module name and takes the group from config.
-  """
-  defmacro build_for_controller!(fields \\ []) do
-    kind =
-      __CALLER__.module
-      |> Module.split()
-      |> Enum.reverse()
-      |> hd()
-      |> String.replace_suffix("Controller", "")
-
-    quote do
-      unquote(fields)
-      |> Keyword.put_new_lazy(:names, fn -> Bonny.API.CRD.kind_to_names(unquote(kind)) end)
-      |> Bonny.API.CRD.new!()
-    end
-  end
-
-  @doc """
   Converts the internally used structure to a map representing a kubernetes CRD manifest.
   """
   @spec to_manifest(__MODULE__.t()) :: map()
