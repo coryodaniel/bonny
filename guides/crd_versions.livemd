@@ -3,8 +3,7 @@
 ```elixir
 Mix.install(
   [
-    # {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
-    {:bonny, path: "/Users/mruoss/src/community/bonny"}
+    {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
   ],
   force: true
 )
@@ -16,18 +15,18 @@ Application.put_env(:bonny, :operator_name, "livebook-operator")
 
 When defining your operator (`use Bonny.Operator`), you have to implement the callback `crds/0` where you define your custom resources. A custom resource definition (CRD) is represented by a `%Bonny.API.CRD{}` struct which defines 4 fields:
 
-* `:scope` - either `:Namespaced` or `:Cluster`
+- `:scope` - either `:Namespaced` or `:Cluster`
 
-* `:group` - The API group of your controller / this resource
+- `:group` - The API group of your controller / this resource
 
-* `:names` - A map with 3-4 keys defining the names of this resource.
+- `:names` - A map with 3-4 keys defining the names of this resource.
 
-  * `plural`: name to be used in the URL: `/apis/<group>/<version>/<plural>` - e.g. crontabs
-  * `singular`: singular name to be used as an alias on the CLI and for display - e.g. crontab
-  * `kind`: is normally the CamelCased singular type. Your resource manifests use this. - e.g. CronTab
-  * `shortnames`: allow shorter string to match your resource on the CLI - e.g. [ct]
+  - `plural`: name to be used in the URL: `/apis/<group>/<version>/<plural>` - e.g. crontabs
+  - `singular`: singular name to be used as an alias on the CLI and for display - e.g. crontab
+  - `kind`: is normally the CamelCased singular type. Your resource manifests use this. - e.g. CronTab
+  - `shortnames`: allow shorter string to match your resource on the CLI - e.g. [ct]
 
-* `versions`: list of API Version modules for this Resource, defaults to the versions in config.exs
+- `versions`: list of API Version modules for this Resource, defaults to the versions in config.exs
 
 ```elixir
 defmodule MyOperator.Operator do
@@ -50,7 +49,7 @@ defmodule MyOperator.Operator do
 end
 ```
 
-We're going to look at [version manifest declaration](#version-manifest-declaration) in more detail in just a moment.  For now, let's just define a simple API version `v1` for the `CronTab` custom resource with just defaults for all the fields. You do this by defining a module that starts with the API declared in the application configuration (`YourOperator.API.V1`), followed by the CRD name (`CronTab`). The module must `use Bonny.API.Version` which expects you to implement `manifest/0`.
+We're going to look at [version manifest declaration](#version-manifest-declaration) in more detail in just a moment. For now, let's just define a simple API version `v1` for the `CronTab` custom resource with just defaults for all the fields. You do this by defining a module that starts with the API declared in the application configuration (`YourOperator.API.V1`), followed by the CRD name (`CronTab`). The module must `use Bonny.API.Version` which expects you to implement `manifest/0`.
 
 ```elixir
 defmodule MyOperator.API.V1.CronTab do

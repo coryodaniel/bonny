@@ -4,8 +4,7 @@
 Mix.install(
   [
     :kino,
-    # {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"},
-    {:bonny, path: "/Users/mruoss/src/community/bonny"}
+    {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
   ],
   force: true
 )
@@ -122,6 +121,42 @@ Bonny.Axn.new!(
 )
 |> MyAppController.call([])
 |> Map.get(:descendants)
+```
+
+## Resource Status
+
+Controllers should use the resource's status to communicate back data to the client. This can be results from underlaying APIs or stats. In your handler, use `Bonny.Axn.update_status/2` to update the status.
+
+```elixir
+defmodule StatusController do
+  use Bonny.ControllerV2
+
+  step(:handle_event)
+
+  def handle_event(axn, _) do
+    axn
+    |> Bonny.Axn.update_status(fn status ->
+      put_in(status, [Access.key(:some, %{}), :field], "foo")
+    end)
+    |> Bonny.Axn.success_event()
+  end
+end
+```
+
+```elixir
+resource = %{
+  "apiVersion" => "example.com/v1",
+  "kind" => "MyApp",
+  "metadata" => %{
+    "name" => "foo",
+    "namespace" => "default",
+    "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
+  }
+}
+
+Bonny.Axn.new!(action: :add, conn: nil, resource: resource)
+|> StatusController.call([])
+|> Map.get(:status)
 ```
 
 ## Kubernetes Events
