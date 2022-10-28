@@ -57,7 +57,7 @@ defmodule Bonny.MixProject do
       {:inflex, "~> 2.0"},
       {:jason, "~> 1.1"},
       # {:k8s, "~> 1.1"},
-      {:k8s, git: "https://github.com/coryodaniel/k8s.git", branch: "develop"},
+      {:k8s, "~> 1.1"},
       {:owl, "~> 0.5.1", runtime: false},
       {:pluggable, "~> 1.0"},
       {:telemetry, "~> 1.0"},

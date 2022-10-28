@@ -118,7 +118,6 @@ defmodule Bonny.Operator do
 
         controllers =
           controllers(watch_namespace, init_args)
-          |> Bonny.Operator.maybe_remove_namespace_params(watch_namespace)
           |> Enum.map(&Map.to_list(&1))
 
         Bonny.Operator.Supervisor.start_link(controllers, __MODULE__, init_args)
@@ -145,16 +144,4 @@ defmodule Bonny.Operator do
     |> operator.call([])
     |> Bonny.Axn.emit_events()
   end
-
-  @doc false
-  @spec maybe_remove_namespace_params(list(controller_spec()), binary() | :all) ::
-          list(controller_spec())
-  def maybe_remove_namespace_params(controllers, :all) do
-    {_, controllers} =
-      pop_in(controllers, [Access.all(), :query, Access.key(:path_params, %{}), :namespace])
-
-    controllers
-  end
-
-  def maybe_remove_namespace_params(controllers, _), do: controllers
 end
