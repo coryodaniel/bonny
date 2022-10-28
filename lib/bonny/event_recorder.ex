@@ -42,7 +42,8 @@ defmodule Bonny.EventRecorder do
       "apiVersion" => @api_version,
       "kind" => @kind,
       "metadata" => %{
-        "name" => "#{Map.fetch!(event.regarding, "name")}.#{unix_nano}"
+        "name" => "#{Map.fetch!(event.regarding, "name")}.#{unix_nano}",
+        "namespace" => Map.get(event.regarding, "namespace", "default")
       },
       "eventTime" => event_time,
       "reportingController" => event.reporting_controller,
@@ -72,7 +73,7 @@ defmodule Bonny.EventRecorder do
         put_cache(agent_name, key, event_manifest)
         :ok
 
-      _ ->
+      _error ->
         :error
     end
   end
