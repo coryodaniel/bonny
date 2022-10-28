@@ -45,4 +45,13 @@ defmodule Bonny.Axn.Test do
     |> Keyword.put_new(:resource, @default_resource)
     |> Bonny.Axn.new!()
   end
+
+  @spec descendants(Bonny.Axn.t()) :: list(Bonny.Resource.t())
+  def descendants(%Bonny.Axn{descendants: descendants}), do: descendants
+
+  @spec events(Bonny.Axn.t()) :: list(Bonny.Event.t())
+  def events(%Bonny.Axn{events: events}), do: events
+
+  @spec status(Bonny.Axn.t()) :: map()
+  def status(%Bonny.Axn{status: status}), do: status
 end

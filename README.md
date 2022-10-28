@@ -36,7 +36,7 @@ end
 ```
 
 Install dependencies and initialize bonny. This task will ask you
-to answer a few questions about your controller
+to answer a few questions about your operator.
 
 Refer to the [kubernetes docs](https://kubernetes.io/docs/concepts/overview/kubernetes-api/#api-groups-and-versioning) for
 API group and API version.
@@ -46,15 +46,7 @@ mix deps.get
 mix bonny.init
 ```
 
-Now you can generate your controllers.
-
-```
-mix bonny.gen.controller
-```
-
-Again, you'll be asked questions regarding your controller. Refer to the [controllers guide](guides/controllers.livemd) for further information.
-
-Don't forget to add your controller to the list of controllers in `config/bonny.exs`
+**Don't forget to add the generated operator module to your application supervisor.**
 
 ### Configuration
 
@@ -62,34 +54,14 @@ Don't forget to add your controller to the list of controllers in `config/bonny.
 
 #### Configuring Bonny
 
-Bonny uses the [k8s client](https://github.com/coryodaniel/k8s) under the hood.
-
-The only configuration parameters required are `:bonny` `controllers` and a `:get_conn` callback (Note: this file will not exist unless you created it using `mix bonny.init`):
+Configuring bonny is necessary for the manifest generation through `mix bonny.gen.manifest`.
 
 ```elixir
 
 config :bonny,
-  # Add each Controller module for this operator to load here
-  # Defaults to none. This *must* be set.
-  controllers: [
-    MyApp.Controllers.WebServer,
-    MyApp.Controllers.Database,
-    MyApp.Controllers.Memcached
-  ],
-
   # Function to call to get a K8s.Conn object.
   # The function should return a %K8s.Conn{} struct or a {:ok, %K8s.Conn{}} tuple
   get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "docker-for-desktop"]]},
-
-  # The API version of the CRD.
-  # Defaults to "apiextensions.k8s.io/v1beta1" which is not supported
-  # by newer versions of Kubernetes anymore.
-  api_version: "apiextensions.k8s.io/v1",
-
-  # The namespace to watch for Namespaced CRDs.
-  # Defaults to "default". `:all` for all namespaces
-  # Also configurable via environment variable `BONNY_POD_NAMESPACE`
-  namespace: "default",
 
   # Set the Kubernetes API group for this operator.
   # This can be overwritten using the @group attribute of a controller
@@ -146,6 +118,7 @@ iex -S mix
 Have a look at the guides that come with this repository. Some can even be opened as a livebook.
 
 - [Mix Tasks](guides/mix_tasks.md)
+- [The Operator](guides/the_operator.livemd)
 - [Controllers](guides/controllers.livemd)
 - [Testing Controllers](guides/testing.livemd)
 - [CRD Versions](guides/crd_versions.livemd)

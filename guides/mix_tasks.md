@@ -35,23 +35,7 @@ additional printer columns, etc.
 Your operator can also have multiple controllers if you want to watch multiple
 resources in your operator. Just run the mix task again.
 
-### Generating a dockerfile
-
-The following command will generate a dockerfile _for your operator_. This will need to be pushed to a docker repository that your Kubernetes cluster can access.
-
-Again, this Dockerfile is for your operator, not for the pods your operator may deploy.
-
-You can skip this step when developing by running your operator _external_ to the cluster.
-
-```shell
-mix bonny.gen.dockerfile
-
-export BONNY_IMAGE=YOUR_IMAGE_NAME_HERE
-docker build -t ${BONNY_IMAGE} .
-docker push ${BONNY_IMAGE}:latest
-```
-
-### Generating Kubernetes manifest for operator
+### Generating Kubernetes manifest for operator (`mix bonny.gen.manifest`)
 
 This will generate the entire manifest for this operator including:
 
@@ -80,4 +64,20 @@ _Alternatively you can apply it directly to kubectl_:
 
 ```shell
 mix bonny.gen.manifest --out - -n test | kubectl apply -f - -n test
+```
+
+### Generating a dockerfile (`mix bonny.gen.dockerfile`)
+
+The following command will generate a dockerfile _for your operator_. This will need to be pushed to a docker repository that your Kubernetes cluster can access.
+
+Again, this Dockerfile is for your operator, not for the pods your operator may deploy.
+
+You can skip this step when developing by running your operator _external_ to the cluster.
+
+```shell
+mix bonny.gen.dockerfile
+
+export BONNY_IMAGE=YOUR_IMAGE_NAME_HERE
+docker build -t ${BONNY_IMAGE} .
+docker push ${BONNY_IMAGE}:latest
 ```
