@@ -6,6 +6,7 @@ defmodule Bonny.EventRecorder do
   use Agent
 
   alias Bonny.Event
+  require Logger
 
   @api_version "events.k8s.io/v1"
   @kind "Event"
@@ -73,7 +74,17 @@ defmodule Bonny.EventRecorder do
         put_cache(agent_name, key, event_manifest)
         :ok
 
-      _error ->
+      error ->
+        gvkn =
+          {event.regarding["apiVersion"], event.regarding["kind"],
+           "#{event.regarding["namespace"]}/#{event.regarding["apiVersion"]}"}
+
+        Logger.error("#{inspect(gvkn)} - Failed applying status of resource.",
+          library: :bonny,
+          error: error,
+          event: event
+        )
+
         :error
     end
   end

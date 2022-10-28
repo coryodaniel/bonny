@@ -51,9 +51,7 @@ defmodule Bonny.Pluggable.Logger do
     end)
     |> Axn.register_before_apply_descendants(fn descendants, _ ->
       for descendant <- descendants do
-        gvkn =
-          {descendant["apiVersion"], descendant["kind"],
-           descendant["metadata"]["namespace"] <> "/" <> descendant["metadata"]["name"]}
+        gvkn = Bonny.Resource.gvkn(descendant)
 
         Logger.log(
           level,

@@ -37,6 +37,7 @@ defmodule Bonny.Axn do
   alias Bonny.Resource
 
   import Bitwise
+  require Logger
 
   @type assigns :: %{optional(atom) => any}
 
@@ -282,7 +283,15 @@ defmodule Bonny.Axn do
       {:ok, _} ->
         mark_status_applied(axn)
 
-      _other ->
+      error ->
+        gvkn = Resource.gvkn(axn.resource)
+
+        Logger.error("#{inspect(gvkn)} - Failed applying status of resource.",
+          library: :bonny,
+          resource: axn.resource,
+          error: error
+        )
+
         axn
         |> failure_event(
           reason: "Failed applying status",
@@ -332,7 +341,15 @@ defmodule Bonny.Axn do
           acc
         end
 
-      {descendant, {:error, _}}, acc ->
+      {descendant, {:error, error}}, acc ->
+        gvkn = Resource.gvkn(descendant)
+
+        Logger.error("#{inspect(gvkn)} - Failed applying descendant.",
+          library: :bonny,
+          resource: descendant,
+          error: error
+        )
+
         acc
         |> clear_events()
         |> failure_event(

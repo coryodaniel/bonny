@@ -193,4 +193,20 @@ defmodule Bonny.Resource do
   end
 
   def apply_status(_, _, _), do: :noop
+
+  @doc """
+  Returns a tuple in the form
+
+  * {apiVersion, kind, namespace/name} for namespaced resources
+  * {apiVersion, kind, name} for cluster scoped resources
+  """
+  @spec gvkn(t()) :: {binary(), binary(), binary()}
+  def gvkn(%{"metadata" => %{"namespace" => _}} = resource) do
+    {resource["apiVersion"], resource["kind"],
+     resource["metadata"]["namespace"] <> "/" <> resource["metadata"]["name"]}
+  end
+
+  def gvkn(resource) do
+    {resource["apiVersion"], resource["kind"], resource["metadata"]["name"]}
+  end
 end
