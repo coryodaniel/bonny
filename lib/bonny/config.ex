@@ -38,7 +38,6 @@ defmodule Bonny.Config do
   The name of the operator instance.
 
   This is set via environment variable `BONNY_POD_NAME`
-  ```
   """
   @spec instance_name() :: binary
   def instance_name() do

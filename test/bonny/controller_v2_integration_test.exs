@@ -53,10 +53,8 @@ defmodule Bonny.ControllerV2IntegrationTest do
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
 
-    assert_receive(
-      {^ref, :add, ^resource_name},
-      timeout
-    )
+    assert_receive {^ref, :add, ^resource_name}, timeout
+    assert_receive {^ref, :done, ^resource_name}, timeout
   end
 
   @tag :integration
@@ -70,10 +68,8 @@ defmodule Bonny.ControllerV2IntegrationTest do
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
 
-    assert_receive(
-      {^ref, :add, ^resource_name},
-      timeout
-    )
+    assert_receive {^ref, :add, ^resource_name}, timeout
+    assert_receive {^ref, :done, ^resource_name}, timeout
 
     apply_op =
       resource
@@ -82,10 +78,8 @@ defmodule Bonny.ControllerV2IntegrationTest do
 
     {:ok, _} = K8s.Client.run(conn, apply_op)
 
-    assert_receive(
-      {^ref, :modify, ^resource_name},
-      timeout
-    )
+    assert_receive {^ref, :modify, ^resource_name}, timeout
+    assert_receive {^ref, :done, ^resource_name}, timeout
   end
 
   @tag :integration
@@ -100,21 +94,18 @@ defmodule Bonny.ControllerV2IntegrationTest do
 
     {:ok, _} = K8s.Client.run(conn, create_op)
 
-    assert_receive(
-      {^ref, :add, ^resource_name},
-      timeout
-    )
+    assert_receive {^ref, :add, ^resource_name}, timeout
+    assert_receive {^ref, :done, ^resource_name}, timeout
 
     delete_op = K8s.Client.delete(resource)
     {:ok, _} = K8s.Client.run(conn, delete_op)
 
-    assert_receive(
-      {^ref, :delete, ^resource_name},
-      timeout
-    )
+    assert_receive {^ref, :delete, ^resource_name}, timeout
+    assert_receive {^ref, :done, ^resource_name}, timeout
 
     # create again so on_exit can delete it again
     {:ok, _} = K8s.Client.run(conn, create_op)
+    assert_receive {^ref, :done, ^resource_name}, timeout
   end
 
   @tag :integration
@@ -128,10 +119,8 @@ defmodule Bonny.ControllerV2IntegrationTest do
 
     {:ok, added_resource} = K8s.Client.run(conn, K8s.Client.create(resource))
 
-    assert_receive(
-      {^ref, :add, ^resource_name},
-      timeout
-    )
+    assert_receive {^ref, :add, ^resource_name}, timeout
+    assert_receive {^ref, :done, ^resource_name}, timeout
 
     get_op = K8s.Client.get(resource)
 
@@ -150,10 +139,8 @@ defmodule Bonny.ControllerV2IntegrationTest do
 
     {:ok, updated_resource} = K8s.Client.run(conn, apply_op)
 
-    assert_receive(
-      {^ref, :modify, ^resource_name},
-      timeout
-    )
+    assert_receive {^ref, :modify, ^resource_name}, timeout
+    assert_receive {^ref, :done, ^resource_name}, timeout
 
     assert updated_resource["metadata"]["generation"] > added_resource["metadata"]["generation"]
 
@@ -176,10 +163,8 @@ defmodule Bonny.ControllerV2IntegrationTest do
 
     {:ok, created_resource} = K8s.Client.run(conn, K8s.Client.create(resource))
 
-    assert_receive(
-      {^ref, :add, ^resource_name},
-      timeout
-    )
+    assert_receive {^ref, :add, ^resource_name}, timeout
+    assert_receive {^ref, :done, ^resource_name}, timeout
 
     list_event_opt =
       K8s.Client.list("events.k8s.io/v1", "Event")

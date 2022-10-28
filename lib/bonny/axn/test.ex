@@ -37,8 +37,12 @@ defmodule Bonny.Axn.Test do
     }
   }
 
-  @spec axn(atom(), Bonny.Resource.t(), K8s.Conn.t(), atom()) :: Bonny.Axn.t()
-  def axn(action, resource \\ @default_resource, conn \\ Bonny.Config.conn(), controller \\ nil) do
-    Bonny.Axn.new!(conn: conn, action: action, resource: resource, controller: controller)
+  @spec axn(atom(), Keyword.t()) :: Bonny.Axn.t()
+  def axn(action, fields \\ []) do
+    fields
+    |> Keyword.put(:action, action)
+    |> Keyword.put_new_lazy(:conn, fn -> Bonny.Config.conn() end)
+    |> Keyword.put_new(:resource, @default_resource)
+    |> Bonny.Axn.new!()
   end
 end

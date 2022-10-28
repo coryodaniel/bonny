@@ -17,7 +17,9 @@ defmodule Bonny.Pluggable.ApplyStatus do
   def init(opts \\ []), do: Keyword.take(opts, [:field_manager, :force])
 
   @impl true
-  def call(axn, apply_opts) do
+  def call(axn, apply_opts) when axn.action != :delete do
     Bonny.Axn.apply_status(axn, apply_opts)
   end
+
+  def call(axn, _apply_opts), do: axn
 end

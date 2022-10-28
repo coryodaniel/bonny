@@ -52,7 +52,7 @@ defmodule Bonny.Pluggable.LoggerTest do
     {:ok, _} = start_supervised({Bonny.EventRecorder, operator: __MODULE__})
 
     [
-      axn: axn(:add, ResourceHelper.widget()) |> struct!(operator: __MODULE__)
+      axn: axn(:add, resource: ResourceHelper.widget()) |> struct!(operator: __MODULE__)
     ]
   end
 

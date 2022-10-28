@@ -5,6 +5,8 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
   alias Bonny.Pluggable.ApplyDescendants, as: MUT
   alias Bonny.Test.ResourceHelper
 
+  import ExUnit.CaptureLog
+
   defmodule K8sMock do
     require Logger
     import K8s.Test.HTTPHelper
@@ -130,13 +132,17 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
   test "failure event is always added", %{failing_descendant: descendant} do
     opts = MUT.init(events_for_actions: [:add])
 
-    # event is added for :add
-    axn =
-      axn(:reconcile)
-      |> Bonny.Axn.register_descendant(descendant)
-      |> MUT.call(opts)
+    log =
+      capture_log(fn ->
+        axn =
+          axn(:reconcile)
+          |> Bonny.Axn.register_descendant(descendant)
+          |> MUT.call(opts)
 
-    assert 1 == length(axn.events)
-    assert hd(axn.events).event_type == :Warning
+        assert 1 == length(axn.events)
+        assert hd(axn.events).event_type == :Warning
+      end)
+
+    assert log =~ "Failed applying descendant"
   end
 end
