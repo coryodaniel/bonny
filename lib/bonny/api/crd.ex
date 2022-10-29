@@ -58,27 +58,9 @@ defmodule Bonny.API.CRD do
   def new!(fields) do
     fields =
       fields
-      |> Keyword.put_new_lazy(:versions, fn -> get_versions(fields[:names].kind) end)
       |> Keyword.put_new(:group, Bonny.Config.group())
 
     struct!(__MODULE__, fields)
-  end
-
-  defp get_versions(kind) do
-    versions = Bonny.Config.versions()
-    possible_version_modules = Enum.map(versions, &Module.concat(&1, kind))
-
-    version_modules =
-      Enum.filter(possible_version_modules, &match?({:module, _}, Code.ensure_compiled(&1)))
-
-    if Enum.empty?(version_modules),
-      do:
-        raise(RuntimeError,
-          message:
-            "No API Version module exists for the given kind \"#{kind}\". Make sure you define at least one of the following modules: #{inspect(possible_version_modules)}"
-        )
-
-    version_modules
   end
 
   @doc """
