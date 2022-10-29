@@ -5,7 +5,7 @@ defmodule Bonny.Axn.Test do
   This module can be used in your test cases, like this:
 
       use ExUnit.Case, async: true
-      use Plug.Test
+      use Bonny.Axn.Test
 
   Using this module will:
 

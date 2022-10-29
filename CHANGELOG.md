@@ -11,20 +11,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
-### Added
+<!-- No new entries below this line! -->
 
-- Added option `skip_observed_generations` to `Bonny.ControllerV2` ([151](https://github.com/coryodaniel/bonny/issues/151), [#153](https://github.com/coryodaniel/bonny/pull/153))
-- `Bonny.ControllerV2` as a successor to `Bonny.Controller`
-  - Allows for better CRD definition ([#149](https://github.com/coryodaniel/bonny/pull/149))
-  - Decouples CRD and controller ([#158](https://github.com/coryodaniel/bonny/pull/158))
-  - Operator wide API version configuration ([#159](https://github.com/coryodaniel/bonny/pull/159))
-  - Adds `Bonny.EventRecorder` for creating Kubernetes events ([#156](https://github.com/coryodaniel/bonny/pull/156), [#5](https://github.com/coryodaniel/bonny/issues/5))
-  - Allows skipping observed generations ([#153](https://github.com/coryodaniel/bonny/pull/153))
+## [0.5.2] - 2022-08-31
+
+### Changed
+
+With Version 1.0.0, Bonny got a thorough refactoring. Besides this changelog,
+you might consider the several guides (e.g. the [migration guide](./guides/migration.mid))
+
+- `Bonny.Operator` was introduced as an entry point to the watching and handling
+  of processes. Your controllers are not more added to the supervision tree by
+  bonny. Instead you must create an operator and add that to your application's
+  supervision tree.
+- The [`Pluggable`](https://hex.pm/packages/pluggable) (think [`Plug`](https://hex.pm/packages/plug))
+  library is used with `Bonny.Axn` as token to process `ADDED`, `MODIFIED`,
+  `DELETED` and reconciliation events by `Pluggable` pipelines.
+- `Bonny.ControllerV2` was introduced as a successor to `Bonny.Controller`. It leverages
+  `Pluggable.StepBuilder` (think `Plug.Builder`) to build a pluggable pipeline.
+- `Bonny.Event` and `Bonny.EventRecorder` were introducd for Kubernetes
+  event creation ([#156](https://github.com/coryodaniel/bonny/pull/156), [#5](https://github.com/coryodaniel/bonny/issues/5))
+
+Why this refactoring?
+
+- Allows for better CRD and API version definitions
+- With a `Pluggable` architecture, controllers are much easier to test (Think of `Plug.Conn` tests)
+- manifest generation and event processing were decoupled
+- Internally, the amount of macros was reduced which makes Bonny easier to maintain
+
+### Added
+
+- `Bonny.Pluggable.SkipObservedGenerations` - halts the pipelines for a defined list of actions if the observed generation equals the resource's generation.
+- `Bonny.Pluggable.ApplyDescendants` - applies all the descendants added to the `%Bonny.Axn{}` struct.
+- `Bonny.Pluggable.ApplyStatus` - applies the status of the given `%Bonny.Axn{}` struct to the status subresource.
+- `Bonny.Pluggable.Logger`- logs an action event and when status, descendants and events are applied to the cluster. If desired, it makes sense to be placed as first step in your operator pipeline but can also be added to a controller pipeline.
 - `Bonny.Resource.add_owner_reference/3` used to add the owner reference to resources created by the controller. ([#147](https://github.com/coryodaniel/bonny/pull/147))
-- An integration test suite was added that runs tests agains a "real" kubernetes cluster on the CI pipeline ([#146](https://github.com/coryodaniel/bonny/pull/146), [#84](https://github.com/coryodaniel/bonny/issues/84))
+- An integration test suite was added that runs tests against a "real" kubernetes cluster on the CI pipeline ([#146](https://github.com/coryodaniel/bonny/pull/146), [#84](https://github.com/coryodaniel/bonny/issues/84))
 - Mix task for initializing a new operator `mix bonny.init` ([#160](https://github.com/coryodaniel/bonny/pull/160), [#67](https://github.com/coryodaniel/bonny/issues/67))
 
-<!-- No new entries below this line! -->
+### Deprecated
+
+- `Bonny.Controller` was deprecated in favor of the new design with
+  `Bonny.Operator` and `Bonny.ControllerV2`
 
 ## [0.5.2] - 2022-08-31
 
@@ -44,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.0] - 2022-04-23
 
-Version 0.5.0 comes with some major changes. Please read through the [migration guide](guides/migrations.md) before upgrading.
+Version 0.5.0 comes with some major changes. Please read through the [migration guide](./guides/migrations.md) before upgrading.
 
 ## Added
 

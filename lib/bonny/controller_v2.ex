@@ -11,6 +11,13 @@ defmodule Bonny.ControllerV2 do
 
       step_name(Bonny.Axn.t(), keyword()) :: Bonny.Axn.t()
 
+  The modules `Bonny.Axn` module is imported to your controller. In your event
+  handler step you should use the functions `Bonny.Axn.register_descendant/3`,
+  `Bonny.Axn.update_status/2` and the ones to  register events:
+  `Bonny.Axn.success_event/2`, `Bonny.Axn.failure_event/2` and/or
+  `Bonny.Axn.register_event/6`. Note that these functions raise
+  exceptions if those resources have already been applied to the cluster.
+
   ## Example
 
   Match against the struct's `:action` field which is one of `:add`, `:modify`,
@@ -33,6 +40,49 @@ defmodule Bonny.ControllerV2 do
           axn
         end
       end
+
+  Registering your descendants with the `%Bonny.Axn{}` token makes your
+  controller easier to test. Be sure to add `Bonny.Pluggable.ApplyDescendants`
+  as step to your operator in order for the descendants to be applied to the
+  cluster.
+
+      defmodule MyOperator.Controller.CronTabController do
+
+        # other steps
+        step :handle_event
+        # other steps
+
+        # apply the resource
+        def handle_event(axn, _opts) do
+          deployment = generate_deployment(axn.resource)
+
+          axn
+          |> register_descendant(deployment)
+          |> success_event()
+        end
+      end
+
+  Use `Bonny.Axn.update_status/2` to store API responses or other status data in the
+  resource status. Be sure to enable the status subresource in your CRD version
+  module.
+
+      defmodule MyOperator.Controller.CronTabController do
+
+        # other steps
+        step :handle_event
+        # other steps
+
+        # apply the resource
+        def handle_event(axn, _opts) do
+          response = apply_state(axn.resource)
+
+          axn
+          |> update_status(fn status ->
+            Map.put(status, "response", response)
+          end)
+          |> success_event()
+        end
+      end
   """
 
   use Supervisor
@@ -48,7 +98,9 @@ defmodule Bonny.ControllerV2 do
   defmacro __using__(_opts) do
     quote do
       use Pluggable.StepBuilder
+
       import Bonny.Axn
+
       import Bonny.ControllerV2, only: [to_rbac_rule: 1]
       @behaviour Bonny.ControllerV2
 

@@ -3,7 +3,7 @@ defmodule Bonny.Operator do
   Defines a Bonny operator.
 
   The operator defines custom resources, watch queries and their
-  controllers and serves as the entry point to the watching and handling
+  controllers and serves as the entry point to the watching and handling of
   processes.
 
   Overall, an operator has the following responsibilities:
