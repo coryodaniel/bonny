@@ -37,12 +37,12 @@ defmodule Bonny.Server.Reconciler do
   end
 
   defp fetch_succeeded?({:error, error}) do
-    Logger.debug("Reconciler fetch failed", %{error: error})
+    Logger.debug("Reconciler fetch failed", %{error: error, library: :bonny})
     false
   end
 
   defp fetch_succeeded?(resource) when is_map(resource) do
-    Logger.debug("Reconciler fetch succeeded")
+    Logger.debug("Reconciler fetch succeeded", library: :bonny)
     true
   end
 
@@ -52,7 +52,8 @@ defmodule Bonny.Server.Reconciler do
       name: K8s.Resource.name(resource),
       namespace: K8s.Resource.namespace(resource),
       kind: K8s.Resource.kind(resource),
-      api_version: resource["apiVersion"]
+      api_version: resource["apiVersion"],
+      library: :bonny
     }
 
     :telemetry.span([:reconciler, :reconcile], metadata, fn ->

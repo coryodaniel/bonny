@@ -173,7 +173,7 @@ defmodule Bonny.Server.Scheduler do
     op = K8s.Client.list("v1", :nodes)
 
     response = K8s.Client.stream(conn, op)
-    metadata = %{operation: op}
+    metadata = %{operation: op, library: :bonny}
 
     case response do
       {:ok, stream} ->
