@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- No new entries below this line! -->
 
-## [0.5.2] - 2022-08-31
+## [1.0.0-rc.0] - 2022-10-29
 
 ### Changed
 
@@ -36,10 +36,11 @@ Why this refactoring?
 
 - Allows for better CRD and API version definitions
 - With a `Pluggable` architecture, controllers are much easier to test (Think of `Plug.Conn` tests)
+- With a `Pluggable` architecture, your processing pipelines are easier to customize/extend
 - manifest generation and event processing were decoupled
 - Internally, the amount of macros was reduced which makes Bonny easier to maintain
 
-### Added
+### Added
 
 - `Bonny.Pluggable.SkipObservedGenerations` - halts the pipelines for a defined list of actions if the observed generation equals the resource's generation.
 - `Bonny.Pluggable.ApplyDescendants` - applies all the descendants added to the `%Bonny.Axn{}` struct.

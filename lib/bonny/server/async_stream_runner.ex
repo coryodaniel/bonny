@@ -49,7 +49,7 @@ defmodule Bonny.Server.AsyncStreamRunner do
     stream = Keyword.fetch!(args, :stream)
     termination_delay = Keyword.get(args, :termination_delay)
 
-    Logger.debug("AsyncStreamRunne Starting #{name}", library: :bonny)
+    Logger.debug("AsyncStreamRunner - Starting #{name}", library: :bonny)
 
     {:ok, pid} = Task.start_link(__MODULE__, :run, [stream, termination_delay])
 

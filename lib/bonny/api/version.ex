@@ -2,8 +2,8 @@ defmodule Bonny.API.Version do
   @moduledoc ~S"""
   Describes an API version of a custom resource.
 
-  The %Bonny.API.Version{} struct contains the fields required to build the manifest
-  for this version.
+  The `%Bonny.API.Version{}` struct contains the fields required to build the
+  manifest for this version.
 
   This module is meant to be `use`d by a module representing the
   API version of a custom resource. The using module has to define
