@@ -60,7 +60,7 @@ defmodule Bonny.PeriodicTask do
   @doc "Registers and starts a new `Bonny.PeriodicTask`"
   @spec register(t()) :: {:ok, pid} | {:error, term()}
   def register(%__MODULE__{id: id} = task) do
-    Logger.info("Task registered", %{id: id})
+    Logger.info("Task registered", %{id: id, library: :bonny})
     DynamicSupervisor.start_child(__MODULE__, {Bonny.PeriodicTask.Runner, task})
   end
 
@@ -69,7 +69,7 @@ defmodule Bonny.PeriodicTask do
   def unregister(%__MODULE__{id: id}), do: unregister(id)
 
   def unregister(id) when is_atom(id) do
-    Logger.info("Task unregistered", %{id: id})
+    Logger.info("Task unregistered", %{id: id, library: :bonny})
 
     case Process.whereis(id) do
       nil ->

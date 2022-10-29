@@ -1,6 +1,6 @@
 defmodule Bonny.MixProject do
   use Mix.Project
-  @version "0.5.2"
+  @version "1.0.0-rc.0"
   @source_url "https://github.com/coryodaniel/bonny"
 
   def project do
@@ -98,9 +98,13 @@ defmodule Bonny.MixProject do
       extras: [
         "README.md",
         "CHANGELOG.md",
+        "guides/contributing.md",
+        "guides/controllers.livemd",
+        "guides/crd_versions.livemd",
         "guides/migrations.md",
-        "guides/testing.md",
-        "guides/controllers.livemd"
+        "guides/mix_tasks.md",
+        "guides/testing.livemd",
+        "guides/the_operator.livemd"
       ],
       groups_for_extras: [
         Guides: Path.wildcard("guides/*.md")

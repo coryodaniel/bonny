@@ -5,6 +5,16 @@ defmodule Bonny.Axn do
   This is the token passed to all steps of your operator and controller
   pipeline.
 
+  This module gets imported to your controllers where you should use the
+  functions `register_descendant/3`, `update_status/2` and the ones to register
+  events: `success_event/2`, `failure_event/2` and/or `register_event/6`. Note
+  that these functions raise exceptions if those resources have already been
+  applied to the cluster.
+
+  The `register_before_*` functions can be used in `Pluggable` steps in order
+  to register callbacks that are called before applying resources to the
+  cluster. Have a look at `Bonny.Pluggable.Logger` for a use case.
+
   ## Action event fields
 
   These fields contain information on the action event that occurred.
@@ -114,7 +124,10 @@ defmodule Bonny.Axn do
     """
   end
 
-  @spec event(
+  @doc """
+  Registers a Kubernetes event to the `%Axn{}` token to be emitted by Bonny.
+  """
+  @spec register_event(
           t(),
           Resource.t() | nil,
           Event.event_type(),
@@ -122,7 +135,7 @@ defmodule Bonny.Axn do
           binary(),
           binary()
         ) :: t()
-  def event(
+  def register_event(
         axn,
         related \\ nil,
         event_type,

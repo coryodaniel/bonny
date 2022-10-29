@@ -1,9 +1,9 @@
 defmodule Bonny.API.Version do
-  @moduledoc """
+  @moduledoc ~S"""
   Describes an API version of a custom resource.
 
-  The %Bonny.API.Version{} struct contains the fields required to build the manifest
-  for this version.
+  The `%Bonny.API.Version{}` struct contains the fields required to build the
+  manifest for this version.
 
   This module is meant to be `use`d by a module representing the
   API version of a custom resource. The using module has to define
@@ -14,50 +14,44 @@ defmodule Bonny.API.Version do
   If no name is passed, The macro will use the using module's name as the
   version name.
 
-  The Option `hub` has to be `true` for exactly one version of your CRD.
-  The `defaults/1` macro will set the `storage` flag to the value passed via the
-  `hub` option.
+  **Note: The `:storage` flag has to be `true` for exactly one version of a
+  CRD.**
 
-  ```
-  defmodule MyOperator.API.V1.CronTab do
-    use Bonny.API.Version
+      defmodule MyOperator.API.V1.CronTab do
+        use Bonny.API.Version
 
-    def manifest() do
-      struct!(defaults(), storage: true)
-    end
-  ```
+        def manifest() do
+          struct!(defaults(), storage: true)
+        end
 
-  ### Use the `manifest/0` callback to override the defaults, e.g. add a schema:
+  Use the `manifest/0` callback to override the defaults, e.g. add a schema.
+  Pipe your struct into `add_observed_generation_status/1` - which is imported
+  into the using module - if you use the
+  `Bonny.Pluggable.SkipObservedGenerations` step in your controller
 
+      defmodule MyOperator.API.V1.CronTab do
+        use Bonny.API.Version
 
-  ```
-  defmodule MyOperator.API.V1.CronTab do
-    use Bonny.API.Version
-
-    def manifest() do
-      struct!(
-        defaults(),
-        storage: true,
-        schema: %{
-          openAPIV3Schema: %{
-            type: :object,
-            properties: %{
-              spec: %{
+        def manifest() do
+          struct!(
+            defaults(),
+            storage: true,
+            schema: %{
+              openAPIV3Schema: %{
+                type: :object,
+                properties: %{
+                  spec: %{
+                }
+              }
             }
-          }
-        }
-      )
-    end
-  ```
-
+          )
+        end
   """
 
-  # Use this behviour when implementing conversion webhooks
-  # defmodule NonHub do
-  #   @callback convert_to(Bonny.Resource.t()) :: Bonny.Resource.t()
-  #   @callback convert_from(Bonny.Resource.t()) :: Bonny.Resource.t()
-  # end
-
+  @doc """
+  Return a `%Bonny.API.Version{}` struct representing the manifest for this
+  version of the CRD API.
+  """
   @callback manifest() :: Bonny.API.Version.t()
 
   @typedoc """
@@ -152,6 +146,10 @@ defmodule Bonny.API.Version do
     end
   end
 
+  @doc """
+  Returns a `Bonny.API.Version` struct with default values. Use this and pipe
+  it into `struct!()` to override the defaults in your `manifest/0` callback.
+  """
   defmacro defaults() do
     name = __extract_version__(__CALLER__.module)
 
@@ -178,7 +176,9 @@ defmodule Bonny.API.Version do
 
   ### Example
 
-      iex> Bonny.API.Version.add_observed_generation_status(%{})
+      iex> %Bonny.API.Version{}
+      ...> |> Bonny.API.Version.add_observed_generation_status()
+      ...> |> Map.take([:subresources, :schema])
       %{
         subresources: %{status: %{}},
         schema: %{
@@ -191,7 +191,8 @@ defmodule Bonny.API.Version do
                   observedGeneration: %{type: :integer}
                 }
               }
-            }
+            },
+            "x-kubernetes-preserve-unknown-fields": true,
           }
         }
       }

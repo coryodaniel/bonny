@@ -103,7 +103,7 @@ defmodule Bonny.PeriodicTaskTest do
       {_task_pid, agent_name2} = make_increment_task(:task2, 25)
 
       :timer.sleep(50)
-      assert Agent.get(agent_name1, & &1) in 8..10
+      assert Agent.get(agent_name1, & &1) in 7..10
       assert Agent.get(agent_name2, & &1) in 1..2
       DynamicSupervisor.stop(PeriodicTask)
     end

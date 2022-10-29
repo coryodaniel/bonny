@@ -11,14 +11,14 @@ defmodule Bonny.PeriodicTask.Runner do
 
   @impl true
   def init(%PeriodicTask{} = task) do
-    Logger.info("Task initialized", %{id: task.id})
+    Logger.info("Task initialized", %{id: task.id, library: :bonny})
     Process.send_after(self(), :run, calc_offset(task))
     {:ok, task}
   end
 
   @impl true
   def handle_info(:run, %PeriodicTask{} = task) do
-    metadata = %{id: task.id}
+    metadata = %{id: task.id, library: :bonny}
 
     :telemetry.span([:task, :execution], metadata, fn ->
       Logger.info("Task execution started", metadata)

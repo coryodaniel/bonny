@@ -50,7 +50,7 @@ defmodule Bonny.Server.Scheduler.Binding do
   def create(conn, pod, node) do
     binding = new(pod, node)
     operation = K8s.Client.create(pod, binding)
-    metadata = %{operation: operation}
+    metadata = %{operation: operation, library: :bonny}
 
     :telemetry.span([:scheduler, :binding], metadata, fn ->
       case K8s.Client.run(conn, operation) do

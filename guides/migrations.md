@@ -18,7 +18,7 @@ controllers and bring it into a `Pluggable` form.
 #### Step 1: Create your Opeator
 
 Create a new module (e.g. `YourProject.Operator`) which uses `use Bonny.Operator`,
-implement `crds/0` and `controllers/2` according to the [Operator Guide](./operators.livemd)
+implement `crds/0` and `controllers/2` according to the [Operator Guide](./the_operator.livemd)
 and add it to your supervision tree.
 
 #### Step 2: Create your API versions

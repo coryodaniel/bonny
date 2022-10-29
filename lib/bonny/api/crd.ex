@@ -2,10 +2,9 @@ defmodule Bonny.API.CRD do
   @moduledoc """
   A Custom Resource Definition.
 
-  The %Bonny.API.CRD{} struct contains the fields `group`, `resource_type`,
+  The `%Bonny.API.CRD{}` struct contains the fields `group`, `resource_type`,
   `scope` and `version`. New definitions can be created directly, using the
-  `new!/1` function or from inside a controller using the
-  `build_for_controller!/1` macro.
+  `new!/1` function.
   """
 
   @kind "CustomResourceDefinition"

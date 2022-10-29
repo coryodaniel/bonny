@@ -47,10 +47,10 @@ end
 
 The step(s) you implement are called with a `%Bonny.Axn{}` token. It contains the `action` which triggered this event, the `resource` the event regards and other fields. Use pattern matching or a adispatch mechanism to handle the four different action types:
 
-* `add/1` - resource was created in the cluster.
-* `delete/1` - resource was deleted from the cluster.
-* `modify/1` - resource was modified in the cluster.
-* `reconcile/1` - Called on a regular basis in case we missed an action or to fix diverged state.
+- `add/1` - resource was created in the cluster.
+- `delete/1` - resource was deleted from the cluster.
+- `modify/1` - resource was modified in the cluster.
+- `reconcile/1` - Called on a regular basis in case we missed an action or to fix diverged state.
 
 Your event handlers should return the struct it received as first parameter. However, your controller can use helper functions from the `Bonny.Axn` module to modify it before returning it.
 
@@ -163,7 +163,7 @@ Bonny.Axn.new!(action: :add, conn: nil, resource: resource)
 
 Kubernetes events provide a way to report back to the client. A Kubernetes event always references the object to which the event relates. For a controller the regarding object would be the handled resource. The user can then use `kubectl describe` on the custom resource to see the events.
 
-Use `Bonny.Axn.success_event/2`, `Bonny.Axn.failure_event/2` or `Bonny.Axn.add_event/2` do register events in the `%Bonny.Axn{}` struct. Events are going to be applied to the cluster at the end of the Operator pipeline. There is no need to register a `step` for that.
+Use `Bonny.Axn.success_event/2`, `Bonny.Axn.failure_event/2` or `Bonny.Axn.register_event/6` do register events in the `%Bonny.Axn{}` struct. Events are going to be applied to the cluster at the end of the Operator pipeline. There is no need to register a `step` for that.
 
 ```elixir
 defmodule MyResourceController do
@@ -209,8 +209,8 @@ You can define such rules one by defining the `rbac_rules/0` callback. This call
 
 ```elixir
 @type rbac_rule :: %{
-  apiGroups: list(binary()), 
-  resources: list(binary()), 
+  apiGroups: list(binary()),
+  resources: list(binary()),
   binary()s: list(binary())}
 ```
 
@@ -220,8 +220,8 @@ You can use the helper function `to_rbac_rule/1` to convert a tuple to an rbac r
 
 ```elixir
   @spec to_rbac_rule({
-    binary() | list(binary()), 
-    binary() | list(binary()), 
+    binary() | list(binary()),
+    binary() | list(binary()),
     binary() | list(binary())
   }) :: rbac_rule
 ```

@@ -6,8 +6,8 @@ defmodule Bonny.Pluggable.SkipObservedGenerations do
 
   ## Options
 
-  `:actions` - The actions for which this rule applies. Defaults to `[:add, :modify]`.
-  `:observed_generation_key` - The resource status key where the observed generation is stored. This will be passed to `Kernel.get_in()`. Defaults to `["status", "observedGeneration"]`.
+  * `:actions` - The actions for which this rule applies. Defaults to `[:add, :modify]`.
+  * `:observed_generation_key` - The resource status key where the observed generation is stored. This will be passed to `Kernel.get_in()`. Defaults to `["status", "observedGeneration"]`.
 
   ## Usage
 
