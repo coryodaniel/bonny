@@ -28,6 +28,9 @@ defmodule Bonny.ControllerV2IntegrationTest do
 
     {:ok, _} = Supervisor.start_link([{Bonny.Test.Operator, conn: conn}], strategy: :one_for_one)
 
+    # Give watch process some time to start.
+    Process.sleep(600)
+
     [timeout: timeout]
   end
 
