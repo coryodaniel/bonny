@@ -47,7 +47,8 @@ defmodule Bonny.AxnTest do
 
   describe "event/5 resp. event/6" do
     test "adds an without related object to an empty list of events", %{axn: axn} do
-      result_axn = MUT.event(axn, :Normal, "Reason for the action", "add", "Custom Event Message")
+      result_axn =
+        MUT.register_event(axn, :Normal, "Reason for the action", "add", "Custom Event Message")
 
       assert 1 == length(result_axn.events)
 
@@ -76,7 +77,14 @@ defmodule Bonny.AxnTest do
       related: related
     } do
       result_axn =
-        MUT.event(axn, related, :Normal, "Reason for the action", "add", "Custom Event Message")
+        MUT.register_event(
+          axn,
+          related,
+          :Normal,
+          "Reason for the action",
+          "add",
+          "Custom Event Message"
+        )
 
       assert 1 == length(result_axn.events)
 
@@ -117,7 +125,7 @@ defmodule Bonny.AxnTest do
         )
 
       result_axn =
-        MUT.event(
+        MUT.register_event(
           struct!(axn, events: [dummy_event]),
           :Normal,
           "Reason for the action",
