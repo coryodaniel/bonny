@@ -201,12 +201,13 @@ defmodule Bonny.Resource do
   * {apiVersion, kind, name} for cluster scoped resources
   """
   @spec gvkn(t()) :: {binary(), binary(), binary()}
-  def gvkn(%{"metadata" => %{"namespace" => _}} = resource) do
-    {resource["apiVersion"], resource["kind"],
-     resource["metadata"]["namespace"] <> "/" <> resource["metadata"]["name"]}
-  end
-
   def gvkn(resource) do
-    {resource["apiVersion"], resource["kind"], resource["metadata"]["name"]}
+    ns_name =
+      String.trim_leading(
+        "#{resource["metadata"]["namespace"]}/#{resource["metadata"]["name"]}",
+        "/"
+      )
+
+    {ns_name, resource["apiVersion"], "Kind=#{resource["kind"]}"}
   end
 end

@@ -65,7 +65,8 @@ defmodule Bonny.Pluggable.LoggerTest do
         |> MUT.call(opts)
       end)
 
-    assert captured_log =~ ~s|{:add, "example.com/v1", "Widget"} - Processing event|
+    assert captured_log =~
+             ~s|{"default/foo", "example.com/v1", "Kind=Widget, Action=add"} - Processing event|
   end
 
   test "logs when status is applied", %{axn: axn} do
@@ -79,7 +80,8 @@ defmodule Bonny.Pluggable.LoggerTest do
         |> Bonny.Axn.apply_status()
       end)
 
-    assert captured_log =~ ~s|{:add, "example.com/v1", "Widget"} - Applying status|
+    assert captured_log =~
+             ~s|{"default/foo", "example.com/v1", "Kind=Widget, Action=add"} - Applying status|
   end
 
   test "logs when descendants are applied", %{axn: axn} do
@@ -94,7 +96,7 @@ defmodule Bonny.Pluggable.LoggerTest do
       end)
 
     assert captured_log =~
-             ~s|{:add, "example.com/v1", "Widget"} - Descendant {"example.com/v1", "Cog", "default/bar"} applied|
+             ~s|{"default/foo", "example.com/v1", "Kind=Widget, Action=add"} - Descendant {"default/bar", "example.com/v1", "Kind=Cog"} applied|
   end
 
   test "logs when events are emitted", %{axn: axn} do
@@ -108,6 +110,7 @@ defmodule Bonny.Pluggable.LoggerTest do
         |> Bonny.Axn.emit_events()
       end)
 
-    assert captured_log =~ ~s|{:add, "example.com/v1", "Widget"} - Normal event emitted|
+    assert captured_log =~
+             ~s|{"default/foo", "example.com/v1", "Kind=Widget, Action=add"} - Normal event emitted|
   end
 end

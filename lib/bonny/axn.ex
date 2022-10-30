@@ -285,9 +285,9 @@ defmodule Bonny.Axn do
     mark_status_applied(axn)
   end
 
-  def apply_status(axn, apply_opts) do
+  def apply_status(%Bonny.Axn{resource: resource} = axn, apply_opts) do
     result =
-      axn.resource
+      resource
       |> Map.put("status", axn.status)
       |> run_before_apply_status(axn)
       |> Resource.apply_status(axn.conn, apply_opts)
@@ -297,11 +297,12 @@ defmodule Bonny.Axn do
         mark_status_applied(axn)
 
       error ->
-        gvkn = Resource.gvkn(axn.resource)
+        id = identifier(axn)
+        message = apply_status_error_message(error)
 
-        Logger.error("#{inspect(gvkn)} - Failed applying status of resource.",
+        Logger.error("#{inspect(id)} - #{message}",
           library: :bonny,
-          resource: axn.resource,
+          resource: resource,
           error: error
         )
 
@@ -313,6 +314,16 @@ defmodule Bonny.Axn do
         |> mark_status_applied()
     end
   end
+
+  defp apply_status_error_message({:error, %K8s.Discovery.Error{}}) do
+    "Failed applying status of resource. The status subresource for this seems to be disabled."
+  end
+
+  defp apply_status_error_message({:error, %{message: message}}) do
+    "Failed applying status of resource. #{message}"
+  end
+
+  defp apply_status_error_message(_), do: "Failed applying status of resource."
 
   @doc """
   Applies the dependants to the cluster.
@@ -468,5 +479,15 @@ defmodule Bonny.Axn do
 
   defp do_mark_state(%__MODULE__{states: states} = axn, bitmask) do
     %{axn | states: states ||| bitmask}
+  end
+
+  @doc """
+  Returns an identifier of an action event (resource and action) as tuple.
+  Can be used in logs and similar.
+  """
+  @spec identifier(t()) :: {binary(), binary(), binary()}
+  def identifier(%__MODULE__{action: action, resource: resource}) do
+    {ns_name, api_vesion, others} = Bonny.Resource.gvkn(resource)
+    {ns_name, api_vesion, "#{others}, Action=#{action}"}
   end
 end

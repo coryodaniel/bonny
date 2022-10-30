@@ -27,12 +27,12 @@ defmodule Bonny.Pluggable.Logger do
   def init(opts), do: Keyword.get(opts, :level, :info)
 
   def call(axn, level) do
-    action_gvk = {axn.action, axn.resource["apiVersion"], axn.resource["kind"]}
+    id = Axn.identifier(axn)
 
     Logger.log(
       level,
       fn ->
-        inspect(action_gvk) <> " - Processing event"
+        inspect(id) <> " - Processing event"
       end,
       resource: axn.resource
     )
@@ -42,7 +42,7 @@ defmodule Bonny.Pluggable.Logger do
       Logger.log(
         level,
         fn ->
-          inspect(action_gvk) <> " - Applying status"
+          inspect(id) <> " - Applying status"
         end,
         resource: resource
       )
@@ -56,7 +56,7 @@ defmodule Bonny.Pluggable.Logger do
         Logger.log(
           level,
           fn ->
-            inspect(action_gvk) <> " - Descendant #{inspect(gvkn)} applied"
+            inspect(id) <> " - Descendant #{inspect(gvkn)} applied"
           end,
           resource: axn.resource,
           descendant: descendant
@@ -69,7 +69,7 @@ defmodule Bonny.Pluggable.Logger do
       Logger.log(
         level,
         fn ->
-          inspect(action_gvk) <> " - #{event.event_type} event emitted"
+          inspect(id) <> " - #{event.event_type} event emitted"
         end,
         resource: axn.resource,
         event: event
