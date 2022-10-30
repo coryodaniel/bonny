@@ -36,8 +36,8 @@ Why this refactoring?
 
 - Allows for better CRD and API version definitions
 - With a `Pluggable` architecture, controllers are much easier to test (Think of `Plug.Conn` tests)
-- With a `Pluggable` architecture, your processing pipelines are easier to customize/extend
-- manifest generation and event processing were decoupled
+- The `Pluggable` architecture makes your processing pipelines composable and simpler to customize/extend
+- Manifest generation and event processing were decoupled
 - Internally, the amount of macros was reduced which makes Bonny easier to maintain
 
 ### Added
