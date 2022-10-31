@@ -265,7 +265,21 @@ defmodule Bonny.Axn do
     events
     |> List.wrap()
     |> Enum.map(&run_before_emit_event(&1, axn))
-    |> Enum.each(&Bonny.EventRecorder.emit(&1, operator, conn))
+    |> Enum.map(fn event -> {Bonny.EventRecorder.emit(event, operator, conn), event} end)
+    |> Enum.each(fn
+      {{:ok, _}, _} ->
+        :ok
+
+      {error, event} ->
+        id = identifier(axn)
+        message = emit_event_error_message(error, axn.resource)
+
+        Logger.error("#{inspect(id)} - #{message}",
+          library: :bonny,
+          event: event,
+          error: error
+        )
+    end)
 
     mark_events_emitted(axn)
   end
@@ -329,6 +343,11 @@ defmodule Bonny.Axn do
 
   defp apply_descendant_error_message(error, descendant) do
     gvkn = Resource.gvkn(descendant)
+    ["Failed applying descending (child) resource #{inspect(gvkn)}." | apply_error_message(error)]
+  end
+
+  defp emit_event_error_message(error, resource) do
+    gvkn = Resource.gvkn(resource)
     ["Failed applying descending (child) resource #{inspect(gvkn)}." | apply_error_message(error)]
   end
 

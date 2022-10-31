@@ -32,7 +32,7 @@ defmodule Bonny.EventRecorder do
   Create a kubernetes event in the cluster.
   Documentation: https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/event-v1/
   """
-  @spec emit(Event.t(), atom(), K8s.Conn.t()) :: :ok | :error
+  @spec emit(Event.t(), atom(), K8s.Conn.t()) :: K8s.Client.Runner.Base.result_t()
   def emit(event, operator, conn) do
     agent_name = agent_name(operator)
     event_time = event.now
@@ -69,24 +69,11 @@ defmodule Bonny.EventRecorder do
     apply_op =
       K8s.Client.apply(event_manifest, field_manager: event.reporting_controller, force: true)
 
-    case K8s.Client.run(conn, apply_op) do
-      {:ok, _} ->
-        put_cache(agent_name, key, event_manifest)
-        :ok
+    result = K8s.Client.run(conn, apply_op)
 
-      error ->
-        gvkn =
-          {event.regarding["apiVersion"], event.regarding["kind"],
-           "#{event.regarding["namespace"]}/#{event.regarding["apiVersion"]}"}
+    if match?({:ok, _}, result), do: put_cache(agent_name, key, event_manifest)
 
-        Logger.error("#{inspect(gvkn)} - Failed applying status of resource.",
-          library: :bonny,
-          error: error,
-          event: event
-        )
-
-        :error
-    end
+    result
   end
 
   defp get_cache(agent_name, key, default) do
