@@ -315,15 +315,22 @@ defmodule Bonny.Axn do
     end
   end
 
-  defp apply_status_error_message({:error, %K8s.Discovery.Error{}}) do
-    "Failed applying status of resource. The status subresource for this seems to be disabled."
+  defp apply_error_message({:error, %K8s.Discovery.Error{}}) do
+    [" ", "The status subresource for this seems to be disabled."]
   end
 
-  defp apply_status_error_message({:error, %{message: message}}) do
-    "Failed applying status of resource. #{message}"
+  defp apply_error_message({:error, %{message: message}}), do: [" ", message]
+
+  defp apply_error_message(_), do: []
+
+  defp apply_status_error_message(error) do
+    ["Failed applying resource status." | apply_error_message(error)]
   end
 
-  defp apply_status_error_message(_), do: "Failed applying status of resource."
+  defp apply_descendant_error_message(error, descendant) do
+    gvkn = Resource.gvkn(descendant)
+    ["Failed applying descending (child) resource #{inspect(gvkn)}." | apply_error_message(error)]
+  end
 
   @doc """
   Applies the dependants to the cluster.
@@ -366,9 +373,10 @@ defmodule Bonny.Axn do
         end
 
       {descendant, {:error, error}}, acc ->
-        gvkn = Resource.gvkn(descendant)
+        id = identifier(axn)
+        message = apply_descendant_error_message(error, descendant)
 
-        Logger.error("#{inspect(gvkn)} - Failed applying descendant.",
+        Logger.error("#{inspect(id)} - #{message}",
           library: :bonny,
           resource: descendant,
           error: error

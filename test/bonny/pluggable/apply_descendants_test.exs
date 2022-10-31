@@ -143,6 +143,7 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
         assert hd(axn.events).event_type == :Warning
       end)
 
-    assert log =~ "Failed applying descendant"
+    assert log =~
+             ~s|Failed applying descending (child) resource {"default/error", "example.com/v1", "Kind=Error"}|
   end
 end
