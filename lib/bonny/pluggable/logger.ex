@@ -2,10 +2,14 @@ defmodule Bonny.Pluggable.Logger do
   @moduledoc """
   A pluggable step for logging basic action event information in the format:
 
-      {:add, "example.com/v1", "Widget"} - Processing event
-      {:add, "example.com/v1", "Widget"} - Status applied
-      {:add, "example.com/v1", "Widget"} - Normal event emitted
-      {:add, "example.com/v1", "Widget"} - Descendant {"v1", "Deployment", "default/nginx"} applied
+      {"NAMESPACE/OBJECT_NAME", API_VERSION, "Kind=KIND, Action=ACTION"}
+
+  Example:
+
+      {"default/my-object", "example.com/v1", "Kind=MyCustomResource, Action=:add"} - Processing event
+      {"default/my-object", "example.com/v1", "Kind=MyCustomResource, Action=:add"} - Applying status
+      {"default/my-object", "example.com/v1", "Kind=MyCustomResource, Action=:add"} - Emitting Normal event
+      {"default/my-object", "example.com/v1", "Kind=MyCustomResource, Action=:add"} - Applying descendant {"default/nginx", "apps/v1", "Kind=Deployment"}
 
   To use it, just add a step to the desired module.
 
@@ -56,7 +60,7 @@ defmodule Bonny.Pluggable.Logger do
         Logger.log(
           level,
           fn ->
-            inspect(id) <> " - Descendant #{inspect(gvkn)} applied"
+            inspect(id) <> " - Applying descendant #{inspect(gvkn)}"
           end,
           resource: axn.resource,
           descendant: descendant
@@ -69,7 +73,7 @@ defmodule Bonny.Pluggable.Logger do
       Logger.log(
         level,
         fn ->
-          inspect(id) <> " - #{event.event_type} event emitted"
+          inspect(id) <> " - Emitting #{event.event_type} event"
         end,
         resource: axn.resource,
         event: event

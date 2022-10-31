@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- No new entries below this line! -->
 
+## [1.0.0-rc.1] - 2022-10-31
+
+# Added
+
+- Better logs in case of errors while applying status, descendants or events
+- Integration tests for these logs
+
 ## [1.0.0-rc.0] - 2022-10-29
 
 ### Changed

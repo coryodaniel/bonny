@@ -96,7 +96,7 @@ defmodule Bonny.Pluggable.LoggerTest do
       end)
 
     assert captured_log =~
-             ~s|{"default/foo", "example.com/v1", "Kind=Widget, Action=:add"} - Descendant {"default/bar", "example.com/v1", "Kind=Cog"} applied|
+             ~s|{"default/foo", "example.com/v1", "Kind=Widget, Action=:add"} - Applying descendant {"default/bar", "example.com/v1", "Kind=Cog"}|
   end
 
   test "logs when events are emitted", %{axn: axn} do
@@ -111,6 +111,6 @@ defmodule Bonny.Pluggable.LoggerTest do
       end)
 
     assert captured_log =~
-             ~s|{"default/foo", "example.com/v1", "Kind=Widget, Action=:add"} - Normal event emitted|
+             ~s|{"default/foo", "example.com/v1", "Kind=Widget, Action=:add"} - Emitting Normal event|
   end
 end
