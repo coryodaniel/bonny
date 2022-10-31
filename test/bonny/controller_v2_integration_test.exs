@@ -11,6 +11,8 @@ defmodule Bonny.ControllerV2IntegrationTest do
   alias Bonny.Test.IntegrationHelper
   alias Bonny.Test.ResourceHelper
 
+  @resource_labels %{"test" => "controller_v2"}
+
   setup_all do
     timeout =
       "TEST_WAIT_TIMEOUT"
@@ -20,8 +22,11 @@ defmodule Bonny.ControllerV2IntegrationTest do
     conn = IntegrationHelper.conn()
 
     on_exit(fn ->
+      selector = K8s.Selector.label(@resource_labels)
+
       delete_v2_op =
         K8s.Client.delete_all("example.com/v1", "TestResourceV2", namespace: "default")
+        |> K8s.Operation.put_label_selector(selector)
 
       {:ok, _} = K8s.Client.run(conn, delete_v2_op)
     end)
@@ -41,18 +46,23 @@ defmodule Bonny.ControllerV2IntegrationTest do
 
     conn = IntegrationHelper.conn()
 
-    [conn: conn, resource_name: resource_name, ref: ref]
+    [
+      conn: conn,
+      resource_name: resource_name,
+      resource:
+        ResourceHelper.test_resource(resource_name, :v2, self(), ref, labels: @resource_labels),
+      ref: ref
+    ]
   end
 
   @tag :integration
   test "creating resource triggers controller", %{
     conn: conn,
     resource_name: resource_name,
+    resource: resource,
     timeout: timeout,
     ref: ref
   } do
-    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
-
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
 
@@ -64,10 +74,10 @@ defmodule Bonny.ControllerV2IntegrationTest do
   test "updating resource triggers modify/1", %{
     conn: conn,
     resource_name: resource_name,
+    resource: resource,
     timeout: timeout,
     ref: ref
   } do
-    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
     create_op = K8s.Client.create(resource)
     {:ok, _} = K8s.Client.run(conn, create_op)
 
@@ -89,10 +99,10 @@ defmodule Bonny.ControllerV2IntegrationTest do
   test "deleting resource triggers delete/1", %{
     conn: conn,
     resource_name: resource_name,
+    resource: resource,
     timeout: timeout,
     ref: ref
   } do
-    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
     create_op = K8s.Client.create(resource)
 
     {:ok, _} = K8s.Client.run(conn, create_op)
@@ -115,11 +125,10 @@ defmodule Bonny.ControllerV2IntegrationTest do
   test "creating and updating resource sets observedGeneration", %{
     conn: conn,
     resource_name: resource_name,
+    resource: resource,
     timeout: timeout,
     ref: ref
   } do
-    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
-
     {:ok, added_resource} = K8s.Client.run(conn, K8s.Client.create(resource))
 
     assert_receive {^ref, :add, ^resource_name}, timeout
@@ -159,11 +168,10 @@ defmodule Bonny.ControllerV2IntegrationTest do
   test "creating resource creates success event", %{
     conn: conn,
     resource_name: resource_name,
+    resource: resource,
     timeout: timeout,
     ref: ref
   } do
-    resource = ResourceHelper.test_resource(resource_name, :v2, self(), ref)
-
     {:ok, created_resource} = K8s.Client.run(conn, K8s.Client.create(resource))
 
     assert_receive {^ref, :add, ^resource_name}, timeout

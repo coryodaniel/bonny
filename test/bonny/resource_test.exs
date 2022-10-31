@@ -81,7 +81,6 @@ defmodule Bonny.ResourceTest do
                "blockOwnerDeletion" => false,
                "controller" => true,
                "name" => "some-widget",
-               "namespace" => "default",
                "uid" => "d9607e19-f88f-11e6-a518-42010a800195"
              }
     end
@@ -109,7 +108,6 @@ defmodule Bonny.ResourceTest do
                "blockOwnerDeletion" => false,
                "controller" => true,
                "name" => "some-widget",
-               "namespace" => "default",
                "uid" => "d9607e19-f88f-11e6-a518-42010a800195"
              }
     end

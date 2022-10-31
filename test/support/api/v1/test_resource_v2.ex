@@ -18,6 +18,12 @@ defmodule Bonny.Test.API.V1.TestResourceV2 do
                 rand: %{type: :string}
               },
               required: ["pid", "ref"]
+            },
+            status: %{
+              type: :object,
+              properties: %{
+                foo: %{type: :string}
+              }
             }
           }
         }

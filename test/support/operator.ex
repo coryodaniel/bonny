@@ -24,6 +24,12 @@ defmodule Bonny.Test.Operator do
         scope: :Namespaced,
         names: Bonny.API.CRD.kind_to_names("TestResourceV2"),
         versions: [Bonny.Test.API.V1.TestResourceV2]
+      },
+      %Bonny.API.CRD{
+        group: "example.com",
+        scope: :Namespaced,
+        names: Bonny.API.CRD.kind_to_names("TestResourceV3"),
+        versions: [Bonny.Test.API.V1.TestResourceV2]
       }
     ]
   end

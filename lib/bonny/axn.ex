@@ -270,9 +270,9 @@ defmodule Bonny.Axn do
       {{:ok, _}, _} ->
         :ok
 
-      {error, event} ->
+      {{:error, error}, event} ->
         id = identifier(axn)
-        message = emit_event_error_message(error, axn.resource)
+        message = emit_event_error_message(error)
 
         Logger.error("#{inspect(id)} - #{message}",
           library: :bonny,
@@ -310,7 +310,7 @@ defmodule Bonny.Axn do
       {:ok, _} ->
         mark_status_applied(axn)
 
-      error ->
+      {:error, error} ->
         id = identifier(axn)
         message = apply_status_error_message(error)
 
@@ -329,13 +329,17 @@ defmodule Bonny.Axn do
     end
   end
 
-  defp apply_error_message({:error, %K8s.Discovery.Error{}}) do
-    [" ", "The status subresource for this seems to be disabled."]
-  end
-
-  defp apply_error_message({:error, %{message: message}}), do: [" ", message]
+  defp apply_error_message(%{message: message}), do: [" ", message]
 
   defp apply_error_message(_), do: []
+
+  defp apply_status_error_message(%K8s.Discovery.Error{}) do
+    [
+      "Failed applying resource status.",
+      " ",
+      "The status subresource for this resource seems to be disabled."
+    ]
+  end
 
   defp apply_status_error_message(error) do
     ["Failed applying resource status." | apply_error_message(error)]
@@ -346,9 +350,8 @@ defmodule Bonny.Axn do
     ["Failed applying descending (child) resource #{inspect(gvkn)}." | apply_error_message(error)]
   end
 
-  defp emit_event_error_message(error, resource) do
-    gvkn = Resource.gvkn(resource)
-    ["Failed applying descending (child) resource #{inspect(gvkn)}." | apply_error_message(error)]
+  defp emit_event_error_message(error) do
+    ["Failed emitting event." | apply_error_message(error)]
   end
 
   @doc """
@@ -515,6 +518,6 @@ defmodule Bonny.Axn do
   @spec identifier(t()) :: {binary(), binary(), binary()}
   def identifier(%__MODULE__{action: action, resource: resource}) do
     {ns_name, api_vesion, others} = Bonny.Resource.gvkn(resource)
-    {ns_name, api_vesion, "#{others}, Action=#{action}"}
+    {ns_name, api_vesion, "#{others}, Action=#{inspect(action)}"}
   end
 end

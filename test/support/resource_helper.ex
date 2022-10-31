@@ -46,7 +46,7 @@ defmodule Bonny.Test.ResourceHelper do
     }
   end
 
-  @test_resource_kinds %{v1: "TestResource", v2: "TestResourceV2"}
+  @test_resource_kinds %{v1: "TestResource", v2: "TestResourceV2", v3: "TestResourceV3"}
   @spec test_resource(binary(), atom(), pid(), reference(), keyword()) :: map()
   def test_resource(name, version, pid, ref, opts \\ []) do
     labels = Keyword.get(opts, :labels, %{})

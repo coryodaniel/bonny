@@ -16,14 +16,14 @@ defmodule Bonny.ControllerIntegrationTest do
     # give the watcher time to initialize:
     :timer.sleep(500)
 
-    on_exit(fn ->
-      conn = IntegrationHelper.conn()
+    conn = IntegrationHelper.conn()
 
+    on_exit(fn ->
       delete_op = K8s.Client.delete_all("example.com/v1", "TestResource", namespace: "default")
       {:ok, _} = K8s.Client.run(conn, delete_op)
     end)
 
-    :ok
+    [conn: conn]
   end
 
   setup do
@@ -32,14 +32,12 @@ defmodule Bonny.ControllerIntegrationTest do
     resource_name =
       "test-#{ref |> :erlang.ref_to_list() |> List.to_string() |> String.replace(~r(\D), "")}"
 
-    conn = IntegrationHelper.conn()
-
     timeout =
       "TEST_WAIT_TIMEOUT"
       |> System.get_env("2000")
       |> String.to_integer()
 
-    [conn: conn, resource_name: resource_name, timeout: timeout, ref: ref]
+    [resource_name: resource_name, timeout: timeout, ref: ref]
   end
 
   @tag :integration

@@ -75,7 +75,6 @@ defmodule Bonny.Resource do
             "controller" => true,
             "kind" => "Orange",
             "name" => "annoying",
-            "namespace" => "default",
             "uid" => "e19b6f40-3293-11ed-a261-0242ac120002"
           }]
         }
@@ -115,6 +114,7 @@ defmodule Bonny.Resource do
   defp owner_reference(resource, opts) do
     resource
     |> resource_reference()
+    |> Map.delete("namespace")
     |> Map.put("blockOwnerDeletion", Keyword.get(opts, :block_owner_deletion, false))
     |> Map.put("controller", true)
   end
