@@ -14,7 +14,7 @@ Application.put_env(:bonny, :operator_name, "livebook")
 
 ## Creating your first Controller
 
-When running `mix bonny.init`, the task asks you to define CRDs and controllers already. It is optional but I advise to do so as it initializes your operator them. To create additional controllers, run `mix bonny.gen.controller`.
+When running `mix bonny.init`, the task asks you to define CRDs and controllers already. It is optional but I advise to do so as it initializes your operator then. To create additional controllers, run `mix bonny.gen.controller`.
 
 `mix bonny.gen.controller` does not register the controller with your operator. (Note however, that `mix bonny.init`does!) In order for your controller to do something, you need to add an entry to the `controllers/2` callback in your operator. See the operators guide for more information about operators.
 
