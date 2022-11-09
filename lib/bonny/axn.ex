@@ -517,7 +517,7 @@ defmodule Bonny.Axn do
   """
   @spec identifier(t()) :: {binary(), binary(), binary()}
   def identifier(%__MODULE__{action: action, resource: resource}) do
-    {ns_name, api_vesion, others} = Bonny.Resource.gvkn(resource)
-    {ns_name, api_vesion, "#{others}, Action=#{inspect(action)}"}
+    {ns_name, api_version, others} = Bonny.Resource.gvkn(resource)
+    {ns_name, api_version, "#{others}, Action=#{inspect(action)}"}
   end
 end

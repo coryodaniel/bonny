@@ -32,7 +32,7 @@ defmodule YourOperator.API.V1.CronTab do
   use Bonny.API.Version
 
   @impl Bonny.API.Version
-  def manifest(), do: struct!(default(), storage: true)
+  def manifest(), do: struct!(defaults(), storage: true)
 end
 ```
 
@@ -51,7 +51,7 @@ end
 #### Step 3: Additional Printer Columns
 
 Additional printer columns belong to CRD API versions, not to controllers. Therefore, if your
-controller defined additional printer columns, move those over to the verison you just created.
+controller defined additional printer columns, move those over to the version you just created.
 Modify `manifest/0` for this purpose.
 
 ```elixir
