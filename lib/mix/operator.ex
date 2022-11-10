@@ -55,33 +55,36 @@ defmodule Bonny.Mix.Operator do
   end
 
   defp operator_rules(operators) do
-    crds = Enum.flat_map(operators, & &1.crds())
+    for operator <- operators,
+        %{query: query, controller: controller} <- operator.controllers("default", []) do
+      crd_rules(query, operator.crds()) ++ controller_rules(controller)
+    end
+    |> List.flatten()
+  end
 
-    controllers = Enum.flat_map(operators, & &1.controllers("default", []))
+  defp controller_rules({controller, _opts}), do: controller.rbac_rules()
+  defp controller_rules(nil), do: []
+  defp controller_rules(controller), do: controller.rbac_rules()
 
-    Enum.flat_map(controllers, fn %{controller: controller, query: query} ->
-      crd_rules =
-        case find_matching_crd(query, crds) do
-          nil ->
-            []
+  defp crd_rules(query, crds) do
+    case find_matching_crd(query, crds) do
+      nil ->
+        []
 
-          crd ->
-            [
-              %{
-                apiGroups: [query.api_version],
-                resources: [crd.names.plural],
-                verbs: ["*"]
-              },
-              %{
-                apiGroups: [query.api_version],
-                resources: [crd.names.plural <> "/status"],
-                verbs: ["*"]
-              }
-            ]
-        end
-
-      crd_rules ++ controller.rbac_rules()
-    end)
+      crd ->
+        [
+          %{
+            apiGroups: [query.api_version],
+            resources: [crd.names.plural],
+            verbs: ["*"]
+          },
+          %{
+            apiGroups: [query.api_version],
+            resources: [crd.names.plural <> "/status"],
+            verbs: ["*"]
+          }
+        ]
+    end
   end
 
   defp find_matching_crd(query, crds) do

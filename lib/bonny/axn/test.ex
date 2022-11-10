@@ -54,4 +54,7 @@ defmodule Bonny.Axn.Test do
 
   @spec status(Bonny.Axn.t()) :: map()
   def status(%Bonny.Axn{status: status}), do: status
+
+  @spec assigns(Bonny.Axn.t()) :: map()
+  def assigns(%Bonny.Axn{assigns: assigns}), do: assigns
 end

@@ -51,13 +51,16 @@ defmodule Bonny.Operator do
   alias Bonny.Axn
 
   @type controller_spec :: %{
-          controller: atom(),
+          optional(:controller) => module() | {module(), keyword()},
           query: K8s.Operation.t()
         }
 
   @callback controllers(binary(), Keyword.t()) :: list(controller_spec())
   @callback crds() :: list(Bonny.API.CRD.t())
 
+  @spec __using__(any) ::
+          {:__block__, [],
+           [{:@, [...], [...]} | {:__block__, [...], [...]} | {:use, [...], [...]}, ...]}
   defmacro __using__(opts) do
     quote do
       use Pluggable.StepBuilder
@@ -116,23 +119,25 @@ defmodule Bonny.Operator do
         {watch_namespace, init_args} =
           Keyword.pop(init_args, :watch_namespace, @default_watch_namespace)
 
-        controllers =
-          controllers(watch_namespace, init_args)
-          |> Enum.map(&Map.to_list(&1))
-
-        Bonny.Operator.Supervisor.start_link(controllers, __MODULE__, init_args)
+        controllers(watch_namespace, init_args)
+        |> Enum.map(&Bonny.Operator.prepare_controller_for_supervisor/1)
+        |> Bonny.Operator.Supervisor.start_link(__MODULE__, init_args)
       end
 
       @doc """
       Runs the controller pipeline for the current action event.
       """
-      def delegate_to_controller(axn, _opts) do
-        axn
-        |> axn.controller.call([])
+      def delegate_to_controller(%Bonny.Axn{controller: nil} = axn, _step_opts), do: axn
+
+      def delegate_to_controller(%Bonny.Axn{controller: {controller, opts}} = axn, _step_opts) do
+        controller.call(axn, controller.init(opts))
       end
     end
   end
 
+  @doc false
+  @spec run({atom(), Bonny.Resource.t()}, {module(), keyword()}, module(), K8s.Conn.t()) ::
+          Bonny.Axn.t()
   def run({action, resource}, controller, operator, conn) do
     Axn.new!(
       conn: conn,
@@ -143,5 +148,15 @@ defmodule Bonny.Operator do
     )
     |> operator.call([])
     |> Bonny.Axn.emit_events()
+  end
+
+  @doc false
+  @spec prepare_controller_for_supervisor(controller_spec()) :: [{module(), keyword()}]
+  def prepare_controller_for_supervisor(controller) do
+    Map.update(controller, :controller, nil, fn
+      {controller, init_opts} -> {controller, init_opts}
+      controller -> {controller, []}
+    end)
+    |> Map.to_list()
   end
 end

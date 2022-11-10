@@ -23,7 +23,7 @@ defmodule Bonny.Axn do
     * `resource` - the resource the action was applied to
     * `conn` - the connection to the cluster the event occurred
     * `operator` - the operator that discovered and dispatched the event
-    * `controller` - the controller handling the event
+    * `controller` - the controller handling the event and its init opts
 
   ## Reaction fields
 
@@ -63,8 +63,8 @@ defmodule Bonny.Axn do
           assigns: assigns(),
           private: assigns(),
           halted: boolean(),
-          controller: atom(),
-          operator: atom() | nil,
+          controller: {controller :: module(), init_opts :: keyword()} | nil,
+          operator: module() | nil,
           states: states()
         }
 

@@ -111,9 +111,9 @@ crds
 In `controllers/2` we define the queries and their event handlers, i.e. controllers. function should return a list where each element of the list is a map with these 2 keys:
 
 * `:query` - A list operation of type `K8s.Operation.t()`. Bonny will watch the cluster with this operation and forward all events to the `:controller`.
-* `:controller` - An controller `use`ing `Bonny.ControllerV2`. See the [controller guide](controllers.livemd) for more information on controllers
+* `:controller` - A controller (See the [controller guide](controllers.livemd)) or any other `Pluggable` step. Accepts a module or a `{controller :: module(), init_opts :: keyword()}` tuple. If a tuple is given, the init_opts are passed to the controller's `init/1` function.
 
-If you managed to define a valid `conn` above, you can run the operator also defined above. The code below starts the operator and shows the supervision tree. Note that the operator starts an `EventRecorder` and two proceses for each controller defined in `controllers/2`. These two processes are the `Watcher` and the `Reconciler`. The `Watcher` watches for `ADD`, `MODIFY` and `DELETE` events in the cluster. The `Reconciler` regularly creates `:reconcile` events for each resource found in the cluster.
+If you managed to define a valid `conn` above, you can now run the operator defined above in this livebook. The code below starts the operator and shows the supervision tree. Note how the operator starts an `EventRecorder` and two proceses for each controller defined in `controllers/2`. These two processes are the `Watcher` and the `Reconciler`. The `Watcher` watches for `ADD`, `MODIFY` and `DELETE` events in the cluster. The `Reconciler` regularly creates `:reconcile` events for each resource found in the cluster.
 
 ```elixir
 {:ok, supervisor} = Supervisor.start_link([{MyApp.Operator, conn: conn}], strategy: :one_for_one)
