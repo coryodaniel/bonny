@@ -145,6 +145,7 @@ The operator implements a [Pluggable](https://hex.pm/packages/pluggable) pipelin
 
 Bonny comes with a few steps to your convenience. In most caes it makes sense to add at least `Bonny.Pluggable.ApplyDescendants` and `Bonny.Pluggable.ApplyStatus` to the end of your operator pipeline.
 
+* `Bonny.Pluggable.AddManagedByLabelToDescendants` - Adds the `app.kubernetes.io/managed-by` label to all descendants registered within the pipeline.
 * `Bonny.Pluggable.ApplyDescendants` - applies all the descendants added to the `%Bonny.Axn{}` struct.
 * `Bonny.Pluggable.ApplyStatus` - applies the status of the given `%Bonny.Axn{}` struct to the status subresource.
 * `Bonny.Pluggable.Logger`- logs an action event and when status, descendants and events are applied to the cluster. If desired, it makes sense to be placed as first step in your operator pipeline but can also be added to a controller pipeline.

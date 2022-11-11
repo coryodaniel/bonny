@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+### Added
+
+- `Bonny.Pluggable.AddManagedByLabelToDescendants` - Adds the `app.kubernetes.io/managed-by` label to all descendants registered within the pipeline.
+- Allow `nil` and `{controller :: module(), init_opts :: keyword()}` in the operator's `controllers/2` callback.
+
 <!-- No new entries below this line! -->
 
 ## [1.0.0-rc.1] - 2022-10-31

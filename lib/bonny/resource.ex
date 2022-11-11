@@ -120,6 +120,39 @@ defmodule Bonny.Resource do
   end
 
   @doc """
+  Set a label on the given resource.
+
+  ### Example
+
+      iex> resource = %{
+      ...>   "apiVersion" => "v1",
+      ...>   "kind" => "Pod",
+      ...>   "metadata" => %{"name" => "nginx", "namespace" => "default"}
+      ...>   # spec
+      ...> }
+      ...> Bonny.Resource.set_label(resource, "app.kubernetes.io/managed-by", "my-operator")
+      %{
+        "apiVersion" => "v1",
+        "kind" => "Pod",
+        "metadata" => %{
+          "name" => "nginx",
+          "namespace" => "default",
+          "labels" => %{
+            "app.kubernetes.io/managed-by" => "my-operator"
+          }
+        }
+      }
+  """
+  @spec set_label(t(), binary(), binary()) :: t()
+  def set_label(resource, label, value) do
+    put_in(
+      resource,
+      ["metadata", Access.key("labels", %{}), label],
+      value
+    )
+  end
+
+  @doc """
   Sets .status.observedGeneration to .metadata.generation
   """
   @spec set_observed_generation(t()) :: t()
