@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `K8sConn` - Implement spec correctly.
 
+### Changed
+
+- `Bonny.Axn.apply_descendants/N`, `Bonny.Axn.apply_status/N` - Raise upon error.
+
 <!-- No new entries below this line! -->
 
 ## [1.0.0-rc.1] - 2022-10-31

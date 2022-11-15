@@ -320,12 +320,7 @@ defmodule Bonny.Axn do
           error: error
         )
 
-        axn
-        |> failure_event(
-          reason: "Failed applying status",
-          message: "The status subresource could not be applied."
-        )
-        |> mark_status_applied()
+        raise "#{inspect(id)} - #{message}"
     end
   end
 
@@ -394,7 +389,7 @@ defmodule Bonny.Axn do
           acc
         end
 
-      {descendant, {:error, error}}, acc ->
+      {descendant, {:error, error}}, _acc ->
         id = identifier(axn)
         message = apply_descendant_error_message(error, descendant)
 
@@ -404,13 +399,7 @@ defmodule Bonny.Axn do
           error: error
         )
 
-        acc
-        |> clear_events()
-        |> failure_event(
-          reason: "Applying descendant failed",
-          message:
-            "Failed to apply #{K8s.Resource.FieldAccessors.kind(descendant)} #{K8s.Resource.FieldAccessors.name(descendant)} to the cluster."
-        )
+        raise "#{inspect(id)} - #{message}"
     end)
     |> mark_descendants_applied()
   end

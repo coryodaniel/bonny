@@ -134,13 +134,15 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
 
     log =
       capture_log(fn ->
-        axn =
-          axn(:reconcile)
-          |> Bonny.Axn.register_descendant(descendant)
-          |> MUT.call(opts)
+        assert_raise RuntimeError, ~r/Failed applying descending \(child\) resource/, fn ->
+          axn =
+            axn(:reconcile)
+            |> Bonny.Axn.register_descendant(descendant)
+            |> MUT.call(opts)
 
-        assert 1 == length(axn.events)
-        assert hd(axn.events).event_type == :Warning
+          assert 1 == length(axn.events)
+          assert hd(axn.events).event_type == :Warning
+        end
       end)
 
     assert log =~

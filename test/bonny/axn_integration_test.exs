@@ -60,9 +60,11 @@ defmodule Bonny.AxnIntegrationTest do
 
       log =
         capture_log(fn ->
-          axn(:add, conn: conn, resource: added_resource)
-          |> MUT.update_status(fn _ -> %{"foo" => 1} end)
-          |> MUT.apply_status()
+          assert_raise RuntimeError, ~r/Failed applying resource status./, fn ->
+            axn(:add, conn: conn, resource: added_resource)
+            |> MUT.update_status(fn _ -> %{"foo" => 1} end)
+            |> MUT.apply_status()
+          end
         end)
 
       assert log =~ ".status.foo: expected string, got"
@@ -94,9 +96,11 @@ defmodule Bonny.AxnIntegrationTest do
 
       log =
         capture_log(fn ->
-          axn(:add, conn: conn, resource: added_resource)
-          |> MUT.register_descendant(ResourceHelper.widget())
-          |> MUT.apply_descendants()
+          assert_raise RuntimeError, ~r/uid mismatch/, fn ->
+            axn(:add, conn: conn, resource: added_resource)
+            |> MUT.register_descendant(ResourceHelper.widget())
+            |> MUT.apply_descendants()
+          end
         end)
 
       assert log =~ "uid mismatch"
