@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+<!-- No new entries below this line! -->
+
+## [1.0.0-rc.2] - 2022-11-15
+
 ### Added
 
 - `Bonny.Pluggable.AddManagedByLabelToDescendants` - Adds the `app.kubernetes.io/managed-by` label to all descendants registered within the pipeline.
@@ -23,8 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `Bonny.Axn.apply_descendants/N`, `Bonny.Axn.apply_status/N` - Raise upon error.
-
-<!-- No new entries below this line! -->
 
 ## [1.0.0-rc.1] - 2022-10-31
 
