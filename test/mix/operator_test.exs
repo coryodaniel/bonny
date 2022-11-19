@@ -16,15 +16,15 @@ defmodule Bonny.Mix.OperatorTest do
           resources: ["customresourcedefinitions"],
           verbs: ["*"]
         },
-        %{apiGroups: ["events.k8s.io/v1"], resources: ["events"], verbs: ["*"]},
+        %{apiGroups: ["events.k8s.io"], resources: ["events"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["testresources"], verbs: ["*"]},
         %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
         %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
-        %{apiGroups: ["example.com/v1"], resources: ["testresourcev2s"], verbs: ["*"]},
-        %{apiGroups: ["example.com/v1"], resources: ["testresourcev2s/status"], verbs: ["*"]}
+        %{apiGroups: ["example.com"], resources: ["testresourcev2s"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["testresourcev2s/status"], verbs: ["*"]}
       ]
     }
 

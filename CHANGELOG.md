@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- No new entries below this line! -->
 
+## [1.0.0-rc.3] - 2022-11-19
+
+### Fixed
+
+- `Bonny.Mix.Operator` - fix manifest generation: remove version from apiGroup in ClusterRole.
+
 ## [1.0.0-rc.2] - 2022-11-15
 
 ### Added

@@ -29,7 +29,7 @@ defmodule Bonny.Mix.Operator do
         verbs: ["*"]
       },
       %{
-        apiGroups: ["events.k8s.io/v1"],
+        apiGroups: ["events.k8s.io"],
         resources: ["events"],
         verbs: ["*"]
       }
@@ -72,14 +72,16 @@ defmodule Bonny.Mix.Operator do
         []
 
       crd ->
+        api_group = String.replace(query.api_version, ~r/^([^\/]*)\/?.*$/, "\\1")
+
         [
           %{
-            apiGroups: [query.api_version],
+            apiGroups: [api_group],
             resources: [crd.names.plural],
             verbs: ["*"]
           },
           %{
-            apiGroups: [query.api_version],
+            apiGroups: [api_group],
             resources: [crd.names.plural <> "/status"],
             verbs: ["*"]
           }

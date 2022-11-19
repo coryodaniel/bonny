@@ -33,7 +33,7 @@ defmodule TestResourceV2Controller do
 
   def rbac_rules() do
     [
-      to_rbac_rule({"example.com/v1", "testresourcev2s/status", "*"})
+      to_rbac_rule({"example.com", "testresourcev2s/status", "*"})
     ]
   end
 end
