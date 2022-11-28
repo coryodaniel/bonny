@@ -13,6 +13,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- No new entries below this line! -->
 
+## [1.0.0] - 2022-11-28
+
+With Version 1.0.0, Bonny got a thorough refactoring. Besides this changelog,
+you might consider the several guides (e.g. the [migration guide](./guides/migration.mid))
+
+- `Bonny.Operator` was introduced as an entry point to the watching and handling
+  of processes. Your controllers are not more added to the supervision tree by
+  bonny. Instead you must create an operator and add that to your application's
+  supervision tree.
+- The [`Pluggable`](https://hex.pm/packages/pluggable) (think [`Plug`](https://hex.pm/packages/plug))
+  library is used with `Bonny.Axn` as token to process `ADDED`, `MODIFIED`,
+  `DELETED` and reconciliation events by `Pluggable` pipelines.
+- `Bonny.ControllerV2` was introduced as a successor to `Bonny.Controller`. It leverages
+  `Pluggable.StepBuilder` (think `Plug.Builder`) to build a pluggable pipeline.
+- `Bonny.Event` and `Bonny.EventRecorder` were introducd for Kubernetes
+  event creation ([#156](https://github.com/coryodaniel/bonny/pull/156), [#5](https://github.com/coryodaniel/bonny/issues/5))
+
+### Why this refactoring?
+
+- Allows for better CRD and API version definitions
+- With a `Pluggable` architecture, controllers are much easier to test (Think of `Plug.Conn` tests)
+- The `Pluggable` architecture makes your processing pipelines composable and simpler to customize/extend
+- Decoupling of manifest generation and action event processing
+- Internally, the amount of macros was reduced which makes Bonny easier to understand and maintain
+
 ## [1.0.0-rc.3] - 2022-11-19
 
 ### Fixed

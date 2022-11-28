@@ -30,7 +30,7 @@ Now add bonny to your dependencies in `mix.exs`
 ```elixir
 def deps do
   [
-    {:bonny, "~> 0.5"}
+    {:bonny, "~> 1.0"}
   ]
 end
 ```
@@ -99,7 +99,7 @@ To start your operator and connect it to an existing cluster, one must first:
 ```elixir
 # config.exs
 config :bonny,
-  {K8s.Conn, :from_file, ["~/.kube/config", [context: "optional-alternate-context"]]}
+  get_conn: {K8s.Conn, :from_file, ["~/.kube/config", [context: "optional-alternate-context"]]}
 ```
 
 If you've used `mix bonny.init` to generate your config, it created a `YourOperator.Conn` module for you. You can edit that instead.
@@ -124,15 +124,6 @@ Have a look at the guides that come with this repository. Some can even be opene
 - [CRD Versions](guides/crd_versions.livemd)
 - [Migrations](guides/migrations.md)
 - [Contributing](guides/contributing.md)
-
-## Tutorials and Examples:
-
-_Important!_ These tutorials are for an older version of Bonny, but the `add/1`, `modify/1`, and `delete/1` APIs are the same, as well as a new `reconcile/1` function. Additionally a [k8s](https://github.com/coryodaniel/k8s) has been added!
-
-Feel free to message me on [twitter](https://twitter.com/coryodaniel) if you need any help!
-
-- HelloOperator Tutorial Part: [1](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-1-34ccb2ea0b4d) [2](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-2-efdf8e422085) [3](https://medium.com/coryodaniel/bonny-extending-kubernetes-with-elixir-part-3-fdfc8b8cc843)
-- HelloOperator [source code](https://github.com/coryodaniel/hello_operator)
 
 ## Talks
 
@@ -188,9 +179,9 @@ _[Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)_:
 
 A set of application specific controllers deployed on Kubernetes and managed via kubectl and the Kubernetes API.
 
-## Testing
+## Contributing
 
-Check the guide about testing
+I'm thankful for any contribution to this project. Check out the [contribution guide](guides/contributing.md)
 
 ## Operator Blog Posts
 
