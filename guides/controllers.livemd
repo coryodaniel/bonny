@@ -1,13 +1,7 @@
 # Controllers
 
 ```elixir
-Mix.install(
-  [
-    :kino,
-    {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
-  ],
-  force: true
-)
+Mix.install([:kino, :bonny])
 
 Application.put_env(:bonny, :operator_name, "livebook")
 ```
@@ -47,22 +41,22 @@ end
 
 The step(s) you implement are called with a `%Bonny.Axn{}` token. It contains the `action` which triggered this event, the `resource` the event regards and other fields. Use pattern matching or a adispatch mechanism to handle the four different action types:
 
-- `add/1` - resource was created in the cluster.
-- `delete/1` - resource was deleted from the cluster.
-- `modify/1` - resource was modified in the cluster.
-- `reconcile/1` - Called on a regular basis in case we missed an action or to fix diverged state.
+* `add/1` - resource was created in the cluster.
+* `delete/1` - resource was deleted from the cluster.
+* `modify/1` - resource was modified in the cluster.
+* `reconcile/1` - Called on a regular basis in case we missed an action or to fix diverged state.
 
 Your event handlers should return the struct it received as first parameter. However, your controller can use helper functions from the `Bonny.Axn` module to modify it before returning it.
 
-## Descending Resources
+## Descendant Resources
 
-Your controller might create descending resources for its custom resource. For example, a `MyAppController` would create deployments and services for a `MyApp` resource.
+Your controller might create descendant resources for its custom resource. For example, a `MyAppController` would create deployments and services for a `MyApp` resource.
 
 Use `Bonny.Axn.register_descendant/3` to add such descendants. Descendants are not directly applied to the cluster. They are only registered within the `%Bonny.Axn{}` token. **Note that you need to add step `Bonny.Pluggable.ApplyDescendants` to either your controller or operator in order to apply descendants to the cluster.**
 
 ### Owner Reference
 
-If your controller creates descending resources for your custom resource, it is good practice to reference the owner(s). In kubernetes, you do this by adding an entry to `.metadata.ownerReferences`. `Bonny.Axn.register_descendant/3` does that for you unless you pass `ommit_owner_ref: true` as option.
+If your controller creates descendant resources for your custom resource, it is good practice to reference the owner(s). In kubernetes, you do this by adding an entry to `.metadata.ownerReferences`. `Bonny.Axn.register_descendant/3` does that for you unless you pass `ommit_owner_ref: true` as option.
 
 <!-- livebook:{"reevaluate_automatically":true} -->
 

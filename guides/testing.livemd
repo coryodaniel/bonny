@@ -1,10 +1,7 @@
 # Testing
 
 ```elixir
-Mix.install([
-  {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"},
-  :inflex
-])
+Mix.install([:bonny, :inflex])
 
 Application.put_env(:bonny, :operator_name, "livebook-operator")
 

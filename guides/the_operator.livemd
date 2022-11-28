@@ -1,13 +1,7 @@
 # The Operator
 
 ```elixir
-Mix.install(
-  [
-    :kino,
-    {:bonny, git: "https://github.com/coryodaniel/bonny.git", branch: "master"}
-  ]
-  # , force: true
-)
+Mix.install([:kino, :bonny])
 
 defmodule MyApp.API.V1.TestResource do
   use Bonny.API.Version
