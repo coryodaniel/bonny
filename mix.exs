@@ -93,7 +93,7 @@ defmodule Bonny.MixProject do
       main: "readme",
       logo: "assets/bonny.png",
       assets: "assets",
-      source_ref: @version,
+      source_ref: "v#{@version}",
       source_url: @source_url,
       extras: [
         "README.md",
