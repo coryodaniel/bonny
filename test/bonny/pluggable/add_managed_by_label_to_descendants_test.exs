@@ -7,7 +7,7 @@ defmodule Bonny.Pluggable.AddManagedByLabelToDescendantsTest do
 
   defmodule K8sMock do
     require Logger
-    import K8s.Test.HTTPHelper
+    import K8s.Client.HTTPTestHelper
     alias Bonny.Test.ResourceHelper
 
     def request(:patch, "apis/example.com/v1/namespaces/default/cogs/bar", body, _headers, _opts) do

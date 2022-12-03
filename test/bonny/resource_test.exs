@@ -10,7 +10,7 @@ defmodule Bonny.ResourceTest do
   defmodule K8sMock do
     require Logger
 
-    import K8s.Test.HTTPHelper
+    import K8s.Client.HTTPTestHelper
 
     def conn(), do: Bonny.K8sMock.conn(__MODULE__)
 

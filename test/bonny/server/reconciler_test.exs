@@ -8,7 +8,7 @@ defmodule Bonny.Server.ReconcilerTest do
   alias Bonny.Server.Reconciler, as: MUT
 
   defmodule K8sMock do
-    import K8s.Test.HTTPHelper
+    import K8s.Client.HTTPTestHelper
 
     def conn(), do: Bonny.K8sMock.conn(__MODULE__)
 
@@ -22,9 +22,7 @@ defmodule Bonny.Server.ReconcilerTest do
     end
 
     def request(:get, "apis/example.com/v1/cogs", _, _, _) do
-      render(%{"reason" => "NotFound", "message" => "next page not found"}, 404, [
-        {"Content-Type", "application/json"}
-      ])
+      render(404, "NotFound")
     end
   end
 

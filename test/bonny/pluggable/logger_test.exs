@@ -8,7 +8,7 @@ defmodule Bonny.Pluggable.LoggerTest do
 
   defmodule K8sMock do
     require Logger
-    import K8s.Test.HTTPHelper
+    import K8s.Client.HTTPTestHelper
     alias Bonny.Test.ResourceHelper
 
     def request(

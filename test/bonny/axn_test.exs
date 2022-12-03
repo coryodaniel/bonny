@@ -345,7 +345,7 @@ defmodule Bonny.AxnTest do
   describe "apply_status/2" do
     defmodule ApplyStatusK8sMock do
       require Logger
-      import K8s.Test.HTTPHelper
+      import K8s.Client.HTTPTestHelper
       alias Bonny.Test.ResourceHelper
 
       def request(
@@ -459,7 +459,7 @@ defmodule Bonny.AxnTest do
   describe "apply_descendant/2" do
     defmodule ApplyDescendantsK8sMock do
       require Logger
-      import K8s.Test.HTTPHelper
+      import K8s.Client.HTTPTestHelper
       alias Bonny.Test.ResourceHelper
 
       def request(
@@ -486,6 +486,7 @@ defmodule Bonny.AxnTest do
       K8s.Client.DynamicHTTPProvider.register(self(), ApplyDescendantsK8sMock)
     end
 
+    @tag :wip
     test "applies descendants", %{axn: axn, related: related, ref: ref} do
       axn
       |> MUT.register_descendant(related)
