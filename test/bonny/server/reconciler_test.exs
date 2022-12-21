@@ -12,7 +12,7 @@ defmodule Bonny.Server.ReconcilerTest do
 
     def conn(), do: Bonny.K8sMock.conn(__MODULE__)
 
-    def request(:get, "apis/example.com/v1/foos", _, _, opts) do
+    def request(:get, %URI{path: "apis/example.com/v1/foos"}, _, _, opts) do
       limit = get_in(opts, [:params, :limit])
 
       case limit do
@@ -21,7 +21,7 @@ defmodule Bonny.Server.ReconcilerTest do
       end
     end
 
-    def request(:get, "apis/example.com/v1/cogs", _, _, _) do
+    def request(:get, %URI{path: "apis/example.com/v1/cogs"}, _, _, _) do
       render(404, "NotFound")
     end
   end

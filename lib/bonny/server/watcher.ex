@@ -3,7 +3,7 @@ defmodule Bonny.Server.Watcher do
   Creates the stream for watching resources in kubernetes and prepares its processing.
 
   Watching a resource in kubernetes results in a stream of add/modify/delete events.
-  This module uses `K8s.Client.watch_and_stream/3` to create such a stream and maps
+  This module uses `K8s.Client.stream/3` to create such a stream and maps
   events to a controller's event handler. It is then up to the caller to run the
   resulting stream.
 
@@ -24,7 +24,7 @@ defmodule Bonny.Server.Watcher do
 
   @spec get_raw_stream(K8s.Conn.t(), K8s.Operation.t()) :: Enumerable.t(watch_event())
   def get_raw_stream(conn, watch_operation) do
-    {:ok, watch_stream} = K8s.Client.watch_and_stream(conn, watch_operation)
+    {:ok, watch_stream} = K8s.Client.stream(conn, watch_operation)
 
     watch_stream
     |> Stream.map(fn %{"type" => type, "object" => resource} -> {@operations[type], resource} end)

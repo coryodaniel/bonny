@@ -350,7 +350,7 @@ defmodule Bonny.AxnTest do
 
       def request(
             :patch,
-            "api/v1/namespaces/default/configmaps/foo/status",
+            %URI{path: "api/v1/namespaces/default/configmaps/foo/status"},
             body,
             _headers,
             _opts
@@ -360,9 +360,9 @@ defmodule Bonny.AxnTest do
         render(resource)
       end
 
-      def request(_method, _url, _body, _headers, _opts) do
+      def request(_method, _uri, _body, _headers, _opts) do
         Logger.error("Call to #{__MODULE__}.request/5 not handled: #{inspect(binding())}")
-        {:error, %HTTPoison.Error{reason: "request not mocked"}}
+        {:error, %K8s.Client.HTTPError{message: "request not mocked"}}
       end
     end
 
@@ -464,7 +464,7 @@ defmodule Bonny.AxnTest do
 
       def request(
             :patch,
-            "api/v1/namespaces/default/configmaps/bar",
+            %URI{path: "api/v1/namespaces/default/configmaps/bar"},
             body,
             _headers,
             _opts
@@ -476,9 +476,9 @@ defmodule Bonny.AxnTest do
         render(resource)
       end
 
-      def request(_method, _url, _body, _headers, _opts) do
+      def request(_method, _uri, _body, _headers, _opts) do
         Logger.error("Call to #{__MODULE__}.request/5 not handled: #{inspect(binding())}")
-        {:error, %HTTPoison.Error{reason: "request not mocked"}}
+        {:error, %K8s.Client.HTTPError{message: "request not mocked"}}
       end
     end
 
@@ -486,7 +486,6 @@ defmodule Bonny.AxnTest do
       K8s.Client.DynamicHTTPProvider.register(self(), ApplyDescendantsK8sMock)
     end
 
-    @tag :wip
     test "applies descendants", %{axn: axn, related: related, ref: ref} do
       axn
       |> MUT.register_descendant(related)

@@ -36,7 +36,7 @@ defmodule Bonny.Operator do
         def controllers(watching_namespace, _opts) do
           [
             %{
-              query: K8s.Client.list("my-controller.io", "MyCustomResource", namespace: nil)
+              query: K8s.Client.watch("my-controller.io", "MyCustomResource", namespace: nil)
               controller: MyOperator.Controller.MyCustomResourceController
             }
           ]

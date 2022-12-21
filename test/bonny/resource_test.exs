@@ -16,7 +16,7 @@ defmodule Bonny.ResourceTest do
 
     def request(
           :patch,
-          "apis/example.com/v1/namespaces/default/widgets/foo/status",
+          %URI{path: "apis/example.com/v1/namespaces/default/widgets/foo/status"},
           body,
           _headers,
           _opts
@@ -33,9 +33,9 @@ defmodule Bonny.ResourceTest do
       render(%{})
     end
 
-    def request(_method, _url, _body, _headers, _opts) do
+    def request(_method, _uri, _body, _headers, _opts) do
       Logger.error("Call to #{__MODULE__}.request/5 not handled: #{inspect(binding())}")
-      {:error, %HTTPoison.Error{reason: "request not mocked"}}
+      {:error, %K8s.Client.HTTPError{message: "request not mocked"}}
     end
   end
 

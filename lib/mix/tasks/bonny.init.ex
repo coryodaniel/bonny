@@ -266,7 +266,7 @@ defmodule Mix.Tasks.Bonny.Init do
           quote do
             %{
               query:
-                K8s.Client.list(unquote(api_version), unquote(controller[:name]),
+                K8s.Client.watch(unquote(api_version), unquote(controller[:name]),
                   namespace: watching_namespace
                 ),
               controller: unquote(controller_module)
@@ -275,7 +275,7 @@ defmodule Mix.Tasks.Bonny.Init do
         else
           quote do
             %{
-              query: K8s.Client.list(unquote(api_version), unquote(controller[:name])),
+              query: K8s.Client.watch(unquote(api_version), unquote(controller[:name])),
               controller: unquote(controller_module)
             }
           end

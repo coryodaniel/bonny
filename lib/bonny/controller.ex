@@ -161,8 +161,8 @@ defmodule Bonny.Controller do
     kind = Bonny.CRD.kind(crd)
 
     case crd.scope do
-      :namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
-      _ -> K8s.Client.list(api_version, kind)
+      :namespaced -> K8s.Client.watch(api_version, kind, namespace: Bonny.Config.namespace())
+      _ -> K8s.Client.watch(api_version, kind)
     end
   end
 end
