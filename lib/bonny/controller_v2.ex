@@ -130,14 +130,16 @@ defmodule Bonny.ControllerV2 do
     operator = Keyword.fetch!(init_args, :operator)
     conn = Keyword.get_lazy(init_args, :conn, fn -> Bonny.Config.conn() end)
 
-    watcher_stream =
-      Bonny.Server.Watcher.get_raw_stream(conn, query)
+    watcher_stream = fn ->
+      Bonny.Server.Watcher.get_raw_stream(conn, ensure_watch_query(query))
       |> Stream.map(&Bonny.Operator.run(&1, controller, operator, conn))
+    end
 
-    reconciler_stream =
+    reconciler_stream = fn ->
       conn
-      |> Bonny.Server.Reconciler.get_raw_stream(query)
+      |> Bonny.Server.Reconciler.get_raw_stream(ensure_list_query(query))
       |> Task.async_stream(&Bonny.Operator.run({:reconcile, &1}, controller, operator, conn))
+    end
 
     children = [
       {Bonny.Server.AsyncStreamRunner, id: Watcher, stream: watcher_stream},
@@ -152,4 +154,24 @@ defmodule Bonny.ControllerV2 do
       max_seconds: 120
     )
   end
+
+  defp ensure_list_query(%K8s.Operation{verb: :watch} = op) do
+    struct!(op, verb: :list)
+  end
+
+  defp ensure_list_query(%K8s.Operation{verb: :watch_all_namespaces} = op) do
+    struct!(op, verb: :list_all_namespaces)
+  end
+
+  defp ensure_list_query(op), do: op
+
+  defp ensure_watch_query(%K8s.Operation{verb: :list} = op) do
+    struct!(op, verb: :watch)
+  end
+
+  defp ensure_watch_query(%K8s.Operation{verb: :list_all_namespaces} = op) do
+    struct!(op, verb: :watch_all_namespaces)
+  end
+
+  defp ensure_watch_query(op), do: op
 end

@@ -124,7 +124,7 @@ defmodule Bonny.Server.Scheduler do
         args
         |> Keyword.put(
           :stream,
-          Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation)
+          fn -> Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation) end
         )
         |> Keyword.put(:termination_delay, 5_000)
         |> Bonny.Server.AsyncStreamRunner.child_spec()

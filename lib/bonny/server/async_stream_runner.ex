@@ -5,16 +5,17 @@ defmodule Bonny.Server.AsyncStreamRunner do
 
   ## Example
       # prepare a stream
-      stream =
+      stream = fn ->
         conn
         |> K8s.Client.stream(operation)
         |> Stream.filter(&filter_resources/1)
         |> Stream.map(&process_stream/1)
+      end
 
       children = [
         {Bonny.Server.AsyncStreamRunner,
            name: ReconcileServer,
-           stream: K8s.Client.stream(conn, operation),
+           stream: stream,
            termination_delay: 30_000,
       ]
 
@@ -22,7 +23,7 @@ defmodule Bonny.Server.AsyncStreamRunner do
 
   ## Options
 
-    * `:stream` - The (prepared) stream to run
+    * `:stream` - Callback to get the stream to run
     * `:name` (optional) - Register this process under the given name.
     * `:termination_delay` (optional) - After the stream ends, how many
       milliseconds to wait before the process terminates (and might be
@@ -60,7 +61,7 @@ defmodule Bonny.Server.AsyncStreamRunner do
 
   @spec run(Enumerable.t(), non_neg_integer()) :: no_return()
   def run(stream, termination_delay) do
-    Stream.run(stream)
+    Stream.run(stream.())
 
     Logger.debug("AsyncStreamRunner - Stream terminated", library: :bonny)
 

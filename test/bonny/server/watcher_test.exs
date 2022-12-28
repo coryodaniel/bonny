@@ -87,7 +87,6 @@ defmodule Bonny.Server.WatcherTest do
     [conn: __MODULE__.K8sMock.conn()]
   end
 
-  @tag :wip
   test "watcher returns a prepared stream that calls the add/modify/delete functions for each event",
        %{conn: conn} do
     Process.register(self(), __MODULE__)

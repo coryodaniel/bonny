@@ -45,8 +45,7 @@ defmodule Bonny.Server.Scheduler.Binding do
   @doc """
   Creates the pod's /binding subresource through K8s.
   """
-  @spec create(K8s.Conn.t(), map(), map()) ::
-          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec create(K8s.Conn.t(), map(), map()) :: K8s.Client.Runner.Base.result_t()
   def create(conn, pod, node) do
     binding = new(pod, node)
     operation = K8s.Client.create(pod, binding)
