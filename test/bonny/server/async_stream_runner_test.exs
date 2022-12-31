@@ -11,11 +11,10 @@ defmodule Bonny.Server.AsyncStreamRunnerTest do
     self = self()
     ref = make_ref()
 
-    stream = fn ->
+    stream =
       Stream.iterate(0, &(&1 + 1))
       |> Stream.map(&send(self, {ref, "Current number: #{&1}"}))
       |> Stream.take(5)
-    end
 
     {:ok, pid} = MUT.start_link(stream: stream)
     monitor_ref = Process.monitor(pid)

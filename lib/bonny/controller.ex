@@ -63,24 +63,22 @@ defmodule Bonny.Controller do
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.WatchServer,
            name: __MODULE__.WatchServer,
-           stream: fn ->
+           stream:
              Bonny.Server.Watcher.get_stream(
                __MODULE__,
                conn,
                Bonny.Controller.ensure_watch_query(list_operation)
-             )
-           end,
+             ),
            termination_delay: 5_000},
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.ReconcileServer,
            name: __MODULE__.ReconcileServer,
-           stream: fn ->
+           stream:
              Bonny.Server.Reconciler.get_stream(
                __MODULE__,
                conn,
                Bonny.Controller.ensure_list_query(list_operation)
-             )
-           end,
+             ),
            termination_delay: 30_000}
         ]
 
