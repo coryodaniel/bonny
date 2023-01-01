@@ -153,6 +153,7 @@ defmodule Bonny.ControllerV2 do
     )
   end
 
+  # coveralls-ignore-start trivial code
   defp ensure_list_query(%K8s.Operation{verb: :watch} = op) do
     struct!(op, verb: :list)
   end
@@ -172,4 +173,5 @@ defmodule Bonny.ControllerV2 do
   end
 
   defp ensure_watch_query(op), do: op
+  # coveralls-ignore-stop
 end
