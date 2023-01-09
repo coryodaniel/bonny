@@ -58,7 +58,7 @@ defmodule Bonny.MixProject do
       {:jason, "~> 1.1"},
       # {:k8s, "~> 1.1"},
       {:k8s, "~> 1.1"},
-      {:owl, "~> 0.5.1", runtime: false},
+      {:owl, "~> 0.6.0", runtime: false},
       {:pluggable, "~> 1.0"},
       {:telemetry, "~> 1.0"},
       {:ymlr, "~> 3.0"},
