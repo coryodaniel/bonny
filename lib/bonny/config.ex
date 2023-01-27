@@ -58,14 +58,24 @@ defmodule Bonny.Config do
   def service_account() do
     :bonny
     |> Application.get_env(:service_account_name, project_name())
-    |> dns_safe_name
+    |> dns_safe_name()
   end
 
   defp project_name() do
-    Mix.Project.config()
-    |> Keyword.fetch!(:app)
-    |> Atom.to_string()
-    |> String.replace("_", "-")
+    :bonny
+    |> Application.get_env(:project_name)
+    |> tap(fn
+      nil ->
+        Mix.Project.config()
+        |> Keyword.fetch!(:app)
+        |> Atom.to_string()
+        |> String.replace("_", "-")
+
+      val ->
+        val
+        |> to_string()
+        |> String.replace("_", "-")
+    end)
   end
 
   defp dns_safe_name(str) do
