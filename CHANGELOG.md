@@ -7,16 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Fixed
-
-- Initialized application calls the wrong function to initialize conn - [#181](https://github.com/coryodaniel/bonny/pull/181)
-- Don't add operator to supervision tree in `:test` env per default - [#182](https://github.com/coryodaniel/bonny/issues/182)
-
 <!-- Add your changelog entry to the relevant subsection -->
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
 <!-- No new entries below this line! -->
+
+## [1.0.1] - 2023-02-04
+
+### Fixed
+
+- Initialized application calls the wrong function to initialize conn - [#181](https://github.com/coryodaniel/bonny/pull/181)
+- Don't add operator to supervision tree in `:test` env per default - [#182](https://github.com/coryodaniel/bonny/issues/182)
 
 ## [1.0.0] - 2022-11-28
 
