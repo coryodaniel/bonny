@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Initialized application calls the wrong function to initialize conn - [#181](https://github.com/coryodaniel/bonny/pull/181)
+- Don't add operator to supervision tree in `:test` env per default - [#182](https://github.com/coryodaniel/bonny/issues/182)
 
 <!-- Add your changelog entry to the relevant subsection -->
 

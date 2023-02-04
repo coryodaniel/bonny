@@ -6,9 +6,15 @@ defmodule <%= @app_name %>.Application do
   use Application
 
   def start(_type, env: env) do
-    children = [{<%= @app_name %>.Operator, conn: <%= @app_name %>.K8sConn.get!(env)}]
-
     opts = [strategy: :one_for_one, name: <%= @app_name %>.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children(env), opts)
+  end
+
+  # If you want to implement integration tests, remove the following line:
+  defp children(:test), do: []
+  defp children(env) do
+    [
+      {<%= @app_name %>.Operator, conn: <%= @app_name %>.K8sConn.get!(env)}
+    ]
   end
 end
