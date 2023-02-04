@@ -26,7 +26,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
 
       delete_v2_op =
         K8s.Client.delete_all("example.com/v1", "TestResourceV2", namespace: "default")
-        |> K8s.Operation.put_label_selector(selector)
+        |> K8s.Operation.put_selector(selector)
 
       {:ok, _} = K8s.Client.run(conn, delete_v2_op)
     end)
