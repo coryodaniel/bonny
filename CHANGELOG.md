@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+### Added
+
+- A pluggable step for adding missing GVK information to resources - [#184](https://github.com/coryodaniel/bonny/pull/184), [#183](https://github.com/coryodaniel/bonny/issues/183)
+
 <!-- No new entries below this line! -->
 
 ## [1.0.1] - 2023-02-04
