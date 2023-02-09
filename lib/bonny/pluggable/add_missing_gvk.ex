@@ -23,7 +23,7 @@ defmodule Bonny.Pluggable.AddMissingGVK do
   @behaviour Pluggable
 
   @impl true
-  def init(opts \\ []),
+  def init(opts),
     do: %{
       "apiVersion" => Keyword.fetch!(opts, :apiVersion),
       "kind" => Keyword.fetch!(opts, :kind)
