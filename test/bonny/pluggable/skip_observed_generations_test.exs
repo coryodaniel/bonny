@@ -1,5 +1,5 @@
 defmodule Bonny.Pluggable.SkipObservedGenerationsTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use Bonny.Axn.Test
 
   alias Bonny.Pluggable.SkipObservedGenerations, as: MUT
