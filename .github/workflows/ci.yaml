@@ -7,22 +7,24 @@ on:
 
 env:
   MIX_ENV: test
+  KUBECONFIG: /home/runner/.kube/config
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        k8s_version: [latest]
+        k8s_version: [v1.26.0]
         elixir: [1.14.x]
         otp: [25.x]
     steps:
       - uses: actions/checkout@v2
 
-      - uses: debianmaster/actions-k3s@v1.0.5
-        id: k3s
+      - uses: engineerd/setup-kind@v0.5.0
+        id: kind
         with:
-          version: ${{ matrix.k8s_version }}
+          version: v0.17.0
+          image: kindest/node:${{ matrix.k8s_version }}
 
       - name: Setup elixir
         id: beam
