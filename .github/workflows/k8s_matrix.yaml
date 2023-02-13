@@ -4,19 +4,24 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+
+env:
+  KUBECONFIG: /home/runner/.kube/config
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        k8s_version: [v1.23.10-k3s1, v1.24.4-k3s1, latest] # tags according to https://hub.docker.com/r/rancher/k3s/tags
-        otp: [25.x] # with 24.3.0 hackney returns :checkout_failure
+        k8s_version: [v1.22.15, v1.23.13, v1.24.7, v1.25.3, v1.26.0]
+        otp: [25.x]
         elixir: [1.14.x]
     steps:
-      - uses: debianmaster/actions-k3s@v1.0.5
-        id: k3s
+      - uses: engineerd/setup-kind@v0.5.0
+        id: kind
         with:
-          version: ${{ matrix.k8s_version }}
+          version: v0.17.0
+          image: kindest/node:${{ matrix.k8s_version }}
       - uses: actions/checkout@v1.0.0
       - uses: erlef/setup-beam@v1
         with:
