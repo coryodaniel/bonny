@@ -8,20 +8,20 @@ help:
 
 all: test lint docs analyze
 
-integration.yaml: ## Create a k3d cluster
+integration.yaml: ## Create a kind cluster
 	$(MAKE) cluster.delete cluster.create
 	kind export kubeconfig --kubeconfig ${KUBECONFIG_PATH} --name "${CLUSTER_NAME}" 
 
 .PHONY: test.integration
 test.integration: integration.yaml
-test.integration: ## Run integration tests using k3d `make cluster`
+test.integration: ## Run integration tests using kind `make cluster`
 	MIX_ENV=test mix compile
 	MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
 	kubectl config use-context kind-${CLUSTER_NAME}
 	TEST_KUBECONFIG=${KUBECONFIG_PATH} mix test --only integration
 
 .PHONY: cluster.delete
-cluster.delete: ## Delete k3d cluster
+cluster.delete: ## Delete kind cluster
 	- kind delete cluster --kubeconfig ${KUBECONFIG_PATH} --name "${CLUSTER_NAME}"
 	rm -f ${KUBECONFIG_PATH}
 
@@ -38,7 +38,7 @@ lint:
 test:
 	MIX_ENV=test mix compile
 	MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
-	kubectl config use-context k3d-${CLUSTER_NAME}
+	kubectl config use-context kind-${CLUSTER_NAME}
 	TEST_KUBECONFIG=${KUBECONFIG_PATH} mix test --include integration --cover
 
 .PHONY: test.watch

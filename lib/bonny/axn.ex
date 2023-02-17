@@ -509,4 +509,67 @@ defmodule Bonny.Axn do
     {ns_name, api_version, others} = Bonny.Resource.gvkn(resource)
     {ns_name, api_version, "#{others}, Action=#{inspect(action)}"}
   end
+
+  @doc """
+  Sets the condition in the resource status.
+
+  The field `.status.conditions`, if configured in the CRD, nolds a list of
+  conditions, their `status` with a `message` and two timestamps. On the
+  resource this could look something like this (taken from a Pod):
+
+  ```
+  kind: Pod
+  status:
+    conditions:
+      - lastTransitionTime: "2019-10-22T16:29:24Z"
+        status: "True"
+        type: PodScheduled
+      - lastTransitionTime: "2019-10-22T16:29:24Z"
+        status: "True"
+        type: Initialized
+      - lastTransitionTime: "2019-10-22T16:29:31Z"
+        status: "True"
+        type: ContainersReady
+      - lastTransitionTime: "2019-10-22T16:29:31Z"
+        status: "True"
+        type: Ready
+  ```
+  """
+  @spec set_condition(
+          axn :: t(),
+          type :: binary(),
+          status :: boolean(),
+          message :: binary() | nil
+        ) :: t()
+  def set_condition(axn, type, status, message \\ nil) do
+    condition_status = if(status, do: "True", else: "False")
+    now = DateTime.utc_now()
+
+    condition =
+      %{
+        "type" => type,
+        "status" => condition_status,
+        "message" => message,
+        "lastHeartbeatTime" => now,
+        "lastTransitionTime" => now
+      }
+      |> Map.filter(&(!is_nil(&1)))
+
+    update_status(axn, fn status ->
+      next_conditions =
+        status
+        |> Map.get("conditions", [])
+        |> Map.new(&{&1["type"], &1})
+        |> Map.update(type, condition, fn
+          %{"status" => ^condition_status} = old_condition ->
+            Map.put(condition, "lastTransitionTime", old_condition["lastTransitionTime"])
+
+          _old_condition ->
+            condition
+        end)
+        |> Map.values()
+
+      Map.put(status, "conditions", next_conditions)
+    end)
+  end
 end
