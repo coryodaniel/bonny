@@ -30,5 +30,6 @@ defmodule Bonny.Test.API.V1.TestResourceV2 do
       }
     )
     |> add_observed_generation_status()
+    |> add_conditions()
   end
 end

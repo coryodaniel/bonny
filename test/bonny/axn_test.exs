@@ -516,4 +516,37 @@ defmodule Bonny.AxnTest do
       assert_receive ^ref
     end
   end
+
+  describe "set_condition/4" do
+    test "Sets conditions on a fresh resource", %{axn: axn} do
+      axn =
+        axn
+        |> MUT.set_condition("Ready", false, "working on it...")
+        |> MUT.set_condition("Initialized", true, "Initialization done")
+
+      assert 2 == length(axn.status["conditions"])
+    end
+
+    test "Updates lastHeartbeatTime", %{axn: axn} do
+      axn =
+        axn
+        |> MUT.set_condition("Ready", false, "working on it...")
+        |> MUT.set_condition("Ready", false, "working on it...")
+
+      assert 1 == length(axn.status["conditions"])
+      ready_condition = hd(axn.status["conditions"])
+      assert ready_condition["lastHeartbeatTime"] > ready_condition["lastTransitionTime"]
+    end
+
+    test "Updates lastTransitionTime", %{axn: axn} do
+      axn =
+        axn
+        |> MUT.set_condition("Ready", false, "working on it...")
+        |> MUT.set_condition("Ready", true, "working on it...")
+
+      assert 1 == length(axn.status["conditions"])
+      ready_condition = hd(axn.status["conditions"])
+      assert ready_condition["lastHeartbeatTime"] == ready_condition["lastTransitionTime"]
+    end
+  end
 end

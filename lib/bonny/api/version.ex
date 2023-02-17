@@ -140,7 +140,7 @@ defmodule Bonny.API.Version do
     quote do
       @behaviour Bonny.API.Version
       import Bonny.API.Version,
-        only: [defaults: 0, add_observed_generation_status: 1]
+        only: [defaults: 0, add_observed_generation_status: 1, add_conditions: 1]
 
       @hub Keyword.get(unquote(opts), :hub, false)
     end
@@ -211,6 +211,74 @@ defmodule Bonny.API.Version do
         :observedGeneration
       ],
       %{type: :integer}
+    )
+  end
+
+  @doc """
+  Adds the status subresource if it hasn't been added before
+  and adds the schema for the `.status.conditions` array.
+
+  ### Example
+
+      iex> %Bonny.API.Version{}
+      ...> |> Bonny.API.Version.add_conditions()
+      ...> |> Map.take([:subresources, :schema])
+      %{
+        subresources: %{status: %{}},
+        schema: %{
+          openAPIV3Schema: %{
+            type: :object,
+            properties: %{
+              status: %{
+                type: :object,
+                properties: %{
+                  conditions: %{
+                    type: :array,
+                    items: %{
+                      type: :object,
+                      properties: %{
+                        type: %{type: :string},
+                        status: %{type: :string, enum: ["True", "False"]},
+                        message: %{type: :string},
+                        lastTransitionTime: %{type: :string, format: :"date-time"},
+                        lastHeartbeatTime: %{type: :string, format: :"date-time"}
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "x-kubernetes-preserve-unknown-fields": true,
+          }
+        }
+      }
+  """
+  @spec add_conditions(t()) :: t()
+  def add_conditions(version) do
+    version
+    |> put_in([Access.key(:subresources, %{}), :status], %{})
+    |> put_in(
+      [
+        Access.key(:schema, %{}),
+        Access.key(:openAPIV3Schema, %{type: :object}),
+        Access.key(:properties, %{}),
+        Access.key(:status, %{type: :object, properties: %{}}),
+        Access.key(:properties, %{}),
+        :conditions
+      ],
+      %{
+        type: :array,
+        items: %{
+          type: :object,
+          properties: %{
+            type: %{type: :string},
+            status: %{type: :string, enum: ["True", "False"]},
+            message: %{type: :string},
+            lastTransitionTime: %{type: :string, format: :"date-time"},
+            lastHeartbeatTime: %{type: :string, format: :"date-time"}
+          }
+        }
+      }
     )
   end
 end

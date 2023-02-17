@@ -132,4 +132,42 @@ defmodule Bonny.AxnIntegrationTest do
       assert log =~ ~s|type: Invalid value: "": has invalid value: InvalidType|
     end
   end
+
+  describe "set_condition/4" do
+    @tag :integration
+    test "runs without errors", %{conn: conn, resource: resource} do
+      {:ok, added_resource} = K8s.Client.run(conn, K8s.Client.apply(resource))
+
+      axn(:add, conn: conn, resource: added_resource)
+      |> MUT.set_condition("Ready", false, "not ready yet")
+      |> MUT.apply_status()
+
+      {:ok, resource} =
+        resource
+        |> K8s.Client.get()
+        |> K8s.Client.put_conn(conn)
+        |> K8s.Client.run()
+
+      assert "False" == hd(resource["status"]["conditions"])["status"]
+    end
+
+    @tag :integration
+    @tag :wip
+    test "message can be nil", %{conn: conn, resource: resource} do
+      {:ok, added_resource} = K8s.Client.run(conn, K8s.Client.apply(resource))
+
+      axn(:add, conn: conn, resource: added_resource)
+      |> MUT.set_condition("Ready", false)
+      |> MUT.apply_status()
+
+      {:ok, resource} =
+        resource
+        |> K8s.Client.get()
+        |> K8s.Client.put_conn(conn)
+        |> K8s.Client.run()
+
+      assert "False" == hd(resource["status"]["conditions"])["status"]
+      assert nil == hd(resource["status"]["conditions"])["message"]
+    end
+  end
 end
