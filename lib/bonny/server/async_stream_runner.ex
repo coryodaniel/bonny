@@ -14,7 +14,7 @@ defmodule Bonny.Server.AsyncStreamRunner do
       children = [
         {Bonny.Server.AsyncStreamRunner,
            name: ReconcileServer,
-           stream: K8s.Client.stream(conn, operation),
+           stream: stream,
            termination_delay: 30_000,
       ]
 

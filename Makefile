@@ -36,6 +36,9 @@ lint:
 
 .PHONY: test
 test:
+	MIX_ENV=test mix compile
+	MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
+	kubectl config use-context k3d-${CLUSTER_NAME}
 	TEST_KUBECONFIG=${KUBECONFIG_PATH} mix test --include integration --cover
 
 .PHONY: test.watch

@@ -22,7 +22,7 @@ defmodule <%= @app_name %>.Operator do
       [
         # Add your controllers here.
         # %{
-        #  query: K8s.Client.list("<%= @api_group %>/v1", "MyCustomResource", namespace: watching_namespace),
+        #  query: K8s.Client.watch("<%= @api_group %>/v1", "MyCustomResource", namespace: watching_namespace),
         #  controller: <%= @app_name %>.Controller.MyCustomResourceController
         # }
       ]

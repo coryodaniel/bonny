@@ -9,10 +9,16 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
 
   defmodule K8sMock do
     require Logger
-    import K8s.Test.HTTPHelper
+    import K8s.Client.HTTPTestHelper
     alias Bonny.Test.ResourceHelper
 
-    def request(:patch, "apis/example.com/v1/namespaces/default/cogs/bar", body, _headers, _opts) do
+    def request(
+          :patch,
+          %URI{path: "apis/example.com/v1/namespaces/default/cogs/bar"},
+          body,
+          _headers,
+          _opts
+        ) do
       resource = Jason.decode!(body)
       dest = ResourceHelper.string_to_pid(resource["spec"]["pid"])
       send(dest, resource)
@@ -21,17 +27,17 @@ defmodule Bonny.Pluggable.ApplyDescendantsTest do
 
     def request(
           :patch,
-          "apis/example.com/v1/namespaces/default/errors/error",
+          %URI{path: "apis/example.com/v1/namespaces/default/errors/error"},
           _body,
           _headers,
           _opts
         ) do
-      {:error, %HTTPoison.Error{reason: "some error"}}
+      {:error, %K8s.Client.HTTPError{message: "some error"}}
     end
 
-    def request(_method, _url, _body, _headers, _opts) do
+    def request(_method, _uri, _body, _headers, _opts) do
       Logger.error("Call to #{__MODULE__}.request/5 not handled: #{inspect(binding())}")
-      {:error, %HTTPoison.Error{reason: "request not mocked"}}
+      {:error, %K8s.Client.HTTPError{message: "request not mocked"}}
     end
   end
 

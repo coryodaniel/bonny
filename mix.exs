@@ -8,7 +8,7 @@ defmodule Bonny.MixProject do
       app: :bonny,
       description: description(),
       version: @version,
-      elixir: "~> 1.12",
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -56,8 +56,7 @@ defmodule Bonny.MixProject do
     [
       {:inflex, "~> 2.0"},
       {:jason, "~> 1.1"},
-      # {:k8s, "~> 1.1"},
-      {:k8s, "~> 1.1"},
+      {:k8s, "~> 2.0"},
       {:owl, "~> 0.6.0", runtime: false},
       {:pluggable, "~> 1.0"},
       {:telemetry, "~> 1.0"},

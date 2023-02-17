@@ -10,7 +10,8 @@ defmodule Bonny.Test.Operator do
   def controllers(watching_namespace, _opts) do
     [
       %{
-        query: K8s.Client.list("example.com/v1", "TestResourceV2", namespace: watching_namespace),
+        query:
+          K8s.Client.watch("example.com/v1", "TestResourceV2", namespace: watching_namespace),
         controller: TestResourceV2Controller
       }
     ]

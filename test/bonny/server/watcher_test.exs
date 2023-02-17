@@ -8,64 +8,58 @@ defmodule Bonny.Server.WatcherTest do
   defmodule K8sMock do
     require Logger
 
-    import K8s.Test.HTTPHelper
+    alias K8s.Client.HTTPTestHelper
 
     def conn(), do: Bonny.K8sMock.conn(__MODULE__)
 
-    def request(:get, "apis/example.com/v1/widgets", _body, _headers, opts) do
-      case get_in(opts, [:params, :watch]) do
-        true ->
-          pid = Keyword.fetch!(opts, :stream_to)
-
-          send_object(pid, %{
-            "type" => "ADDED",
-            "object" => %{
-              "apiVersion" => "v1",
-              "kind" => "Namespace",
-              "metadata" => %{"name" => "foo", "resourceVersion" => "11", "generation" => 1}
-            }
-          })
-
-          send_object(pid, %{
-            "type" => "MODIFIED",
-            "object" => %{
-              "apiVersion" => "v1",
-              "kind" => "Namespace",
-              "metadata" => %{"name" => "bar", "resourceVersion" => "12", "generation" => 2},
-              "status" => %{"observedGeneration" => 1}
-            }
-          })
-
-          send_object(pid, %{
-            "type" => "MODIFIED",
-            "object" => %{
-              "apiVersion" => "v1",
-              "kind" => "Namespace",
-              "metadata" => %{"name" => "foo", "resourceVersion" => "13", "generation" => 2},
-              "status" => %{"observedGeneration" => 2}
-            }
-          })
-
-          send_object(pid, %{
-            "type" => "DELETED",
-            "object" => %{
-              "apiVersion" => "v1",
-              "kind" => "Namespace",
-              "metadata" => %{"name" => "foo", "resourceVersion" => "14", "generation" => 2},
-              "status" => %{"observedGeneration" => 2}
-            }
-          })
-
-          {:ok, %HTTPoison.AsyncResponse{id: make_ref()}}
-
-        nil ->
-          render(%{"metadata" => %{"resourceVersion" => "10"}})
-      end
+    def request(:get, %URI{path: "apis/example.com/v1/widgets"}, _body, _headers, _opts) do
+      HTTPTestHelper.render(%{"metadata" => %{"resourceVersion" => "10"}})
     end
 
-    def request(_method, _url, _body, _headers, _opts) do
+    def request(_method, _uri, _body, _headers, _opts) do
       Logger.error("Call to #{__MODULE__}.request/5 not handled: #{inspect(binding())}")
-      {:error, %HTTPoison.Error{reason: "request not mocked"}}
+      {:error, %K8s.Client.HTTPError{message: "request not mocked"}}
+    end
+
+    def stream(:get, %URI{path: "apis/example.com/v1/widgets"}, _body, _headers, _opts) do
+      {:ok,
+       [
+         HTTPTestHelper.stream_object(%{
+           "type" => "ADDED",
+           "object" => %{
+             "apiVersion" => "v1",
+             "kind" => "Namespace",
+             "metadata" => %{"name" => "foo", "resourceVersion" => "11", "generation" => 1}
+           }
+         }),
+         HTTPTestHelper.stream_object(%{
+           "type" => "MODIFIED",
+           "object" => %{
+             "apiVersion" => "v1",
+             "kind" => "Namespace",
+             "metadata" => %{"name" => "bar", "resourceVersion" => "12", "generation" => 2},
+             "status" => %{"observedGeneration" => 1}
+           }
+         }),
+         HTTPTestHelper.stream_object(%{
+           "type" => "MODIFIED",
+           "object" => %{
+             "apiVersion" => "v1",
+             "kind" => "Namespace",
+             "metadata" => %{"name" => "foo", "resourceVersion" => "13", "generation" => 2},
+             "status" => %{"observedGeneration" => 2}
+           }
+         }),
+         HTTPTestHelper.stream_object(%{
+           "type" => "DELETED",
+           "object" => %{
+             "apiVersion" => "v1",
+             "kind" => "Namespace",
+             "metadata" => %{"name" => "foo", "resourceVersion" => "14", "generation" => 2},
+             "status" => %{"observedGeneration" => 2}
+           }
+         })
+       ]}
     end
   end
 
@@ -97,7 +91,7 @@ defmodule Bonny.Server.WatcherTest do
        %{conn: conn} do
     Process.register(self(), __MODULE__)
 
-    operation = K8s.Client.list("example.com/v1", :widgets)
+    operation = K8s.Client.watch("example.com/v1", :widgets)
     stream = MUT.get_stream(__MODULE__.TestController, conn, operation) |> Stream.take(4)
 
     Task.async(fn ->

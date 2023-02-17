@@ -63,12 +63,22 @@ defmodule Bonny.Controller do
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.WatchServer,
            name: __MODULE__.WatchServer,
-           stream: Bonny.Server.Watcher.get_stream(__MODULE__, conn, list_operation),
+           stream:
+             Bonny.Server.Watcher.get_stream(
+               __MODULE__,
+               conn,
+               Bonny.Controller.ensure_watch_query(list_operation)
+             ),
            termination_delay: 5_000},
           {Bonny.Server.AsyncStreamRunner,
            id: __MODULE__.ReconcileServer,
            name: __MODULE__.ReconcileServer,
-           stream: Bonny.Server.Reconciler.get_stream(__MODULE__, conn, list_operation),
+           stream:
+             Bonny.Server.Reconciler.get_stream(
+               __MODULE__,
+               conn,
+               Bonny.Controller.ensure_list_query(list_operation)
+             ),
            termination_delay: 30_000}
         ]
 
@@ -100,6 +110,28 @@ defmodule Bonny.Controller do
       defoverridable list_operation: 0, conn: 0
     end
   end
+
+  # coveralls-ignore-start trivial code
+  def ensure_list_query(%K8s.Operation{verb: :watch} = op) do
+    struct!(op, verb: :list)
+  end
+
+  def ensure_list_query(%K8s.Operation{verb: :watch_all_namespaces} = op) do
+    struct!(op, verb: :list_all_namespaces)
+  end
+
+  def ensure_list_query(op), do: op
+
+  def ensure_watch_query(%K8s.Operation{verb: :list} = op) do
+    struct!(op, verb: :watch)
+  end
+
+  def ensure_watch_query(%K8s.Operation{verb: :list_all_namespaces} = op) do
+    struct!(op, verb: :watch_all_namespaces)
+  end
+
+  def ensure_watch_query(op), do: op
+  # coveralls-ignore-end
 
   @doc false
   defmacro __before_compile__(_) do
@@ -161,8 +193,8 @@ defmodule Bonny.Controller do
     kind = Bonny.CRD.kind(crd)
 
     case crd.scope do
-      :namespaced -> K8s.Client.list(api_version, kind, namespace: Bonny.Config.namespace())
-      _ -> K8s.Client.list(api_version, kind)
+      :namespaced -> K8s.Client.watch(api_version, kind, namespace: Bonny.Config.namespace())
+      _ -> K8s.Client.watch(api_version, kind)
     end
   end
 end
