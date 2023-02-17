@@ -11,9 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+### Changed
+
+- Upgraded k8s dependency to 2.0.x. [#173](https://github.com/coryodaniel/bonny/pull/173)
+
 ### Added
 
-- A pluggable step for adding missing GVK information to resources - [#184](https://github.com/coryodaniel/bonny/pull/184), [#183](https://github.com/coryodaniel/bonny/issues/183)
+- `Bonny.Pluggable.AddMissingGVK` - A pluggable step for adding missing GVK information to resources - [#184](https://github.com/coryodaniel/bonny/pull/184), [#183](https://github.com/coryodaniel/bonny/issues/183)
+- Helpers to define conditions on custom resources. [#188](https://github.com/coryodaniel/bonny/pull/188)
+  - `Bonny.API.Version.add_conditions/1` - Helper to define a schema for conditions on the CRD
+  - `Bonny.Axn.set_condition/4` - Helper to set a condition on a resource
 
 <!-- No new entries below this line! -->
 
