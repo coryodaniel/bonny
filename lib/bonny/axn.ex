@@ -553,7 +553,7 @@ defmodule Bonny.Axn do
         "lastHeartbeatTime" => now,
         "lastTransitionTime" => now
       }
-      |> Map.filter(&(!is_nil(&1)))
+      |> Map.reject(&is_nil(elem(&1, 1)))
 
     update_status(axn, fn status ->
       next_conditions =
