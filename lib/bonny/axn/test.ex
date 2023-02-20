@@ -24,7 +24,7 @@ defmodule Bonny.Axn.Test do
   end
 
   @default_resource %{
-    "apiVersion" => "example.com/v1",
+    "apiVersion" => "v1",
     "kind" => "ConfigMap",
     "metadata" => %{
       "name" => "foo",
