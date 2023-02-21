@@ -30,18 +30,20 @@ defmodule Bonny.Pluggable.AddFinalizerTest do
   end
 
   test "adds finalizer to resource metadata" do
-    opts = MUT.init(id: "bonny/foo-finalizer", impl: fn axn -> {:ok, axn} end)
+    opts =
+      MUT.init(id: "bonny/foo-finalizer", impl: fn axn -> {:ok, axn} end, add_to_resource: true)
+
     axn = MUT.call(axn(:add), opts)
     assert [resource] = axn.descendants
     assert "bonny/foo-finalizer" in resource["metadata"]["finalizers"]
   end
 
-  test "skips adding finalizer to resource metadata if skip_if evals to true" do
+  test "skips adding finalizer to resource metadata if add_to_resource evals to false" do
     opts =
       MUT.init(
         id: "bonny/foo-finalizer",
         impl: fn axn -> {:ok, axn} end,
-        skip_if: fn _ -> true end
+        add_to_resource: fn _ -> false end
       )
 
     axn = MUT.call(axn(:add), opts)
@@ -49,7 +51,9 @@ defmodule Bonny.Pluggable.AddFinalizerTest do
   end
 
   test "Noop if finalizer already in resource metadata" do
-    opts = MUT.init(id: "bonny/foo-finalizer", impl: fn axn -> {:ok, axn} end)
+    opts =
+      MUT.init(id: "bonny/foo-finalizer", impl: fn axn -> {:ok, axn} end, add_to_resource: true)
+
     axn = axn(:add)
 
     axn = put_in(axn.resource["metadata"]["finalizers"], ["bonny/foo-finalizer"])

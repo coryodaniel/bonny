@@ -2,21 +2,28 @@ defmodule Bonny.Pluggable.AddFinalizer do
   @behaviour Pluggable
 
   @type finalizer_impl :: (Bonny.Axn.t() -> {:ok, Bonny.Axn.t()} | {:error, Bonny.Axn.t()})
-  @type skip_if :: (Bonny.Axn.t() -> boolean())
-  @type options :: [{:id, binary()} | {:impl, finalizer_impl()} | {:skip_if, skip_if()}]
+  @type add_to_resource :: boolean() | (Bonny.Axn.t() -> boolean())
+  @type options :: [
+          {:id, binary()} | {:impl, finalizer_impl()} | {:add_to_resource, add_to_resource()}
+        ]
+  @typep finalizer :: %{
+           id: binary(),
+           impl: finalizer_impl(),
+           add: add_to_resource()
+         }
 
   @impl true
+  @spec init(options()) :: finalizer()
   def init(opts) do
     %{
       id: Keyword.fetch!(opts, :id),
       impl: Keyword.fetch!(opts, :impl),
-      skip_if: Keyword.get(opts, :skip_if, fn _ -> false end)
+      add: Keyword.get(opts, :add_to_resource, false)
     }
   end
 
   @impl true
-  @spec call(Bonny.Axn.t(), %{id: binary(), impl: finalizer_impl(), skip_if: skip_if()}) ::
-          Bonny.Axn.t()
+  @spec call(Bonny.Axn.t(), finalizer()) :: Bonny.Axn.t()
   def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer)
       when is_map_key(metadata, "deletionTimestamp") do
     if finalizer.id in Map.get(metadata, "finalizers", []) do
@@ -43,9 +50,8 @@ defmodule Bonny.Pluggable.AddFinalizer do
   end
 
   def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer) do
-    if finalizer.id in Map.get(metadata, "finalizers", []) or finalizer.skip_if.(axn) do
-      axn
-    else
+    if add_to_resource?(axn, finalizer) and
+         finalizer.id not in Map.get(metadata, "finalizers", []) do
       resource_with_finalizer =
         update_in(
           axn.resource,
@@ -54,6 +60,12 @@ defmodule Bonny.Pluggable.AddFinalizer do
         )
 
       Bonny.Axn.register_descendant(axn, resource_with_finalizer, omit_owner_ref: true)
+    else
+      axn
     end
   end
+
+  @spec add_to_resource?(Bonny.Axn.t(), finalizer()) :: boolean()
+  defp add_to_resource?(_axn, %{add: add}) when is_boolean(add), do: add
+  defp add_to_resource?(axn, %{add: add}) when is_function(add), do: add.(axn)
 end
