@@ -56,7 +56,7 @@ defmodule Bonny.Axn do
   @type t :: %__MODULE__{
           action: :add | :modify | :reconcile | :delete,
           conn: K8s.Conn.t(),
-          descendants: list(Resource.t()),
+          descendants: %{{name :: binary(), namespace :: binary()} => Resource.t()},
           events: list(Bonny.Event.t()),
           resource: Resource.t(),
           status: map() | nil,
@@ -77,7 +77,7 @@ defmodule Bonny.Axn do
     status: nil,
     assigns: %{},
     private: %{},
-    descendants: [],
+    descendants: %{},
     events: [],
     halted: false,
     operator: nil,
@@ -228,7 +228,11 @@ defmodule Bonny.Axn do
         do: descendant,
         else: Resource.add_owner_reference(descendant, axn.resource)
 
-    %__MODULE__{axn | descendants: [descendant | axn.descendants]}
+    key =
+      {K8s.Resource.FieldAccessors.namespace(descendant),
+       K8s.Resource.FieldAccessors.name(descendant)}
+
+    %__MODULE__{axn | descendants: Map.put(axn.descendants, key, descendant)}
   end
 
   @doc """
@@ -372,7 +376,7 @@ defmodule Bonny.Axn do
     %__MODULE__{descendants: descendants, conn: conn} = axn
 
     descendants
-    |> List.wrap()
+    |> Map.values()
     |> run_before_apply_descendants(axn)
     |> Resource.apply_async(conn, apply_opts)
     |> Enum.reduce(axn, fn

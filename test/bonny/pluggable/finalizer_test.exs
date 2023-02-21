@@ -1,10 +1,10 @@
-defmodule Bonny.Pluggable.AddFinalizerTest do
+defmodule Bonny.Pluggable.FinalizerTest do
   use ExUnit.Case, async: true
   use Bonny.Axn.Test
 
-  alias Bonny.Pluggable.AddFinalizer, as: MUT
+  alias Bonny.Pluggable.Finalizer, as: MUT
 
-  defmodule AddFinalizerK8sMock do
+  defmodule FinalizerK8sMock do
     require Logger
     import K8s.Client.HTTPTestHelper
 
@@ -26,7 +26,7 @@ defmodule Bonny.Pluggable.AddFinalizerTest do
   end
 
   setup do
-    K8s.Client.DynamicHTTPProvider.register(self(), AddFinalizerK8sMock)
+    K8s.Client.DynamicHTTPProvider.register(self(), FinalizerK8sMock)
   end
 
   test "adds finalizer to resource metadata" do
@@ -34,7 +34,7 @@ defmodule Bonny.Pluggable.AddFinalizerTest do
       MUT.init(id: "bonny/foo-finalizer", impl: fn axn -> {:ok, axn} end, add_to_resource: true)
 
     axn = MUT.call(axn(:add), opts)
-    assert [resource] = axn.descendants
+    assert [resource] = Map.values(axn.descendants)
     assert "bonny/foo-finalizer" in resource["metadata"]["finalizers"]
   end
 
@@ -47,7 +47,7 @@ defmodule Bonny.Pluggable.AddFinalizerTest do
       )
 
     axn = MUT.call(axn(:add), opts)
-    assert [] = axn.descendants
+    assert %{} = axn.descendants
   end
 
   test "Noop if finalizer already in resource metadata" do
@@ -59,7 +59,7 @@ defmodule Bonny.Pluggable.AddFinalizerTest do
     axn = put_in(axn.resource["metadata"]["finalizers"], ["bonny/foo-finalizer"])
 
     result = MUT.call(axn, opts)
-    assert result.descendants == []
+    assert %{} == result.descendants
   end
 
   test "Calls finalizer when deletionTimestamp is set" do

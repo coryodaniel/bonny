@@ -1,4 +1,4 @@
-defmodule Bonny.Pluggable.AddFinalizer do
+defmodule Bonny.Pluggable.Finalizer do
   @behaviour Pluggable
 
   @type finalizer_impl :: (Bonny.Axn.t() -> {:ok, Bonny.Axn.t()} | {:error, Bonny.Axn.t()})
@@ -52,14 +52,14 @@ defmodule Bonny.Pluggable.AddFinalizer do
   def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer) do
     if add_to_resource?(axn, finalizer) and
          finalizer.id not in Map.get(metadata, "finalizers", []) do
-      resource_with_finalizer =
+      axn =
         update_in(
-          axn.resource,
-          ["metadata", Access.key("finalizers", [])],
+          axn,
+          [Access.key(:resource), "metadata", Access.key("finalizers", [])],
           &(&1 ++ [finalizer.id])
         )
 
-      Bonny.Axn.register_descendant(axn, resource_with_finalizer, omit_owner_ref: true)
+      Bonny.Axn.register_descendant(axn, axn.resource, omit_owner_ref: true)
     else
       axn
     end

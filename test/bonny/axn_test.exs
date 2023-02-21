@@ -417,7 +417,8 @@ defmodule Bonny.AxnTest do
 
   describe "register_descendant/3" do
     test "registers a descendant with owner reference", %{axn: axn, related: related} do
-      %{descendants: [registered_descendant | others]} = MUT.register_descendant(axn, related)
+      %{descendants: descendants} = MUT.register_descendant(axn, related)
+      [registered_descendant | others] = Map.values(descendants)
 
       assert Enum.empty?(others)
 
@@ -438,9 +439,8 @@ defmodule Bonny.AxnTest do
     end
 
     test "Ommits owner reference if requested", %{axn: axn, related: related} do
-      %{descendants: [registered_descendant | []]} =
-        MUT.register_descendant(axn, related, omit_owner_ref: true)
-
+      %{descendants: descendants} = MUT.register_descendant(axn, related, omit_owner_ref: true)
+      [registered_descendant | []] = Map.values(descendants)
       assert is_nil(registered_descendant["metadata"]["ownerReferences"])
     end
 
