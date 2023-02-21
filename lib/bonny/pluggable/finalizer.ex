@@ -1,8 +1,66 @@
 defmodule Bonny.Pluggable.Finalizer do
+  @moduledoc """
+  Declare a finalizer and its implementation.
+
+  ### Kubernetes Docs:
+
+  * https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/
+  * https://kubernetes.io/blog/2021/05/14/using-finalizers-to-control-deletion/
+
+  > Note for Testing: This step directly updates the resource on the kubernetes
+  > cluster. In order to write unit tests, you therefore want to use
+  > `K8s.Client.DynamicHTTPProvider` in order to mock the calls to Kubernetes
+
+  ### Examples
+
+  See `t:options/0`, `t:finalizer_impl/0` and `t:add_to_resource/0` for more
+  infos on the options.
+
+  By default, a missing finalizer is not added to the resource.
+
+      step Bonny.Pluggable.Finalizer,
+        id: "example.com/cleanup",
+        impl: &__MODULE__.cleanup/1
+
+  Set `add_to_resource` to true in order for Bonny to always add it.
+
+      step Bonny.Pluggable.Finalizer,
+        id: "example.com/cleanup",
+        impl: &__MODULE__.cleanup/1,
+        add_to_resource: true
+
+  Or make it depending on the event/resource.
+
+      step Bonny.Pluggable.Finalizer,
+        id: "example.com/cleanup",
+        impl: &__MODULE__.cleanup/1,
+        add_to_resource: &__MODULE__.deletion_policy_not_abandon/1
+
+  """
+
   @behaviour Pluggable
 
+  @typedoc """
+  The implementation of the finalizer. This is a function of arity 1 which is
+  called when the resource is deleted. It receives the `%Bonny.Axn{}` token as
+  argument and should return the same.
+  """
   @type finalizer_impl :: (Bonny.Axn.t() -> {:ok, Bonny.Axn.t()} | {:error, Bonny.Axn.t()})
+
+  @typedoc """
+  Boolean or callback of arity 1 to tell Bonny whether or not to add the
+  finalizer to the resource if it is missing. If it is a callback, it receives
+  the `%Bonny.Axn{}` token and shoulr return a `boolean`.
+  """
   @type add_to_resource :: boolean() | (Bonny.Axn.t() -> boolean())
+
+  @typedoc """
+  - `id` - Fully qualified finalizer identifier
+  - `impl` - The implementation of the finalizer. See `t:finalizer_impl/0`
+  - `add_to_resource` - (otional) whether Bonny should add the finalizer to the
+    resource if it is missing. See `t:add_to_resource/0`
+    `%Bonny.Axn{}` token. Defaults to `false`.
+  """
   @type options :: [
           {:id, binary()} | {:impl, finalizer_impl()} | {:add_to_resource, add_to_resource()}
         ]
@@ -15,8 +73,14 @@ defmodule Bonny.Pluggable.Finalizer do
   @impl true
   @spec init(options()) :: finalizer()
   def init(opts) do
+    id = Keyword.fetch!(opts, :id)
+
+    if !String.contains?(id, "/") do
+      raise "The finalizer identifier #{inspect(id)} is not fully qualified. It has to be in form \"domain/name\"."
+    end
+
     %{
-      id: Keyword.fetch!(opts, :id),
+      id: id,
       impl: Keyword.fetch!(opts, :impl),
       add: Keyword.get(opts, :add_to_resource, false)
     }

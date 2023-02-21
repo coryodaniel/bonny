@@ -29,6 +29,12 @@ defmodule Bonny.Pluggable.FinalizerTest do
     K8s.Client.DynamicHTTPProvider.register(self(), FinalizerK8sMock)
   end
 
+  test "Raises if no FQDN" do
+    assert_raise RuntimeError, ~r/"bonny-foo-finalizer" is not fully qualified/, fn ->
+      MUT.init(id: "bonny-foo-finalizer", impl: fn axn -> {:ok, axn} end, add_to_resource: true)
+    end
+  end
+
   test "adds finalizer to resource metadata" do
     opts =
       MUT.init(id: "bonny/foo-finalizer", impl: fn axn -> {:ok, axn} end, add_to_resource: true)
