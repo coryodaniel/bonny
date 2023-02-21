@@ -13,22 +13,20 @@ defmodule TestResourceV2Controller do
 
   use Bonny.ControllerV2
 
-  step(:send_done)
+  step :send_done
 
-  step(Bonny.Pluggable.Finalizer,
+  step Bonny.Pluggable.Finalizer,
     id: "example.com/cleanup",
     impl: &__MODULE__.cleanup/1,
     add_to_resource: &__MODULE__.add_finalizers?/1
-  )
 
-  step(Bonny.Pluggable.Finalizer,
+  step Bonny.Pluggable.Finalizer,
     id: "example.com/cleanup2",
     impl: &__MODULE__.cleanup2/1,
     add_to_resource: &__MODULE__.add_finalizers?/1
-  )
 
-  step(Bonny.Pluggable.SkipObservedGenerations)
-  step(:handle_action)
+  step Bonny.Pluggable.SkipObservedGenerations
+  step :handle_action
 
   def handle_action(axn, _opts) do
     respond(axn.resource, axn.action)

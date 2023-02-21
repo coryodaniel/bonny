@@ -11,7 +11,7 @@ end
 defmodule MyApp.Controller.GenericController do
   use Bonny.ControllerV2
 
-  step(:handle_event)
+  step :handle_event
   def handle_event(axn, _), do: axn
 end
 
@@ -57,9 +57,9 @@ defmodule MyApp.Operator do
     ]
   end
 
-  step(:delegate_to_controller)
-  step(Bonny.Pluggable.ApplyStatus)
-  step(Bonny.Pluggable.ApplyDescendants)
+  step :delegate_to_controller
+  step Bonny.Pluggable.ApplyStatus
+  step Bonny.Pluggable.ApplyDescendants
 
   @impl Bonny.Operator
   def controllers(watching_namespace, _opts) do

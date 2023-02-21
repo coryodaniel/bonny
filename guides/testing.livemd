@@ -81,7 +81,7 @@ The `ConfigMapToPluralizeController` handles `:add` and `:modify` and `:reconcil
 defmodule ConfigMapToPluralizeController do
   use Bonny.ControllerV2
 
-  step(:handle_event)
+  step :handle_event
 
   def handle_event(%Bonny.Axn{action: action} = axn, _opts)
       when action in [:add, :modify, :reconcile] do
@@ -173,7 +173,7 @@ ExUnit.run()
 
 ## Integration Testing
 
-You can also test your code against a real Kubernetes cluster setup locally (e.g. with `k3d`) and in your CI. You will need to setup a `%K8s.Conn{}` defines the connection your cluster __but is oonly used for the integration tests__. Have a look at the follwing files in the Bonny repo:
+You can also test your code against a real Kubernetes cluster setup locally (e.g. with `k3d`) and in your CI. You will need to setup a `%K8s.Conn{}` defines the connection your cluster **but is oonly used for the integration tests**. Have a look at the follwing files in the Bonny repo:
 
-* `test/support/integration_helper.ex` - defines a `conn/0` function
-* `test/bonny/controller_v2_integration_test.exs` - implements integration tests using the helper above.
+- `test/support/integration_helper.ex` - defines a `conn/0` function
+- `test/bonny/controller_v2_integration_test.exs` - implements integration tests using the helper above.
