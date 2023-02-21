@@ -136,8 +136,7 @@ defmodule Bonny.Operator do
   end
 
   @doc false
-  @spec run({atom(), Bonny.Resource.t()}, {module(), keyword()}, module(), K8s.Conn.t()) ::
-          Bonny.Axn.t()
+  @spec run({atom(), Bonny.Resource.t()}, {module(), keyword()}, module(), K8s.Conn.t()) :: :ok
   def run({action, resource}, controller, operator, conn) do
     Axn.new!(
       conn: conn,
@@ -148,6 +147,9 @@ defmodule Bonny.Operator do
     )
     |> operator.call([])
     |> Bonny.Axn.emit_events()
+    |> Bonny.Axn.run_after_processed()
+
+    :ok
   end
 
   @doc false

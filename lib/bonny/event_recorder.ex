@@ -66,10 +66,11 @@ defmodule Bonny.EventRecorder do
       get_cache(agent_name, key, event_manifest)
       |> increment_series_count()
 
-    apply_op =
-      K8s.Client.apply(event_manifest, field_manager: event.reporting_controller, force: true)
-
-    result = K8s.Client.run(conn, apply_op)
+    result =
+      Bonny.Resource.apply(event_manifest, conn,
+        field_manager: event.reporting_controller,
+        force: true
+      )
 
     if match?({:ok, _}, result), do: put_cache(agent_name, key, event_manifest)
 

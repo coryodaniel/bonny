@@ -2,9 +2,9 @@ defmodule Bonny.Test.Operator do
   @moduledoc false
   use Bonny.Operator, default_watch_namespace: "default"
 
-  step :delegate_to_controller
-  step Bonny.Pluggable.ApplyStatus
-  step :send_done
+  step(:delegate_to_controller)
+  step(Bonny.Pluggable.ApplyStatus)
+  step(Bonny.Pluggable.ApplyDescendants)
 
   @impl Bonny.Operator
   def controllers(watching_namespace, _opts) do
@@ -33,14 +33,5 @@ defmodule Bonny.Test.Operator do
         versions: [Bonny.Test.API.V1.TestResourceV2]
       }
     ]
-  end
-
-  def send_done(%Bonny.Axn{resource: resource} = axn, _) do
-    pid = resource |> get_in(["spec", "pid"]) |> Bonny.Test.ResourceHelper.string_to_pid()
-    ref = resource |> get_in(["spec", "ref"]) |> Bonny.Test.ResourceHelper.string_to_ref()
-    name = resource |> get_in(["metadata", "name"])
-
-    send(pid, {ref, :done, name})
-    axn
   end
 end

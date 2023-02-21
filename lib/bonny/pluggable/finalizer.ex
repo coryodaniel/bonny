@@ -40,6 +40,8 @@ defmodule Bonny.Pluggable.Finalizer do
 
   @behaviour Pluggable
 
+  import YamlElixir.Sigil
+
   @typedoc """
   The implementation of the finalizer. This is a function of arity 1 which is
   called when the resource is deleted. It receives the `%Bonny.Axn{}` token as
@@ -89,47 +91,60 @@ defmodule Bonny.Pluggable.Finalizer do
   @impl true
   @spec call(Bonny.Axn.t(), finalizer()) :: Bonny.Axn.t()
   def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer)
-      when is_map_key(metadata, "deletionTimestamp") do
+      when is_map_key(metadata, "deletionTimestamp") and axn.action == :modify do
     if finalizer.id in Map.get(metadata, "finalizers", []) do
       case finalizer.impl.(axn) do
         {:ok, axn} ->
-          {:ok, resource} =
-            axn.resource
-            |> update_in(~w(metadata finalizers), &List.delete(&1, finalizer.id))
-            |> Bonny.Resource.drop_managed_fields()
-            |> K8s.Client.apply()
-            |> K8s.Client.put_conn(axn.conn)
-            |> K8s.Client.run()
-
-          axn
-          |> struct!(resource: resource)
-          |> Pluggable.Token.halt()
+          new_finalizers_list = List.delete(axn.resource["metadata"]["finalizers"], finalizer.id)
+          patch_finalizers(axn, new_finalizers_list)
+          Pluggable.Token.halt(axn)
 
         {:error, axn} ->
           Pluggable.Token.halt(axn)
       end
     else
-      Pluggable.Token.halt(axn)
+      axn
     end
   end
 
-  def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer) do
+  def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer)
+      when not is_map_key(metadata, "deletionTimestamp") do
     if add_to_resource?(axn, finalizer) and
          finalizer.id not in Map.get(metadata, "finalizers", []) do
-      axn =
-        update_in(
-          axn,
-          [Access.key(:resource), "metadata", Access.key("finalizers", [])],
-          &(&1 ++ [finalizer.id])
-        )
+      new_finalizers_list = [finalizer.id | Map.get(metadata, "finalizers", [])]
+      axn = put_in(axn.resource["metadata"]["finalizers"], new_finalizers_list)
 
-      Bonny.Axn.register_descendant(axn, axn.resource, omit_owner_ref: true)
+      Bonny.Axn.register_after_processed(axn, fn axn ->
+        patch_finalizers(axn, axn.resource["metadata"]["finalizers"])
+      end)
     else
       axn
     end
   end
 
+  def call(axn, _finalizer) do
+    axn
+  end
+
   @spec add_to_resource?(Bonny.Axn.t(), finalizer()) :: boolean()
   defp add_to_resource?(_axn, %{add: add}) when is_boolean(add), do: add
   defp add_to_resource?(axn, %{add: add}) when is_function(add), do: add.(axn)
+
+  defp patch_finalizers(%Bonny.Axn{resource: resource, conn: conn}, finalizers) do
+    patch =
+      ~y"""
+      apiVersion: #{resource["apiVersion"]}
+      kind: #{resource["kind"]}
+      metadata:
+        name: #{resource["metadata"]["name"]}
+        namespace: #{resource["metadata"]["namespace"]}
+
+      """
+      |> put_in(~w(metadata finalizers), finalizers)
+
+    patch
+    |> K8s.Client.patch()
+    |> K8s.Client.put_conn(conn)
+    |> K8s.Client.run()
+  end
 end
