@@ -23,7 +23,8 @@ defmodule TestResourceV2Controller do
   step Bonny.Pluggable.Finalizer,
     id: "example.com/cleanup2",
     impl: &__MODULE__.cleanup2/1,
-    add_to_resource: &__MODULE__.add_finalizers?/1
+    add_to_resource: &__MODULE__.add_finalizers?/1,
+    log_level: :debug
 
   step Bonny.Pluggable.SkipObservedGenerations
   step :handle_action

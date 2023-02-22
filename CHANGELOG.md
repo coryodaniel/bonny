@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helpers to define conditions on custom resources. [#188](https://github.com/coryodaniel/bonny/pull/188)
   - `Bonny.API.Version.add_conditions/1` - Helper to define a schema for conditions on the CRD
   - `Bonny.Axn.set_condition/4` - Helper to set a condition on a resource
-- `Bonny.Pluggable.Finalizer` - A pluggable step to define and implement finalizers
+- `Bonny.Pluggable.Finalizer` - A pluggable step to define and implement finalizers, (#6)[https://github.com/coryodaniel/bonny/issues/6](#189), [https://github.com/coryodaniel/bonny/pull/189]
 - `Bonny.Axn.register_after_processed/2` - Registers a callback to be invoked at the very end of an action event's processing by the operator
 
 <!-- No new entries below this line! -->

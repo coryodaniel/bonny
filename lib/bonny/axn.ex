@@ -539,7 +539,8 @@ defmodule Bonny.Axn do
   Returns an identifier of an action event (resource and action) as tuple.
   Can be used in logs and similar.
   """
-  @spec identifier(t()) :: {binary(), binary(), binary()}
+  @spec identifier(t()) ::
+          {namespace_name :: binary(), api_version :: binary(), kind_action :: binary()}
   def identifier(%__MODULE__{action: action, resource: resource}) do
     {ns_name, api_version, others} = Bonny.Resource.gvkn(resource)
     {ns_name, api_version, "#{others}, Action=#{inspect(action)}"}

@@ -246,7 +246,7 @@ defmodule Bonny.Resource do
   * {apiVersion, kind, namespace/name} for namespaced resources
   * {apiVersion, kind, name} for cluster scoped resources
   """
-  @spec gvkn(t()) :: {binary(), binary(), binary()}
+  @spec gvkn(t()) :: {namespace_name :: binary(), api_version :: binary(), kind :: binary()}
   def gvkn(resource) do
     ns_name =
       String.trim_leading(

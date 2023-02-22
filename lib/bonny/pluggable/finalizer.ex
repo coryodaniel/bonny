@@ -29,18 +29,21 @@ defmodule Bonny.Pluggable.Finalizer do
         impl: &__MODULE__.cleanup/1,
         add_to_resource: true
 
-  Or make it depending on the event/resource.
+  Or make it depending on the event/resource and enable logs.
 
       step Bonny.Pluggable.Finalizer,
         id: "example.com/cleanup",
         impl: &__MODULE__.cleanup/1,
-        add_to_resource: &__MODULE__.deletion_policy_not_abandon/1
+        add_to_resource: &__MODULE__.deletion_policy_not_abandon/1,
+        log: :debug
 
   """
 
   @behaviour Pluggable
 
   import YamlElixir.Sigil
+
+  require Logger
 
   @typedoc """
   The implementation of the finalizer. This is a function of arity 1 which is
@@ -62,14 +65,20 @@ defmodule Bonny.Pluggable.Finalizer do
   - `add_to_resource` - (otional) whether Bonny should add the finalizer to the
     resource if it is missing. See `t:add_to_resource/0`
     `%Bonny.Axn{}` token. Defaults to `false`.
+  - `log_level` - (optional) Log level used for logging by this step. `:disable` for no
+    logs. Defaults to `:disable`
   """
   @type options :: [
-          {:id, binary()} | {:impl, finalizer_impl()} | {:add_to_resource, add_to_resource()}
+          {:id, binary()}
+          | {:impl, finalizer_impl()}
+          | {:add_to_resource, add_to_resource()}
+          | {:log_level, Logger.level() | :disable}
         ]
   @typep finalizer :: %{
            id: binary(),
            impl: finalizer_impl(),
-           add: add_to_resource()
+           add: add_to_resource(),
+           log_level: Logger.level() | :disable
          }
 
   @impl true
@@ -84,7 +93,8 @@ defmodule Bonny.Pluggable.Finalizer do
     %{
       id: id,
       impl: Keyword.fetch!(opts, :impl),
-      add: Keyword.get(opts, :add_to_resource, false)
+      add: Keyword.get(opts, :add_to_resource, false),
+      log_level: Keyword.get(opts, :log_level, :disable)
     }
   end
 
@@ -92,10 +102,26 @@ defmodule Bonny.Pluggable.Finalizer do
   @spec call(Bonny.Axn.t(), finalizer()) :: Bonny.Axn.t()
   def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer)
       when is_map_key(metadata, "deletionTimestamp") and axn.action == :modify do
-    if finalizer.id in Map.get(metadata, "finalizers", []) do
-      case finalizer.impl.(axn) do
+    %{id: finalizer_id, impl: finalizer_impl, log_level: log_level} = finalizer
+
+    if finalizer_id in Map.get(metadata, "finalizers", []) do
+      if log_level != :disable do
+        Logger.log(
+          log_level,
+          ~s(#{inspect(Bonny.Axn.identifier(axn))} - Calling finalizer implementation for finalizer "#{finalizer_id}")
+        )
+      end
+
+      case finalizer_impl.(axn) do
         {:ok, axn} ->
-          new_finalizers_list = List.delete(axn.resource["metadata"]["finalizers"], finalizer.id)
+          if log_level != :disable do
+            Logger.log(
+              log_level,
+              ~s(#{inspect(Bonny.Axn.identifier(axn))} - Removing finalizer "#{finalizer_id}" from resource metadata)
+            )
+          end
+
+          new_finalizers_list = List.delete(axn.resource["metadata"]["finalizers"], finalizer_id)
           patch_finalizers(axn, new_finalizers_list)
           Pluggable.Token.halt(axn)
 
@@ -109,12 +135,21 @@ defmodule Bonny.Pluggable.Finalizer do
 
   def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer)
       when not is_map_key(metadata, "deletionTimestamp") do
+    %{id: finalizer_id, log_level: log_level} = finalizer
+
     if add_to_resource?(axn, finalizer) and
-         finalizer.id not in Map.get(metadata, "finalizers", []) do
-      new_finalizers_list = [finalizer.id | Map.get(metadata, "finalizers", [])]
+         finalizer_id not in Map.get(metadata, "finalizers", []) do
+      new_finalizers_list = [finalizer_id | Map.get(metadata, "finalizers", [])]
       axn = put_in(axn.resource["metadata"]["finalizers"], new_finalizers_list)
 
       Bonny.Axn.register_after_processed(axn, fn axn ->
+        if log_level != :disable do
+          Logger.log(
+            log_level,
+            ~s(#{inspect(Bonny.Axn.identifier(axn))} - Adding finalizer "#{finalizer_id}" to resource metadata)
+          )
+        end
+
         patch_finalizers(axn, axn.resource["metadata"]["finalizers"])
       end)
     else
