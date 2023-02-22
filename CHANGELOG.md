@@ -11,13 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+<!-- No new entries below this line! -->
+
+## [1.1.0] - 2023-02-22
+
+This release updates its dependency on `k8s` to a new major version (`2.x`). If
+you're using `k8s` directly in your code, you should have added it explicitely
+to your dependencies in `mix.exs` and this update will fail until you update
+that dependency manually. If you're using `k8s` directly in your code but you
+haven't added it explicetly to your list of dependencies, you might get
+surprises as `2.x` comes with (yet few) breaking changes.
+
 ### Fixed
 
 - Prevent duplicate descendants
 
 ### Changed
 
-- Upgraded k8s dependency to 2.0.x. [#173](https://github.com/coryodaniel/bonny/pull/173)
+- Upgraded k8s dependency to 2.x. [#173](https://github.com/coryodaniel/bonny/pull/173)
 
 ### Added
 
@@ -27,8 +38,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Bonny.Axn.set_condition/4` - Helper to set a condition on a resource
 - `Bonny.Pluggable.Finalizer` - A pluggable step to define and implement finalizers, (#6)[https://github.com/coryodaniel/bonny/issues/6](#189), [https://github.com/coryodaniel/bonny/pull/189]
 - `Bonny.Axn.register_after_processed/2` - Registers a callback to be invoked at the very end of an action event's processing by the operator
-
-<!-- No new entries below this line! -->
 
 ## [1.0.1] - 2023-02-04
 
