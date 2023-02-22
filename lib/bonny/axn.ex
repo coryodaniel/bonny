@@ -56,7 +56,7 @@ defmodule Bonny.Axn do
   @type t :: %__MODULE__{
           action: :add | :modify | :reconcile | :delete,
           conn: K8s.Conn.t(),
-          descendants: list(Resource.t()),
+          descendants: %{{name :: binary(), namespace :: binary()} => Resource.t()},
           events: list(Bonny.Event.t()),
           resource: Resource.t(),
           status: map() | nil,
@@ -77,7 +77,7 @@ defmodule Bonny.Axn do
     status: nil,
     assigns: %{},
     private: %{},
-    descendants: [],
+    descendants: %{},
     events: [],
     halted: false,
     operator: nil,
@@ -228,7 +228,11 @@ defmodule Bonny.Axn do
         do: descendant,
         else: Resource.add_owner_reference(descendant, axn.resource)
 
-    %__MODULE__{axn | descendants: [descendant | axn.descendants]}
+    key =
+      {K8s.Resource.FieldAccessors.namespace(descendant),
+       K8s.Resource.FieldAccessors.name(descendant)}
+
+    %__MODULE__{axn | descendants: Map.put(axn.descendants, key, descendant)}
   end
 
   @doc """
@@ -372,8 +376,9 @@ defmodule Bonny.Axn do
     %__MODULE__{descendants: descendants, conn: conn} = axn
 
     descendants
-    |> List.wrap()
+    |> Map.values()
     |> run_before_apply_descendants(axn)
+    |> Enum.map(&Bonny.Resource.drop_managed_fields/1)
     |> Resource.apply_async(conn, apply_opts)
     |> Enum.reduce(axn, fn
       {_, {:ok, descendant}}, acc ->
@@ -474,6 +479,28 @@ defmodule Bonny.Axn do
     %{axn | private: update_in(private[:before_emit_event], &[callback | &1 || []])}
   end
 
+  @doc ~S"""
+  Registers a callback to be invoked at the very end of an  action event's
+  processing by the operator.
+
+  Callbacks are invoked in the reverse order they are defined (callbacks
+  defined first are invoked last).
+
+  ## Examples
+
+  To log a message after the an event was processed by the operator:
+
+      Bonny.Axn.register_after_processed(axn, fn axn ->
+        Logger.info("done")
+        :ok
+      end)
+  """
+  @spec register_after_processed(t(), (t() -> any())) :: t()
+  def register_after_processed(%__MODULE__{private: private} = axn, callback)
+      when is_function(callback, 1) do
+    %{axn | private: update_in(private[:after_processed], &[callback | &1 || []])}
+  end
+
   defp run_before_apply_status(resource, %__MODULE__{private: private} = axn) do
     for callback <- private[:before_apply_status] || [], reduce: resource do
       resource -> callback.(resource, axn)
@@ -489,6 +516,14 @@ defmodule Bonny.Axn do
   defp run_before_emit_event(event, %__MODULE__{private: private} = axn) do
     for callback <- private[:before_emit_event] || [], reduce: event do
       event -> callback.(event, axn)
+    end
+  end
+
+  @doc false
+  @spec run_after_processed(t()) :: any()
+  def run_after_processed(%__MODULE__{private: private} = axn) do
+    for callback <- private[:after_processed] || [] do
+      callback.(axn)
     end
   end
 

@@ -50,6 +50,7 @@ defmodule Bonny.Test.ResourceHelper do
   @spec test_resource(binary(), atom(), pid(), reference(), keyword()) :: map()
   def test_resource(name, version, pid, ref, opts \\ []) do
     labels = Keyword.get(opts, :labels, %{})
+    annotations = Keyword.get(opts, :annotations, %{})
 
     """
     apiVersion: example.com/v1
@@ -63,5 +64,6 @@ defmodule Bonny.Test.ResourceHelper do
     """
     |> YamlElixir.read_from_string!()
     |> put_in(~w(metadata labels), labels)
+    |> put_in(~w(metadata annotations), annotations)
   end
 end

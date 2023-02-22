@@ -31,7 +31,12 @@ defmodule Bonny.ControllerV2IntegrationTest do
       {:ok, _} = K8s.Client.run(conn, delete_v2_op)
     end)
 
-    {:ok, _} = Supervisor.start_link([{Bonny.Test.Operator, conn: conn}], strategy: :one_for_one)
+    if is_nil(Process.whereis(Bonny.Test.Operator)) do
+      {:ok, _} =
+        Supervisor.start_link([{Bonny.Test.Operator, name: Bonny.Test.Operator, conn: conn}],
+          strategy: :one_for_one
+        )
+    end
 
     # Give watch process some time to start.
     Process.sleep(600)

@@ -22,7 +22,7 @@ If you used `mix bonny.gen.controller` to create the controller, a `handle_event
 defmodule AppleController do
   use Bonny.ControllerV2
 
-  step(:handle_event)
+  step :handle_event
 
   # apply the resource
   def handle_event(%Bonny.Axn{action: action} = axn, _opts)
@@ -39,12 +39,12 @@ defmodule AppleController do
 end
 ```
 
-The step(s) you implement are called with a `%Bonny.Axn{}` token. It contains the `action` which triggered this event, the `resource` the event regards and other fields. Use pattern matching or a adispatch mechanism to handle the four different action types:
+The step s you implement are called with a `%Bonny.Axn{}` token. It contains the `action` which triggered this event, the `resource` the event regards and other fields. Use pattern matching or a adispatch mechanism to handle the four different action types:
 
-* `add/1` - resource was created in the cluster.
-* `delete/1` - resource was deleted from the cluster.
-* `modify/1` - resource was modified in the cluster.
-* `reconcile/1` - Called on a regular basis in case we missed an action or to fix diverged state.
+- `add/1` - resource was created in the cluster.
+- `delete/1` - resource was deleted from the cluster.
+- `modify/1` - resource was modified in the cluster.
+- `reconcile/1` - Called on a regular basis in case we missed an action or to fix diverged state.
 
 Your event handlers should return the struct it received as first parameter. However, your controller can use helper functions from the `Bonny.Axn` module to modify it before returning it.
 
@@ -64,7 +64,7 @@ If your controller creates descendant resources for your custom resource, it is 
 defmodule MyAppController do
   use Bonny.ControllerV2
 
-  step(:handle_event)
+  step :handle_event
 
   # apply the resource
   def handle_event(%Bonny.Axn{action: action} = axn, _opts)
@@ -125,7 +125,7 @@ Controllers should use the resource's status to communicate back data to the cli
 defmodule StatusController do
   use Bonny.ControllerV2
 
-  step(:handle_event)
+  step :handle_event
 
   def handle_event(axn, _) do
     axn
@@ -163,7 +163,7 @@ Use `Bonny.Axn.success_event/2`, `Bonny.Axn.failure_event/2` or `Bonny.Axn.regis
 defmodule MyResourceController do
   use Bonny.ControllerV2
 
-  step(:handle_event)
+  step :handle_event
 
   def handle_event(axn, _) when axn.action == :add do
     Bonny.Axn.success_event(axn)
@@ -257,14 +257,13 @@ This example shows how only `:reconcile` and `:delete` events are handled by the
 defmodule MyThirdResourceController do
   use Bonny.ControllerV2
 
-  step(Bonny.Pluggable.SkipObservedGenerations,
+  step Bonny.Pluggable.SkipObservedGenerations,
     #  default
     actions: [:add, :modify],
     #  default
     observed_generation_key: ["status", "observedGeneration"]
-  )
 
-  step(:handle_event)
+  step :handle_event
 
   def handle_event(axn, _) do
     IO.puts("handling #{axn.action} event.")

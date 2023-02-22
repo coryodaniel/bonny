@@ -152,7 +152,6 @@ defmodule Bonny.AxnIntegrationTest do
     end
 
     @tag :integration
-    @tag :wip
     test "message can be nil", %{conn: conn, resource: resource} do
       {:ok, added_resource} = K8s.Client.run(conn, K8s.Client.apply(resource))
 

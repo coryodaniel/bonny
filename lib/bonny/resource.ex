@@ -169,6 +169,13 @@ defmodule Bonny.Resource do
     do: Map.update!(resource, "metadata", &Map.delete(&1, "managedFields"))
 
   @doc """
+  Removes .metadata.resourceVersion from the resource.
+  """
+  @spec drop_rv(t()) :: t()
+  def drop_rv(resource),
+    do: Map.update!(resource, "metadata", &Map.delete(&1, "resourceVersion"))
+
+  @doc """
   Applies the given resource to the cluster.
   """
   @spec apply(t(), K8s.Conn.t(), Keyword.t()) :: K8s.Client.Runner.Base.result_t()
@@ -177,8 +184,9 @@ defmodule Bonny.Resource do
       Keyword.merge([force: true], opts)
       |> Keyword.put_new_lazy(:field_manager, fn -> Bonny.Config.name() end)
 
-    op = K8s.Client.apply(resource, opts)
-    K8s.Client.run(conn, op)
+    K8s.Client.apply(resource, opts)
+    |> K8s.Client.put_conn(conn)
+    |> K8s.Client.run()
   end
 
   @doc """
@@ -210,6 +218,11 @@ defmodule Bonny.Resource do
       Keyword.merge([force: true], opts)
       |> Keyword.put_new_lazy(:field_manager, fn -> Bonny.Config.name() end)
 
+    resource =
+      resource
+      |> drop_managed_fields()
+      |> drop_rv()
+
     op =
       K8s.Client.apply(
         resource["apiVersion"],
@@ -218,7 +231,7 @@ defmodule Bonny.Resource do
           namespace: get_in(resource, ~w(metadata namespace)),
           name: get_in(resource, ~w(metadata name))
         ],
-        drop_managed_fields(resource),
+        resource,
         opts
       )
 
