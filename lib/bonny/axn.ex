@@ -493,29 +493,29 @@ defmodule Bonny.Axn do
 
       Bonny.Axn.register_after_processed(axn, fn axn ->
         Logger.info("done")
-        :ok
+        axn
       end)
   """
-  @spec register_after_processed(t(), (t() -> any())) :: t()
+  @spec register_after_processed(t(), (t() -> t())) :: t()
   def register_after_processed(%__MODULE__{private: private} = axn, callback)
       when is_function(callback, 1) do
     %{axn | private: update_in(private[:after_processed], &[callback | &1 || []])}
   end
 
   defp run_before_apply_status(resource, %__MODULE__{private: private} = axn) do
-    for callback <- private[:before_apply_status] || [], reduce: resource do
+    for callback <- List.wrap(private[:before_apply_status]), reduce: resource do
       resource -> callback.(resource, axn)
     end
   end
 
   defp run_before_apply_descendants(descendants, %__MODULE__{private: private} = axn) do
-    for callback <- private[:before_apply_descendants] || [], reduce: descendants do
+    for callback <- List.wrap(private[:before_apply_descendants]), reduce: descendants do
       descendants -> callback.(descendants, axn)
     end
   end
 
   defp run_before_emit_event(event, %__MODULE__{private: private} = axn) do
-    for callback <- private[:before_emit_event] || [], reduce: event do
+    for callback <- List.wrap(private[:before_emit_event]), reduce: event do
       event -> callback.(event, axn)
     end
   end
@@ -523,8 +523,8 @@ defmodule Bonny.Axn do
   @doc false
   @spec run_after_processed(t()) :: any()
   def run_after_processed(%__MODULE__{private: private} = axn) do
-    for callback <- private[:after_processed] || [] do
-      callback.(axn)
+    for callback <- List.wrap(private[:after_processed]), reduce: axn do
+      axn -> callback.(axn)
     end
   end
 
