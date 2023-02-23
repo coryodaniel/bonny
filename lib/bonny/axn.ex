@@ -304,9 +304,10 @@ defmodule Bonny.Axn do
   end
 
   def apply_status(%Bonny.Axn{resource: resource} = axn, apply_opts) do
+    axn = put_in(axn.resource["status"], axn.status)
+
     result =
-      resource
-      |> Map.put("status", axn.status)
+      axn.resource
       |> run_before_apply_status(axn)
       |> Resource.apply_status(axn.conn, apply_opts)
 
