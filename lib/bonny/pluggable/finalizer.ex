@@ -115,7 +115,7 @@ defmodule Bonny.Pluggable.Finalizer do
       when is_map_key(metadata, "deletionTimestamp") and axn.action in [:modify, :reconcile] do
     %{id: finalizer_id, impl: finalizer_impl, log_level: log_level} = finalizer
 
-    if finalizer_id in Map.get(metadata, "finalizers", []) do
+    if finalizer_id in List.wrap(metadata["finalizers"]) do
       log(
         log_level,
         ~s(#{inspect(Bonny.Axn.identifier(axn))} - Calling finalizer implementation for finalizer "#{finalizer_id}")

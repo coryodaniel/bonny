@@ -32,10 +32,7 @@ defmodule Bonny.ControllerV2IntegrationTest do
     end)
 
     if is_nil(Process.whereis(Bonny.Test.Operator)) do
-      {:ok, _} =
-        Supervisor.start_link([{Bonny.Test.Operator, name: Bonny.Test.Operator, conn: conn}],
-          strategy: :one_for_one
-        )
+      {:ok, _} = start_supervised({Bonny.Test.Operator, name: Bonny.Test.Operator, conn: conn})
     end
 
     # Give watch process some time to start.

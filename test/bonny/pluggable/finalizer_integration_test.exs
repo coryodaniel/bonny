@@ -82,6 +82,9 @@ defmodule Bonny.Pluggable.FinalizerIntegrationTest do
         timeout: Integer.floor_div(timeout, 1000)
       )
 
+    # no clue why:
+    Process.sleep(500)
+
     resource
     |> K8s.Client.delete()
     |> K8s.Client.put_conn(conn)
