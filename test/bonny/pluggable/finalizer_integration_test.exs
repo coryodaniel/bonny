@@ -25,10 +25,7 @@ defmodule Bonny.Pluggable.FinalizerIntegrationTest do
     end)
 
     if is_nil(Process.whereis(Bonny.Test.Operator)) do
-      {:ok, _} =
-        Supervisor.start_link([{Bonny.Test.Operator, name: Bonny.Test.Operator, conn: conn}],
-          strategy: :one_for_one
-        )
+      {:ok, _} = start_supervised({Bonny.Test.Operator, name: Bonny.Test.Operator, conn: conn})
     end
 
     # Give watch process some time to start.
@@ -78,15 +75,12 @@ defmodule Bonny.Pluggable.FinalizerIntegrationTest do
       |> K8s.Client.get()
       |> K8s.Client.put_conn(conn)
       |> K8s.Client.wait_until(
-        find: ["status", "observedGeneration"],
-        eval: added_resource["metadata"]["generation"],
+        find: ["metadata", "finalizers"],
+        eval: fn finalizers ->
+          "example.com/cleanup" in finalizers and "example.com/cleanup2" in finalizers
+        end,
         timeout: Integer.floor_div(timeout, 1000)
       )
-
-    finalizers = resource["metadata"]["finalizers"]
-    assert [_ | _] = finalizers
-    assert "example.com/cleanup" in finalizers
-    assert "example.com/cleanup2" in finalizers
 
     resource
     |> K8s.Client.delete()
@@ -127,8 +121,7 @@ defmodule Bonny.Pluggable.FinalizerIntegrationTest do
         timeout: Integer.floor_div(timeout, 1000)
       )
 
-    finalizers = resource["metadata"]["finalizers"]
-    assert is_nil(finalizers) or finalizers == []
+    assert List.wrap(resource["metadata"]["finalizers"]) == []
 
     resource
     |> K8s.Client.delete()

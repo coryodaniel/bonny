@@ -160,6 +160,7 @@ defmodule Bonny.Pluggable.Finalizer do
           )
 
           patch_finalizers(axn, axn.resource["metadata"]["finalizers"])
+          axn
 
         finalizer_present? and not add_to_resource? ->
           new_finalizers_list = List.delete(list_of_finalizers, finalizer_id)
@@ -171,6 +172,7 @@ defmodule Bonny.Pluggable.Finalizer do
           )
 
           patch_finalizers(axn, axn.resource["metadata"]["finalizers"])
+          axn
 
         :otherwise ->
           axn
