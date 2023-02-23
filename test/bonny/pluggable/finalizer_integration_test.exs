@@ -84,7 +84,7 @@ defmodule Bonny.Pluggable.FinalizerIntegrationTest do
       )
 
     finalizers = resource["metadata"]["finalizers"]
-    assert is_list(finalizers)
+    assert [_ | _] = finalizers
     assert "example.com/cleanup" in finalizers
     assert "example.com/cleanup2" in finalizers
 
@@ -95,6 +95,48 @@ defmodule Bonny.Pluggable.FinalizerIntegrationTest do
 
     assert_receive {^ref, :cleanup, ^resource_name}, timeout
     assert_receive {^ref, :cleanup2, ^resource_name}, timeout
+    assert_receive {^ref, :delete, ^resource_name}, timeout
+  end
+
+  @tag :integration
+  test "removes finalizers from resource and does call implementation if annotation missing", %{
+    conn: conn,
+    resource_name: resource_name,
+    resource: resource,
+    timeout: timeout,
+    ref: ref
+  } do
+    resource = put_in(resource["metadata"]["annotations"], %{})
+
+    {:ok, added_resource} =
+      resource
+      |> K8s.Client.create()
+      |> K8s.Client.put_conn(conn)
+      |> K8s.Client.run()
+
+    assert_receive {^ref, :add, ^resource_name}, timeout
+    assert_receive {^ref, :done, ^resource_name}, timeout
+
+    {:ok, resource} =
+      added_resource
+      |> K8s.Client.get()
+      |> K8s.Client.put_conn(conn)
+      |> K8s.Client.wait_until(
+        find: ["status", "observedGeneration"],
+        eval: added_resource["metadata"]["generation"],
+        timeout: Integer.floor_div(timeout, 1000)
+      )
+
+    finalizers = resource["metadata"]["finalizers"]
+    assert is_nil(finalizers) or finalizers == []
+
+    resource
+    |> K8s.Client.delete()
+    |> K8s.Client.put_conn(conn)
+    |> K8s.Client.run()
+
+    refute_receive {^ref, :cleanup, ^resource_name}
+    refute_receive {^ref, :cleanup2, ^resource_name}
     assert_receive {^ref, :delete, ^resource_name}, timeout
   end
 end

@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+### Fixed
+
+- `Bonny.Pluggable.Finalizer` - Remove finalizers from resource if they need to be removed.
+
 <!-- No new entries below this line! -->
 
 ## [1.1.0] - 2023-02-22

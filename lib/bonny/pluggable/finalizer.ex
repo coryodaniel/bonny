@@ -7,9 +7,17 @@ defmodule Bonny.Pluggable.Finalizer do
   * https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/
   * https://kubernetes.io/blog/2021/05/14/using-finalizers-to-control-deletion/
 
-  > Note for Testing: This step directly updates the resource on the kubernetes
+  > #### Use with `SkipObservedGenerations` {: .tip}
+  >
+  > This step is best used with and placed right after
+  > `Bonny.Pluggable.SkipObservedGenerations` in your controller. Have a look at
+  > the examples below.
+
+  > #### Note for Testing {: .warning}
+  >
+  > This step directly updates the resource on the kubernetes
   > cluster. In order to write unit tests, you therefore want to use
-  > `K8s.Client.DynamicHTTPProvider` in order to mock the calls to Kubernetes
+  > `K8s.Client.DynamicHTTPProvider` in order to mock the calls to Kubernetes.
 
   ### Examples
 
@@ -18,12 +26,14 @@ defmodule Bonny.Pluggable.Finalizer do
 
   By default, a missing finalizer is not added to the resource.
 
+      step Bonny.Pluggable.SkipObservedGenerations
       step Bonny.Pluggable.Finalizer,
         id: "example.com/cleanup",
         impl: &__MODULE__.cleanup/1
 
   Set `add_to_resource` to true in order for Bonny to always add it.
 
+      step Bonny.Pluggable.SkipObservedGenerations
       step Bonny.Pluggable.Finalizer,
         id: "example.com/cleanup",
         impl: &__MODULE__.cleanup/1,
@@ -31,6 +41,7 @@ defmodule Bonny.Pluggable.Finalizer do
 
   Or make it depending on the event/resource and enable logs.
 
+      step Bonny.Pluggable.SkipObservedGenerations
       step Bonny.Pluggable.Finalizer,
         id: "example.com/cleanup",
         impl: &__MODULE__.cleanup/1,
@@ -101,25 +112,21 @@ defmodule Bonny.Pluggable.Finalizer do
   @impl true
   @spec call(Bonny.Axn.t(), finalizer()) :: Bonny.Axn.t()
   def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer)
-      when is_map_key(metadata, "deletionTimestamp") and axn.action == :modify do
+      when is_map_key(metadata, "deletionTimestamp") and axn.action in [:modify, :reconcile] do
     %{id: finalizer_id, impl: finalizer_impl, log_level: log_level} = finalizer
 
     if finalizer_id in Map.get(metadata, "finalizers", []) do
-      if log_level != :disable do
-        Logger.log(
-          log_level,
-          ~s(#{inspect(Bonny.Axn.identifier(axn))} - Calling finalizer implementation for finalizer "#{finalizer_id}")
-        )
-      end
+      log(
+        log_level,
+        ~s(#{inspect(Bonny.Axn.identifier(axn))} - Calling finalizer implementation for finalizer "#{finalizer_id}")
+      )
 
       case finalizer_impl.(axn) do
         {:ok, axn} ->
-          if log_level != :disable do
-            Logger.log(
-              log_level,
-              ~s(#{inspect(Bonny.Axn.identifier(axn))} - Removing finalizer "#{finalizer_id}" from resource metadata)
-            )
-          end
+          log(
+            log_level,
+            ~s(#{inspect(Bonny.Axn.identifier(axn))} - Removing finalizer "#{finalizer_id}" from resource metadata)
+          )
 
           new_finalizers_list = List.delete(axn.resource["metadata"]["finalizers"], finalizer_id)
           patch_finalizers(axn, new_finalizers_list)
@@ -133,28 +140,42 @@ defmodule Bonny.Pluggable.Finalizer do
     end
   end
 
-  def call(%Bonny.Axn{resource: %{"metadata" => metadata}} = axn, finalizer)
-      when not is_map_key(metadata, "deletionTimestamp") do
+  def call(%Bonny.Axn{resource: %{"metadata" => metadata}, action: action} = axn, finalizer)
+      when not is_map_key(metadata, "deletionTimestamp") and action != :delete do
     %{id: finalizer_id, log_level: log_level} = finalizer
 
-    if add_to_resource?(axn, finalizer) and
-         finalizer_id not in Map.get(metadata, "finalizers", []) do
-      new_finalizers_list = [finalizer_id | Map.get(metadata, "finalizers", [])]
-      axn = put_in(axn.resource["metadata"]["finalizers"], new_finalizers_list)
+    Bonny.Axn.register_after_processed(axn, fn axn ->
+      list_of_finalizers = List.wrap(axn.resource["metadata"]["finalizers"])
+      finalizer_present? = finalizer_id in list_of_finalizers
+      add_to_resource? = add_to_resource?(axn, finalizer)
 
-      Bonny.Axn.register_after_processed(axn, fn axn ->
-        if log_level != :disable do
-          Logger.log(
+      cond do
+        add_to_resource? and not finalizer_present? ->
+          new_finalizers_list = [finalizer_id | list_of_finalizers]
+          axn = put_in(axn.resource["metadata"]["finalizers"], new_finalizers_list)
+
+          log(
             log_level,
             ~s(#{inspect(Bonny.Axn.identifier(axn))} - Adding finalizer "#{finalizer_id}" to resource metadata)
           )
-        end
 
-        patch_finalizers(axn, axn.resource["metadata"]["finalizers"])
-      end)
-    else
-      axn
-    end
+          patch_finalizers(axn, axn.resource["metadata"]["finalizers"])
+
+        finalizer_present? and not add_to_resource? ->
+          new_finalizers_list = List.delete(list_of_finalizers, finalizer_id)
+          axn = put_in(axn.resource["metadata"]["finalizers"], new_finalizers_list)
+
+          log(
+            log_level,
+            ~s(#{inspect(Bonny.Axn.identifier(axn))} - Removing finalizer "#{finalizer_id}" to resource metadata)
+          )
+
+          patch_finalizers(axn, axn.resource["metadata"]["finalizers"])
+
+        :otherwise ->
+          axn
+      end
+    end)
   end
 
   def call(axn, _finalizer) do
@@ -182,4 +203,8 @@ defmodule Bonny.Pluggable.Finalizer do
     |> K8s.Client.put_conn(conn)
     |> K8s.Client.run()
   end
+
+  @spec log(Logger.level() | :disable, Logger.message()) :: :ok
+  defp log(:disable, _message), do: :ok
+  defp log(log_level, message), do: Logger.log(log_level, message)
 end
