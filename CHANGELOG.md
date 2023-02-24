@@ -11,12 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+<!-- No new entries below this line! -->
+
+## [1.1.1] - 2023-02-24
+
 ### Fixed
 
 - `Bonny.Pluggable.Finalizer` - Remove finalizers from resource if they need to be removed.
 - `Bonny.Axn` - Regression where descendants were not applied - [#192](https://github.com/coryodaniel/bonny/pull/192), [#191](https://github.com/coryodaniel/bonny/issues/191)
-
-<!-- No new entries below this line! -->
 
 ## [1.1.0] - 2023-02-22
 

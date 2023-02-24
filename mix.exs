@@ -1,6 +1,6 @@
 defmodule Bonny.MixProject do
   use Mix.Project
-  @version "1.1.0"
+  @version "1.1.1"
   @source_url "https://github.com/coryodaniel/bonny"
 
   def project do
