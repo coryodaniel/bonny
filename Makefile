@@ -14,8 +14,8 @@ integration.yaml: ## Create a kind cluster
 
 .PHONY: test.integration
 test.integration: integration.yaml
-test.integration: ## Run integration
-	kubectl config use-context kind-${CLUSTER_NAME} tests using kind `make cluster`
+test.integration: ## Run integration tests using kind `make cluster`
+	kubectl config use-context kind-${CLUSTER_NAME} 
 	MIX_ENV=test mix compile
 	MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
 	TEST_KUBECONFIG=${KUBECONFIG_PATH} mix test --only integration

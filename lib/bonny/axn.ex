@@ -228,9 +228,7 @@ defmodule Bonny.Axn do
         do: descendant,
         else: Resource.add_owner_reference(descendant, axn.resource)
 
-    key =
-      {K8s.Resource.FieldAccessors.namespace(descendant),
-       K8s.Resource.FieldAccessors.name(descendant)}
+    key = Bonny.Resource.gvkn(descendant)
 
     %__MODULE__{axn | descendants: Map.put(axn.descendants, key, descendant)}
   end
