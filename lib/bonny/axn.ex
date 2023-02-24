@@ -230,7 +230,7 @@ defmodule Bonny.Axn do
 
     key =
       {K8s.Resource.FieldAccessors.namespace(descendant),
-       K8s.Resource.FieldAccessors.name(descendant)}
+       K8s.Resource.FieldAccessors.kind(descendant), K8s.Resource.FieldAccessors.name(descendant)}
 
     %__MODULE__{axn | descendants: Map.put(axn.descendants, key, descendant)}
   end
