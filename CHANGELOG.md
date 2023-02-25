@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix for an issue reported in [#180](https://github.com/coryodaniel/bonny/pull/180) already: Add operator name as env variable to deployment.
 
+### Chores
+
+- Upgrade k8s to 2.1.0
+
 <!-- No new entries below this line! -->
 
 ## [1.1.1] - 2023-02-24
