@@ -229,7 +229,8 @@ defmodule Bonny.Mix.Operator do
       env_field_ref("BONNY_POD_NAME", "metadata.name"),
       env_field_ref("BONNY_POD_NAMESPACE", "metadata.namespace"),
       env_field_ref("BONNY_POD_IP", "status.podIP"),
-      env_field_ref("BONNY_POD_SERVICE_ACCOUNT", "spec.serviceAccountName")
+      env_field_ref("BONNY_POD_SERVICE_ACCOUNT", "spec.serviceAccountName"),
+      env_field_ref("BONNY_OPERATOR_NAME", Bonny.Config.name())
     ]
   end
 

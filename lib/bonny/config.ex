@@ -31,7 +31,11 @@ defmodule Bonny.Config do
   """
   @spec name() :: binary
   def name() do
-    dns_safe_name(Application.get_env(:bonny, :operator_name) || project_name())
+    dns_safe_name(
+      System.get_env("BONNY_OEPRATOR_NAME") ||
+        Application.get_env(:bonny, :operator_name) ||
+        project_name()
+    )
   end
 
   @doc """

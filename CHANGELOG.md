@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+### Fixes
+
+- Fix for an issue reported in [#180](https://github.com/coryodaniel/bonny/pull/180) already: Add operator name as env variable to deployment.
+
 <!-- No new entries below this line! -->
 
 ## [1.1.1] - 2023-02-24
