@@ -132,6 +132,10 @@ Have a look at the guides that come with this repository. Some can even be opene
   - [source code](https://github.com/coryodaniel/talks/tree/master/commandeering)
   - [video](https://www.youtube.com/watch?v=0r9YmbH0xTY)
 
+## Example Operators built with this version of Bonny
+
+- [Kompost](https://github.com/mruoss/kompost) - Providing self-service management of resources for devs
+
 ## Example Operators built with an older version of Bonny
 
 - [Eviction Operator](https://github.com/bonny-k8s/eviction_operator) - Bonny v 0.4
