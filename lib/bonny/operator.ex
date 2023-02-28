@@ -119,9 +119,16 @@ defmodule Bonny.Operator do
         {watch_namespace, init_args} =
           Keyword.pop(init_args, :watch_namespace, @default_watch_namespace)
 
+        start_link =
+          if init_args[:enable_leader_election] do
+            &Bonny.Operator.LeaderElector.start_link/3
+          else
+            &Bonny.Operator.Supervisor.start_link/3
+          end
+
         controllers(watch_namespace, init_args)
         |> Enum.map(&Bonny.Operator.prepare_controller_for_supervisor/1)
-        |> Bonny.Operator.Supervisor.start_link(__MODULE__, init_args)
+        |> start_link.(__MODULE__, init_args)
       end
 
       @doc """
