@@ -77,16 +77,26 @@ defmodule Bonny.Operator.LeaderElector do
   @impl true
   def handle_info(:maybe_acquire_leadership, state) do
     am_i_leader? = not is_nil(state.operator_pid)
-    Logger.debug("Starting leadership evaluation", library: :bonny)
+
+    Logger.debug("{Operator=#{inspect(state.operator)}} - Starting leadership evaluation",
+      library: :bonny
+    )
 
     state =
       case acquire_or_renew(state.conn, state.operator) do
         :ok when am_i_leader? ->
-          Logger.debug("I am the leader - I stay the leader.", library: :bonny)
+          Logger.debug(
+            "{Operator=#{inspect(state.operator)}} - I am the leader - I stay the leader.",
+            library: :bonny
+          )
+
           state
 
         :ok ->
-          Logger.debug("I am the new leader. Starting the operator.", library: :bonny)
+          Logger.debug(
+            "{Operator=#{inspect(state.operator)}} - I am the new leader. Starting the operator.",
+            library: :bonny
+          )
 
           {:ok, pid} =
             Bonny.Operator.Supervisor.start_link(
@@ -100,7 +110,7 @@ defmodule Bonny.Operator.LeaderElector do
 
         _other when am_i_leader? ->
           Logger.debug(
-            "I was the leader but somebody else took over leadership. Terminating operator.",
+            "{Operator=#{inspect(state.operator)}} - I was the leader but somebody else took over leadership. Terminating operator.",
             library: :bonny
           )
 
@@ -109,7 +119,10 @@ defmodule Bonny.Operator.LeaderElector do
           struct!(state, operator_pid: nil)
 
         _other ->
-          Logger.debug("Somebody else is the leader.", library: :bonny)
+          Logger.debug("{Operator=#{inspect(state.operator)}} - Somebody else is the leader.",
+            library: :bonny
+          )
+
           state
       end
 
@@ -123,7 +136,7 @@ defmodule Bonny.Operator.LeaderElector do
         %__MODULE__{operator_pid: {pid, ref}} = state
       ) do
     Logger.warn(
-      "Uh-oh! Our operator just went down. Guess that means I have to give up leadership. Boohoo!",
+      "{Operator=#{inspect(state.operator)}} - Uh-oh! Our operator just went down. Guess that means I have to give up leadership. Boohoo!",
       library: :bonny
     )
 
@@ -131,9 +144,9 @@ defmodule Bonny.Operator.LeaderElector do
     struct!(state, operator_pid: nil)
   end
 
-  def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
+  def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
     Logger.warn(
-      "Very starnge. A process I'm monitoring went down. But I'm not the leader. Looks like a bug in Bonny. Anyway, releaseing the lock if I have it.",
+      "{Operator=#{inspect(state.operator)}} - Very starnge. A process I'm monitoring went down. But I'm not the leader. Looks like a bug in Bonny. Anyway, releaseing the lock if I have it.",
       library: :bonny
     )
 
@@ -143,14 +156,21 @@ defmodule Bonny.Operator.LeaderElector do
 
   @impl true
   def terminate(_, %__MODULE__{operator_pid: {pid, _ref}} = state) do
-    Logger.debug("I'm going down - releasing the lock now.", library: :bonny)
+    Logger.debug(
+      "{Operator=#{inspect(state.operator)}} - I'm going down - releasing the lock now.",
+      library: :bonny
+    )
+
     release(state.conn, state.operator)
     Process.exit(pid, :shutdown)
     struct!(state, operator_pid: nil)
   end
 
   def terminate(_, state) do
-    Logger.debug("I'm going down but I'm not the leader so chill!")
+    Logger.debug(
+      "{Operator=#{inspect(state.operator)}} - I'm going down but I'm not the leader so chill!"
+    )
+
     state
   end
 
@@ -179,7 +199,9 @@ defmodule Bonny.Operator.LeaderElector do
 
     case get_lease(conn, operator) do
       {:error, %K8s.Client.APIError{reason: "NotFound"}} ->
-        Logger.debug("Lease not found. Trying to create it.", library: :bonny)
+        Logger.debug("{Operator=#{inspect(operator)}} - Lease not found. Trying to create it.",
+          library: :bonny
+        )
 
         result =
           K8s.Client.create(my_lease)
@@ -188,12 +210,15 @@ defmodule Bonny.Operator.LeaderElector do
 
         case result do
           {:ok, _} ->
-            Logger.debug("Lease successfully created.", library: :bonny)
+            Logger.debug("{Operator=#{inspect(operator)}} - Lease successfully created.",
+              library: :bonny
+            )
+
             :ok
 
           {:error, %K8s.Client.APIError{reason: "AlreadyExists"}} ->
             Logger.debug(
-              "Failed creating lease. Seems to have been created by somebody else in the meantime.",
+              "{Operator=#{inspect(operator)}} - Failed creating lease. Seems to have been created by somebody else in the meantime.",
               library: :bonny
             )
 
@@ -203,7 +228,7 @@ defmodule Bonny.Operator.LeaderElector do
       {:ok, old_lease} ->
         if locked_by_sbdy_else?(now, old_lease, my_lease) do
           Logger.debug(
-            ~s(Lock is held by "#{old_lease["spec"]["holderIdentity"]}" and has not yet expired.),
+            ~s({Operator=#{inspect(operator)}} - Lock is held by "#{old_lease["spec"]["holderIdentity"]}" and has not yet expired.),
             library: :bonny
           )
 
@@ -211,14 +236,17 @@ defmodule Bonny.Operator.LeaderElector do
         else
           my_lease =
             if old_lease["spec"]["holderIdentity"] == my_lease["spec"]["holderIdentity"] do
-              Logger.debug("I'm holding the lock. Trying to renew it", library: :bonny)
+              Logger.debug(
+                "{Operator=#{inspect(operator)}} - I'm holding the lock. Trying to renew it",
+                library: :bonny
+              )
 
               my_lease
               |> put_in(~w(spec acquireTime), old_lease["spec"]["acquireTime"])
               |> put_in(~w(metadata resourceVersion), old_lease["metadata"]["resourceVersion"])
             else
               Logger.debug(
-                ~s(Lock is held by "#{old_lease["spec"]["holderIdentity"]}" but has expired. Trying to acquire it.),
+                ~s({Operator=#{inspect(operator)}} - Lock is held by "#{old_lease["spec"]["holderIdentity"]}" but has expired. Trying to acquire it.),
                 library: :bonny
               )
 
@@ -228,12 +256,16 @@ defmodule Bonny.Operator.LeaderElector do
 
           case Bonny.Resource.apply(my_lease, conn, []) do
             {:ok, _} ->
-              Logger.debug(~s(Lock successfully acquired/renewed.), library: :bonny)
+              Logger.debug(
+                ~s({Operator=#{inspect(operator)}} - Lock successfully acquired/renewed.),
+                library: :bonny
+              )
 
               :ok
 
             {:error, exception} when is_exception(exception) ->
-              Logger.debug(~s(Failed aquiring/renewing the lock. #{Exception.message(exception)}),
+              Logger.debug(
+                ~s({Operator=#{inspect(operator)}} - Failed aquiring/renewing the lock. #{Exception.message(exception)}),
                 library: :bonny
               )
 
