@@ -155,20 +155,21 @@ defmodule Bonny.Operator.LeaderElector do
   end
 
   defp release(conn, operator) do
+    my_name = Bonny.Config.instance_name()
+
     case get_lease(conn, operator) do
       {:error, _} ->
         :ok
 
-      {:ok, old_lease} ->
-        if old_lease["spec"]["holderIdentity"] == Bonny.Config.instance_name() do
-          old_lease
-          |> put_in(~w(spec leaseDurationSeconds), 1)
-          |> Bonny.Resource.apply(conn, [])
+      {:ok, %{"spec" => %{"holderIdentity" => ^my_name}} = old_lease} ->
+        old_lease
+        |> put_in(~w(spec leaseDurationSeconds), 1)
+        |> Bonny.Resource.apply(conn, [])
 
-          :ok
-        else
-          :ok
-        end
+        :ok
+
+      _ ->
+        :ok
     end
   end
 
@@ -199,7 +200,6 @@ defmodule Bonny.Operator.LeaderElector do
             :locked
         end
 
-      # other errors
       {:ok, old_lease} ->
         if locked_by_sbdy_else?(now, old_lease, my_lease) do
           Logger.debug(
