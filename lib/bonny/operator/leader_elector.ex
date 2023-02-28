@@ -146,7 +146,7 @@ defmodule Bonny.Operator.LeaderElector do
 
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
     Logger.warn(
-      "{Operator=#{inspect(state.operator)}} - Very starnge. A process I'm monitoring went down. But I'm not the leader. Looks like a bug in Bonny. Anyway, releaseing the lock if I have it.",
+      "{Operator=#{inspect(state.operator)}} - Very strange. A process I'm monitoring went down. But I'm not the leader. Looks like a bug in Bonny. Anyway, releaseing the lock if I have it.",
       library: :bonny
     )
 
