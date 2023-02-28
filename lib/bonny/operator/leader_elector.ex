@@ -53,6 +53,8 @@ defmodule Bonny.Operator.LeaderElector do
 
   defstruct [:controllers, :operator, :init_args, :conn, operator_pid: nil]
 
+  @spec start_link(controllers :: list(), operator :: atom(), init_args :: Keyword.t()) ::
+          {:ok, pid}
   def start_link(controllers, operator, init_args) do
     {:ok, pid} = GenServer.start_link(__MODULE__, {controllers, operator, init_args})
     send(pid, :maybe_acquire_leadership)
@@ -94,10 +96,9 @@ defmodule Bonny.Operator.LeaderElector do
             )
 
           ref = Process.monitor(pid)
-
           struct!(state, operator_pid: {pid, ref})
 
-        _ when am_i_leader? ->
+        _other when am_i_leader? ->
           Logger.debug(
             "I was the leader but somebody else took over leadership. Terminating operator.",
             library: :bonny
@@ -107,7 +108,7 @@ defmodule Bonny.Operator.LeaderElector do
           Process.exit(pid, :shutdown)
           struct!(state, operator_pid: nil)
 
-        _ ->
+        _other ->
           Logger.debug("Somebody else is the leader.", library: :bonny)
           state
       end
@@ -115,6 +116,29 @@ defmodule Bonny.Operator.LeaderElector do
     timeout = if is_nil(state.operator_pid), do: @retry_period, else: @renew_deadline
     Process.send_after(self(), :maybe_acquire_leadership, timeout * 1000)
     {:noreply, state}
+  end
+
+  def handle_info(
+        {:DOWN, ref, :process, pid, _reason},
+        %__MODULE__{operator_pid: {pid, ref}} = state
+      ) do
+    Logger.warn(
+      "Uh-oh! Our operator just went down. Guess that means I have to give up leadership. Boohoo!",
+      library: :bonny
+    )
+
+    release(state.conn, state.operator)
+    struct!(state, operator_pid: nil)
+  end
+
+  def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
+    Logger.warn(
+      "Very starnge. A process I'm monitoring went down. But I'm not the leader. Looks like a bug in Bonny. Anyway, releaseing the lock if I have it.",
+      library: :bonny
+    )
+
+    release(state.conn, state.operator)
+    struct!(state, operator_pid: nil)
   end
 
   @impl true
@@ -126,7 +150,7 @@ defmodule Bonny.Operator.LeaderElector do
   end
 
   def terminate(_, state) do
-    Logger.debug("I'm going down but I'm not the leader.")
+    Logger.debug("I'm going down but I'm not the leader so chill!")
     state
   end
 
@@ -135,7 +159,6 @@ defmodule Bonny.Operator.LeaderElector do
       {:error, _} ->
         :ok
 
-      # other errors
       {:ok, old_lease} ->
         if old_lease["spec"]["holderIdentity"] == Bonny.Config.instance_name() do
           old_lease
