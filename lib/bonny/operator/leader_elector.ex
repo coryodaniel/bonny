@@ -1,4 +1,37 @@
 defmodule Bonny.Operator.LeaderElector do
+  @moduledoc """
+  The leader uses a [Kubernetes
+  Lease](https://kubernetes.io/docs/concepts/architecture/leases/) to make sure
+  the operator only runs on one single replica (the leader) at the same time.
+
+  ## Enabling the Leader Election
+
+  > #### Functionality still in Beta {: .warning}
+  >
+  > The leader election is still being tested. Enable it for testing purposes
+  > only and please report any issues on Github.
+
+  To enable leader election you have to pass the `enable_leader_election: true` option when [adding the operator to your Supervisor](#adding-the-operator-to-your-supervisor):
+
+  ```elixir
+  defmodule MyOperator.Application do
+    use Application
+
+    def start(_type, env: env) do
+      children = [
+        {MyOperator.Operator,
+        conn: MyOperator.K8sConn.get!(env),
+        watch_namespace: :all,
+        enable_leader_election: true} # <-- starts the leader elector
+      ]
+
+      opts = [strategy: :one_for_one, name: MyOperator.Supervisor]
+      Supervisor.start_link(children, opts)
+    end
+  end
+  ```
+  """
+
   use GenServer
 
   import YamlElixir.Sigil
