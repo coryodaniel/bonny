@@ -246,7 +246,6 @@ defmodule Bonny.Operator.LeaderElector do
   end
 
   defp lease(now, lease_duration, operator) do
-    # TODO: add operator hash to name!
     ~y"""
     apiVersion: coordination.k8s.io/v1
     kind: Lease
