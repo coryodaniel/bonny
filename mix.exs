@@ -61,6 +61,7 @@ defmodule Bonny.MixProject do
       {:plug, "~> 1.0"},
       {:pluggable, "~> 1.0"},
       {:telemetry, "~> 1.0"},
+      {:x509, "~> 0.8.5"},
       {:ymlr, "~> 3.0"},
 
       # Dev deps
