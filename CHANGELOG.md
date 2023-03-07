@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.2] - 2023-03-07
 
+### Added
+
+- Simple leader election for running multiple replicas (BETA) - [#195](https://github.com/coryodaniel/bonny/pull/195)
+
 ### Fixes
 
 - Fix for an issue reported in [#180](https://github.com/coryodaniel/bonny/pull/180) already: Add operator name as env variable to deployment.
