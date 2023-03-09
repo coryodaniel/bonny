@@ -1,9 +1,9 @@
-defmodule Bonny.AdmissionControl.WebhookPlugTest do
+defmodule Bonny.AdmissionControl.WebhookRouterTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
   alias Bonny.Test.Plug.WebhookHandlerCRD
-  alias Bonny.AdmissionControl.WebhookPlug, as: MUT
+  alias Bonny.AdmissionControl.WebhookRouter, as: MUT
 
   describe "call/2" do
     test "return 404 if not POST request" do

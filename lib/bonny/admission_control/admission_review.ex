@@ -31,7 +31,7 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
   ## Examples
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}
-      ...> Bonny.AdmissionControl.ReviewRequest.allow(admission_review)
+      ...> Bonny.AdmissionControl.AdmissionReview.allow(admission_review)
       %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => true}}
   """
   @spec allow(t()) :: t()
@@ -45,7 +45,7 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
   ## Examples
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}
-      ...> Bonny.AdmissionControl.ReviewRequest.deny(admission_review)
+      ...> Bonny.AdmissionControl.AdmissionReview.deny(admission_review)
       %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => false}}
   """
   @spec deny(t()) :: t()
@@ -59,10 +59,10 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
   ## Examples
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}
-      ...> Bonny.AdmissionControl.ReviewRequest.deny(admission_review, 403, "foo")
+      ...> Bonny.AdmissionControl.AdmissionReview.deny(admission_review, 403, "foo")
       %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => false, "status" => %{"code" => 403, "message" => "foo"}}}
 
-      iex> Bonny.AdmissionControl.ReviewRequest.deny(%Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}, "foo")
+      iex> Bonny.AdmissionControl.AdmissionReview.deny(%Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}, "foo")
       %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => false, "status" => %{"code" => 400, "message" => "foo"}}}
   """
   @spec deny(t(), integer(), binary()) :: t()
@@ -79,11 +79,11 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
   ## Examples
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}
-      ...> Bonny.AdmissionControl.ReviewRequest.add_warning(admission_review, "warning")
+      ...> Bonny.AdmissionControl.AdmissionReview.add_warning(admission_review, "warning")
       %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"warnings" => ["warning"]}}
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"warnings" => ["existing_warning"]}}
-      ...> Bonny.AdmissionControl.ReviewRequest.add_warning(admission_review, "new_warning")
+      ...> Bonny.AdmissionControl.AdmissionReview.add_warning(admission_review, "new_warning")
       %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"warnings" => ["new_warning", "existing_warning"]}}
   """
   @spec add_warning(t(), binary()) :: t()
@@ -101,11 +101,11 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
   ## Examples
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{}}
-      ...> Bonny.AdmissionControl.ReviewRequest.check_immutable(admission_review, ["spec", "immutable"])
+      ...> Bonny.AdmissionControl.AdmissionReview.check_immutable(admission_review, ["spec", "immutable"])
       %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{}}
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "new_value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{}}
-      ...> Bonny.AdmissionControl.ReviewRequest.check_immutable(admission_review, ["spec", "immutable"])
+      ...> Bonny.AdmissionControl.AdmissionReview.check_immutable(admission_review, ["spec", "immutable"])
       %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "new_value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{"allowed" => false, "status" => %{"code" => 400, "message" => "The field .spec.immutable is immutable."}}}
   """
   @spec check_immutable(t(), list()) :: t()
@@ -125,15 +125,15 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
   ## Examples
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "bar"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
-      ...> Bonny.AdmissionControl.ReviewRequest.check_allowed_values(admission_review, ~w(metadata annotations some/annotation), ["foo", "bar"])
+      ...> Bonny.AdmissionControl.AdmissionReview.check_allowed_values(admission_review, ~w(metadata annotations some/annotation), ["foo", "bar"])
       %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "bar"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
-      ...> Bonny.AdmissionControl.ReviewRequest.check_allowed_values(admission_review, ~w(metadata annotations some/annotation), ["foo", "bar"])
+      ...> Bonny.AdmissionControl.AdmissionReview.check_allowed_values(admission_review, ~w(metadata annotations some/annotation), ["foo", "bar"])
       %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
 
       iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "other"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
-      ...> Bonny.AdmissionControl.ReviewRequest.check_allowed_values(admission_review, ~w(metadata annotations some/annotation), ["foo", "bar"])
+      ...> Bonny.AdmissionControl.AdmissionReview.check_allowed_values(admission_review, ~w(metadata annotations some/annotation), ["foo", "bar"])
       %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "other"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{"allowed" => false, "status" => %{"code" => 400, "message" => ~S(The field .metadata.annotations.some/annotation must contain one of the values in ["foo", "bar"] but it's currently set to "other".)}}}
   """
   @spec check_allowed_values(t(), list(), list()) :: t()
