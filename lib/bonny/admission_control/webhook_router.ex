@@ -8,9 +8,7 @@ defmodule Bonny.AdmissionControl.WebhookRouter do
   @api_version "admission.k8s.io/v1"
   @kind "AdmissionReview"
 
-  @callback process_mutating_review(AdmissionReview.t()) :: AdmissionReview.t()
-  @callback process_validating_review(AdmissionReview.t()) :: AdmissionReview.t()
-  @optional_callbacks process_validating_review: 1, process_mutating_review: 1
+  @callback process(AdmissionReview.t()) :: AdmissionReview.t()
 
   defmacro __using__(_opts) do
     quote do
@@ -25,65 +23,41 @@ defmodule Bonny.AdmissionControl.WebhookRouter do
         json_decoder: Jason
       )
 
-      @impl true
       def init(opts) do
         WebhookRouter.plug_init(opts, __MODULE__)
       end
 
-      @impl true
-      def call(conn, callback) do
+      def call(%Plug.Conn{} = conn, webhook_type) do
         conn
         |> super([])
-        |> WebhookRouter.process_request(&apply(__MODULE__, callback, [&1]))
+        |> WebhookRouter.process_request(__MODULE__, webhook_type)
       end
     end
   end
 
   @doc false
   def plug_init(opts, module) do
-    case Keyword.fetch(opts, :webhook_type) do
-      :error ->
-        raise(CompileError,
-          file: __ENV__.file,
-          line: __ENV__.line,
-          description: "#{module} requires you to define the :webhook_type option when plugged."
-        )
-
-      {:ok, :mutating} ->
-        if not function_exported?(module, :process_mutating_review, 1) do
-          raise(CompileError,
-            file: __ENV__.file,
-            line: __ENV__.line,
-            description:
-              "process_mutating_review/1 must be defined if using with webhook_type: :mutating."
-          )
-        end
-
-        :process_mutating_review
-
-      {:ok, :validating} ->
-        if not function_exported?(module, :process_validating_review, 1) do
-          raise(CompileError,
-            file: __ENV__.file,
-            line: __ENV__.line,
-            description:
-              "process_validating_review/1 must be defined if using with webhook_type: :validating."
-          )
-        end
-
-        :process_validating_review
+    if opts[:webhook_type] not in [:mutating, :validating] do
+      raise(CompileError,
+        file: __ENV__.file,
+        line: __ENV__.line,
+        description:
+          "#{module} requires you to define the :webhook_type as :mutating or :validating when plugged."
+      )
     end
+
+    opts[:webhook_type]
   end
 
   @doc false
-  def process_request(conn, callback) do
+  def process_request(conn, router, webhook_type) do
     conn.body_params
-    |> AdmissionReview.new()
+    |> AdmissionReview.new(webhook_type)
     |> tap(fn review ->
       Logger.debug("Processing Admission Review Request", library: :bonny, review: review)
     end)
     |> AdmissionReview.allow()
-    |> callback.()
+    |> router.process()
     |> encode_response()
     |> send_response(conn)
   end

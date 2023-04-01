@@ -7,21 +7,19 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
 
   @type t :: %__MODULE__{
           request: map(),
-          response: map()
+          response: map(),
+          webhook_type: :mutating | :validating
         }
 
-  @fields [
-    :request,
-    :response
-  ]
-
+  @fields [:request, :response, :webhook_type]
   @enforce_keys @fields
   defstruct @fields
 
-  def new(%{"kind" => "AdmissionReview", "request" => request}) do
+  def new(%{"kind" => "AdmissionReview", "request" => request}, webhook_type) do
     struct!(__MODULE__,
       request: request,
-      response: %{"uid" => request["uid"]}
+      response: %{"uid" => request["uid"]},
+      webhook_type: webhook_type
     )
   end
 
