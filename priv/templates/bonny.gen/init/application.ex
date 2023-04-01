@@ -14,6 +14,7 @@ defmodule <%= @app_name %>.Application do
   defp children(:test), do: []
   defp children(env) do
     [
+
       {<%= @app_name %>.Operator, conn: <%= @app_name %>.K8sConn.get!(env)}
     ]
   end

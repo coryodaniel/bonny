@@ -32,9 +32,9 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
 
   ## Examples
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.allow(admission_review)
-      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => true}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => true}, webhook_type: :validating}
   """
   @spec allow(t()) :: t()
   def allow(admission_review) do
@@ -46,9 +46,9 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
 
   ## Examples
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.deny(admission_review)
-      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => false}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => false}, webhook_type: :validating}
   """
   @spec deny(t()) :: t()
   def deny(admission_review) do
@@ -60,12 +60,12 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
 
   ## Examples
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.deny(admission_review, 403, "foo")
-      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => false, "status" => %{"code" => 403, "message" => "foo"}}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => false, "status" => %{"code" => 403, "message" => "foo"}}, webhook_type: :validating}
 
-      iex> Bonny.AdmissionControl.AdmissionReview.deny(%Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}, "foo")
-      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => false, "status" => %{"code" => 400, "message" => "foo"}}}
+      iex> Bonny.AdmissionControl.AdmissionReview.deny(%Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}, webhook_type: :validating}, "foo")
+      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"allowed" => false, "status" => %{"code" => 400, "message" => "foo"}}, webhook_type: :validating}
   """
   @spec deny(t(), integer(), binary()) :: t()
   @spec deny(t(), binary()) :: t()
@@ -80,13 +80,13 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
 
   ## Examples
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.add_warning(admission_review, "warning")
-      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"warnings" => ["warning"]}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"warnings" => ["warning"]}, webhook_type: :validating}
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"warnings" => ["existing_warning"]}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"warnings" => ["existing_warning"]}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.add_warning(admission_review, "new_warning")
-      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"warnings" => ["new_warning", "existing_warning"]}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{}, response: %{"warnings" => ["new_warning", "existing_warning"]}, webhook_type: :validating}
   """
   @spec add_warning(t(), binary()) :: t()
   def add_warning(admission_review, warning) do
@@ -102,13 +102,13 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
 
   ## Examples
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.check_immutable(admission_review, ["spec", "immutable"])
-      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{}, webhook_type: :validating}
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "new_value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "new_value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.check_immutable(admission_review, ["spec", "immutable"])
-      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "new_value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{"allowed" => false, "status" => %{"code" => 400, "message" => "The field .spec.immutable is immutable."}}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"spec" => %{"immutable" => "new_value"}}, "oldObject" => %{"spec" => %{"immutable" => "value"}}}, response: %{"allowed" => false, "status" => %{"code" => 400, "message" => "The field .spec.immutable is immutable."}}, webhook_type: :validating}
   """
   @spec check_immutable(t(), list()) :: t()
   def check_immutable(admission_review, field) do
@@ -126,17 +126,17 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
 
   ## Examples
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "bar"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "bar"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.check_allowed_values(admission_review, ~w(metadata annotations some/annotation), ["foo", "bar"])
-      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "bar"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "bar"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}, webhook_type: :validating}
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.check_allowed_values(admission_review, ~w(metadata annotations some/annotation), ["foo", "bar"])
-      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}, webhook_type: :validating}
 
-      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "other"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}}
+      iex> admission_review = %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "other"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{}, webhook_type: :validating}
       ...> Bonny.AdmissionControl.AdmissionReview.check_allowed_values(admission_review, ~w(metadata annotations some/annotation), ["foo", "bar"])
-      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "other"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{"allowed" => false, "status" => %{"code" => 400, "message" => ~S(The field .metadata.annotations.some/annotation must contain one of the values in ["foo", "bar"] but it's currently set to "other".)}}}
+      %Bonny.AdmissionControl.AdmissionReview{request: %{"object" => %{"metadata" => %{"annotations" => %{"some/annotation" => "other"}}, "spec" => %{}}, "oldObject" => %{"spec" => %{}}}, response: %{"allowed" => false, "status" => %{"code" => 400, "message" => ~S(The field .metadata.annotations.some/annotation must contain one of the values in ["foo", "bar"] but it's currently set to "other".)}}, webhook_type: :validating}
   """
   @spec check_allowed_values(t(), list(), list()) :: t()
   def check_allowed_values(admission_review, field, allowed_values) do
