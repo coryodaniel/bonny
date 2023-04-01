@@ -10,18 +10,20 @@ defmodule Bonny.AdmissionControl do
            {:admission_config, get_admission_config(conn, operator_name)},
          {:cert_bundle, {:ok, cert_bundle}} <-
            {:cert_bundle, get_or_create_cert_bundle(conn, operator_name)} do
+      encoded_ca = Base.encode64(cert_bundle["ca.pem"])
+
       admission_configurations
       |> Enum.reject(fn config ->
         Enum.all?(
           List.wrap(config["webhooks"]),
-          &(&1["clientConfig"]["caBundle"] == cert_bundle["ca"])
+          &(&1["clientConfig"]["caBundle"] == encoded_ca)
         )
       end)
       |> Enum.map(fn config ->
         put_in(
           config,
-          ["webhooks", Access.all(), ["clientConfig"]["caBundle"]],
-          cert_bundle["ca"]
+          ["webhooks", Access.all(), "clientConfig", "caBundle"],
+          encoded_ca
         )
       end)
       |> Enum.each(&apply_admission_config(conn, &1))
@@ -51,7 +53,8 @@ defmodule Bonny.AdmissionControl do
            {:secret, operator_namespace, operator_name, secret_namespace, secret_name,
             get_secret(conn, secret_namespace, secret_name)},
          {:cert_bundle,
-          %{"key" => _key, "cert" => _cert, "ca_key" => _ca_key, "ca" => _ca} = cert_bundle} <-
+          %{"key.pem" => _key, "cert.pem" => _cert, "ca_key.pem" => _ca_key, "ca.pem" => _ca} =
+            cert_bundle} <-
            {:cert_bundle, decode_secret(secret)} do
       {:ok, cert_bundle}
     else
@@ -140,10 +143,10 @@ defmodule Bonny.AdmissionControl do
       )
 
     cert_bundle = %{
-      "key" => X509.PrivateKey.to_pem(key),
-      "cert" => X509.Certificate.to_pem(cert),
-      "ca_key" => X509.PrivateKey.to_pem(ca_key),
-      "ca" => X509.Certificate.to_pem(ca)
+      "key.pem" => X509.PrivateKey.to_pem(key),
+      "cert.pem" => X509.Certificate.to_pem(cert),
+      "ca_key.pem" => X509.PrivateKey.to_pem(ca_key),
+      "ca.pem" => X509.Certificate.to_pem(ca)
     }
 
     case create_secret(conn, secret_namespace, secret_name, cert_bundle) do
@@ -199,9 +202,8 @@ defmodule Bonny.AdmissionControl do
   defp apply_admission_config(conn, admission_config) do
     result =
       admission_config
-      |> K8s.Client.apply()
-      |> K8s.Client.put_conn(conn)
-      |> K8s.Client.run()
+      |> Bonny.Resource.drop_managed_fields()
+      |> Bonny.Resource.apply(conn, [])
 
     case result do
       {:ok, _} -> :ok
