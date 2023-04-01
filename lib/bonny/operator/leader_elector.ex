@@ -254,6 +254,7 @@ defmodule Bonny.Operator.LeaderElector do
               |> put_in(~w(metadata resourceVersion), old_lease["metadata"]["resourceVersion"])
             end
 
+          # credo:disable-for-next-line
           case Bonny.Resource.apply(my_lease, conn, []) do
             {:ok, _} ->
               Logger.debug(
