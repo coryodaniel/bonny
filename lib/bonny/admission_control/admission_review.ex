@@ -5,15 +5,19 @@ defmodule Bonny.AdmissionControl.AdmissionReview do
 
   require Logger
 
+  @derive Pluggable.Token
+
+  @type webhook_type :: :mutating | :validating
   @type t :: %__MODULE__{
           request: map(),
           response: map(),
-          webhook_type: :mutating | :validating
+          webhook_type: webhook_type(),
+          halted: boolean(),
+          assigns: map()
         }
 
-  @fields [:request, :response, :webhook_type]
-  @enforce_keys @fields
-  defstruct @fields
+  @enforce_keys [:request, :response, :webhook_type]
+  defstruct [:request, :response, :webhook_type, halted: false, assigns: %{}]
 
   def new(%{"kind" => "AdmissionReview", "request" => request}, webhook_type) do
     struct!(__MODULE__,
