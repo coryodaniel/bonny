@@ -17,6 +17,7 @@ defmodule Bonny.Mix.OperatorTest do
           verbs: ["*"]
         },
         %{apiGroups: ["events.k8s.io"], resources: ["events"], verbs: ["*"]},
+        %{apiGroups: ["coordination.k8s.io"], resources: ["leases"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},

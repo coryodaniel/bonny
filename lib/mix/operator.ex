@@ -32,6 +32,11 @@ defmodule Bonny.Mix.Operator do
         apiGroups: ["events.k8s.io"],
         resources: ["events"],
         verbs: ["*"]
+      },
+      %{
+        apiGroups: ["coordination.k8s.io"],
+        resources: ["leases"],
+        verbs: ["*"]
       }
     ]
   end
