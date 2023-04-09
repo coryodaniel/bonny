@@ -1,12 +1,16 @@
 ![Bonny](./assets/banner.png "Bonny")
 
-[![Build Status](https://travis-ci.org/coryodaniel/bonny.svg?branch=master)](https://travis-ci.org/coryodaniel/bonny)
-[![Coverage Status](https://coveralls.io/repos/github/coryodaniel/bonny/badge.svg?branch=master)](https://coveralls.io/github/coryodaniel/bonny?branch=master)
 [![Module Version](https://img.shields.io/hexpm/v/bonny.svg)](https://hex.pm/packages/bonny)
+[![Coverage Status](https://coveralls.io/repos/github/coryodaniel/bonny/badge.svg?branch=master)](https://coveralls.io/github/coryodaniel/bonny?branch=master)
+[![Last Updated](https://img.shields.io/github/last-commit/coryodaniel/bonny.svg)](https://github.com/coryodaniel/bonny/commits/master)
+
+[![Build Status CI](https://github.com/coryodaniel/bonny/actions/workflows/ci.yaml/badge.svg)](https://github.com/coryodaniel/bonny/actions/workflows/ci.yaml)
+[![Build Status Elixir](https://github.com/coryodaniel/bonny/actions/workflows/elixir_matrix.yaml/badge.svg)](https://github.com/coryodaniel/bonny/actions/workflows/elixir_matrix.yaml)
+[![Build Status K8s](https://github.com/coryodaniel/bonny/actions/workflows/k8s_matrix.yaml/badge.svg)](https://github.com/coryodaniel/bonny/actions/workflows/k8s_matrix.yaml)
+
 [![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/bonny/)
 [![Total Download](https://img.shields.io/hexpm/dt/bonny.svg)](https://hex.pm/packages/bonny)
 [![License](https://img.shields.io/hexpm/l/bonny.svg)](https://github.com/coryodaniel/bonny/blob/master/LICENSE)
-[![Last Updated](https://img.shields.io/github/last-commit/coryodaniel/bonny.svg)](https://github.com/coryodaniel/bonny/commits/master)
 
 # Bonny: Kubernetes Development Framework
 
