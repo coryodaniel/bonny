@@ -48,6 +48,8 @@ defmodule Bonny.API.Version do
         end
   """
 
+  @derive Ymlr.Encoder
+
   @doc """
   Return a `%Bonny.API.Version{}` struct representing the manifest for this
   version of the CRD API.
