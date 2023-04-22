@@ -15,7 +15,7 @@ jobs:
         otp: ["23.x", "24.x", "25.x"]
         elixir: ["1.14.x"]
     steps:
-      - uses: actions/checkout@v1.0.0
+      - uses: actions/checkout@v3.5.2
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{matrix.otp}}
