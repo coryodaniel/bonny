@@ -11,3 +11,7 @@ updates:
       interval: "weekly"
     labels:
       - "dependabot-update"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
