@@ -40,6 +40,7 @@ defmodule Bonny.API.CRD do
           versions: list(module())
         }
 
+  @derive Ymlr.Encoder
   @enforce_keys [:names, :versions]
 
   defstruct [
@@ -69,7 +70,6 @@ defmodule Bonny.API.CRD do
   def to_manifest(%__MODULE__{} = crd) do
     spec =
       crd
-      |> Map.from_struct()
       |> update_in([Access.key(:versions, []), Access.all()], & &1.manifest())
       |> assert_single_storage!()
 

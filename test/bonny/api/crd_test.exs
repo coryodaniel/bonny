@@ -18,7 +18,7 @@ defmodule Bonny.API.CRDTest do
     test "creates manifest" do
       crd = %MUT{
         names: %{singular: "somekind", plural: "somekinds", kind: "SomeKind", shortNames: []},
-        group: "example.xom",
+        group: "example.com",
         versions: [V1],
         scope: :Namespaced
       }
@@ -26,9 +26,9 @@ defmodule Bonny.API.CRDTest do
       expected = %{
         apiVersion: "apiextensions.k8s.io/v1",
         kind: "CustomResourceDefinition",
-        metadata: %{labels: %{"k8s-app" => "bonny"}, name: "somekinds.example.xom"},
-        spec: %{
-          group: "example.xom",
+        metadata: %{labels: %{"k8s-app" => "bonny"}, name: "somekinds.example.com"},
+        spec: %Bonny.API.CRD{
+          group: "example.com",
           names: %{kind: "SomeKind", plural: "somekinds", shortNames: [], singular: "somekind"},
           scope: :Namespaced,
           versions: [
