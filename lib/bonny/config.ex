@@ -3,6 +3,13 @@ defmodule Bonny.Config do
   Operator configuration interface
   """
 
+  @project_name Mix.Project.config()
+                |> Keyword.fetch!(:app)
+                |> Atom.to_string()
+                |> String.replace("_", "-")
+
+  defp project_name(), do: @project_name
+
   @doc """
   Kubernetes API Group of this operator
   """
@@ -63,13 +70,6 @@ defmodule Bonny.Config do
     :bonny
     |> Application.get_env(:service_account_name, project_name())
     |> dns_safe_name
-  end
-
-  defp project_name() do
-    Mix.Project.config()
-    |> Keyword.fetch!(:app)
-    |> Atom.to_string()
-    |> String.replace("_", "-")
   end
 
   defp dns_safe_name(str) do
