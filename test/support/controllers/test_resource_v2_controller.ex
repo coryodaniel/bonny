@@ -46,6 +46,7 @@ defmodule TestResourceV2Controller do
 
   def rbac_rules() do
     [to_rbac_rule({"example.com", "testresourcev2s/status", "*"})]
+    [to_rbac_rule({"example.com", "whizbangs", "get"})]
   end
 
   def cleanup(axn) do

@@ -18,7 +18,25 @@ defmodule Bonny.Mix.Operator do
   end
 
   def rbac_rules(operators) do
-    Enum.uniq(base_rules() ++ legacy_rules() ++ operator_rules(operators))
+    rules =
+      for rule <- base_rules() ++ legacy_rules() ++ operator_rules(operators),
+          api_group <- rule.apiGroups,
+          resource <- rule.resources,
+          verb <- rule.verbs,
+          reduce: %{} do
+        acc ->
+          if verb == "*" or Map.get(acc, {api_group, resource}) == ["*"] do
+            Map.put(acc, {api_group, resource}, ["*"])
+          else
+            Map.update(acc, {api_group, resource}, [verb], &[verb | &1])
+          end
+      end
+
+    rules
+    |> Enum.map(fn {{api_group, resource}, verbs} ->
+      %{apiGroups: [api_group], resources: [resource], verbs: verbs |> Enum.uniq() |> Enum.sort()}
+    end)
+    |> Enum.sort_by(&{&1.apiGroups, &1.resources})
   end
 
   defp base_rules() do

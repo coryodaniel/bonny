@@ -11,21 +11,22 @@ defmodule Bonny.Mix.OperatorTest do
       kind: "ClusterRole",
       metadata: %{labels: %{"k8s-app" => "bonny"}, name: "bonny"},
       rules: [
+        %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
         %{
           apiGroups: ["apiextensions.k8s.io"],
           resources: ["customresourcedefinitions"],
           verbs: ["*"]
         },
-        %{apiGroups: ["events.k8s.io"], resources: ["events"], verbs: ["*"]},
+        %{apiGroups: ["apps"], resources: ["deployments"], verbs: ["*"]},
+        %{apiGroups: ["apps"], resources: ["services"], verbs: ["*"]},
         %{apiGroups: ["coordination.k8s.io"], resources: ["leases"], verbs: ["*"]},
-        %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]},
+        %{apiGroups: ["events.k8s.io"], resources: ["events"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["cogs"], verbs: ["*"]},
-        %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
         %{apiGroups: ["example.com"], resources: ["testresources"], verbs: ["*"]},
-        %{apiGroups: ["apps"], resources: ["deployments", "services"], verbs: ["*"]},
-        %{apiGroups: [""], resources: ["configmaps"], verbs: ["create", "read"]},
         %{apiGroups: ["example.com"], resources: ["testresourcev2s"], verbs: ["*"]},
-        %{apiGroups: ["example.com"], resources: ["testresourcev2s/status"], verbs: ["*"]}
+        %{apiGroups: ["example.com"], resources: ["testresourcev2s/status"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["whizbangs"], verbs: ["*"]},
+        %{apiGroups: ["example.com"], resources: ["widgets"], verbs: ["*"]}
       ]
     }
 
