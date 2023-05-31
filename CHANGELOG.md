@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+## Fixed
+
+- Compile time dependency at runtime: [#212](https://github.com/coryodaniel/bonny/pull/212)
+
+## Changed
+
+- Start leader election by default - [#195](https://github.com/coryodaniel/bonny/pull/195)
+
 ## [1.1.3] - 2023-04-09
 
 - Leader Election: Add missing RBAC permission to access leases - [#207](https://github.com/coryodaniel/bonny/pull/207)

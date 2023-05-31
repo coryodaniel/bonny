@@ -120,10 +120,10 @@ defmodule Bonny.Operator do
           Keyword.pop(init_args, :watch_namespace, @default_watch_namespace)
 
         start_link =
-          if init_args[:enable_leader_election] do
-            &Bonny.Operator.LeaderElector.start_link/3
-          else
+          if init_args[:enable_leader_election] == false do
             &Bonny.Operator.Supervisor.start_link/3
+          else
+            &Bonny.Operator.LeaderElector.start_link/3
           end
 
         controllers(watch_namespace, init_args)
