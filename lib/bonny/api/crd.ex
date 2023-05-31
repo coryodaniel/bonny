@@ -131,4 +131,9 @@ defmodule Bonny.API.CRD do
       shortNames: short_names
     }
   end
+
+  # Implement Access behaviour
+  defdelegate fetch(term, key), to: Map
+  defdelegate get(term, key, default), to: Map
+  defdelegate get_and_update(term, key, fun), to: Map
 end

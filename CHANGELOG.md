@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
-- Compile time dependency at runtime: [#212](https://github.com/coryodaniel/bonny/pull/212)
+- `mix bonny.gen.manifest` - Merge RBAC rules for the same resources - []()
+- Compile time dependency at runtime - [#212](https://github.com/coryodaniel/bonny/pull/212)
 
 ## Changed
 
