@@ -117,9 +117,9 @@ Bonny.Axn.new!(
 |> Map.get(:descendants)
 ```
 
-## Resource Status
+## The Status Subresource
 
-Controllers should use the resource's status to communicate back data to the client. This can be results from underlaying APIs or stats. In your handler, use `Bonny.Axn.update_status/2` to update the status.
+Controllers should use a resource's status subresource to communicate back data to the client. This can be results from underlaying APIs or stats. In your handler, use `Bonny.Axn.update_status/2` to update the status. Make sure the status subresource is represented in your CRD's schema.
 
 ```elixir
 defmodule StatusController do
@@ -150,6 +150,159 @@ resource = %{
 
 Bonny.Axn.new!(action: :add, conn: nil, resource: resource)
 |> StatusController.call([])
+|> Map.get(:status)
+```
+
+## Skipping Observed Generations
+
+One of the kubernetes operator best practices is observing generations. [This blog post explains it really well](https://alenkacz.medium.com/kubernetes-operator-best-practices-implementing-observedgeneration-250728868792). It is extremly useful especially when you work with status subresources to not get another `modify` event for updating the status.
+
+Bonny skips observed generations if you add the `Bonny.Pluggable.SkipObservedGenrations` step to your controller.
+
+### Preparations
+
+In order to use the `Bonny.Pluggable.SkipObservedGenrations` step on a custom resource, you have to enable the status subresource and define the correct openAPIV3 schema in your [CRD version file](./crd_versions.livemd#skipped-observed-generations):
+
+```elixir
+defmodule MyOperator.API.V1.CronTab do
+  use Bonny.API.Version
+
+  @impl Bonny.API.Version
+  def manifest() do
+    defaults()
+    |> add_observed_generation_status()
+  end
+end
+
+MyOperator.API.V1.CronTab.manifest()
+```
+
+### How it works
+
+`Bonny.Pluggable.SkipObservedGenrations` compares the current resource's fields `.metadata.generation` with the field defined by the `:observed_generation_key` option (`.status.observedGeneration` by default). It halts the pipeline if the two values match, i.e. if the resource generation had already been observed.
+
+You can define for which actions this rule applies by adding the option `:actions` when placing the step. By default this rule applies to `[:add, :modify]` actions.
+
+Finally, before the resource status is applied, the module copies the value in `.metadata.generation` to the field defined by the `:observed_generation_key` option (`.status.observedGeneration` by default).
+
+### Example
+
+This example shows how only `:reconcile` and `:delete` events are handled by the controller:
+
+```elixir
+defmodule MyThirdResourceController do
+  use Bonny.ControllerV2
+
+  step Bonny.Pluggable.SkipObservedGenerations,
+    #  default
+    actions: [:add, :modify],
+    #  default
+    observed_generation_key: ["status", "observedGeneration"]
+
+
+  step :handle_event
+
+  def handle_event(axn, _) do
+    IO.puts("handling #{axn.action} event.")
+    axn
+  end
+end
+
+action =
+  Kino.Input.select("Test Events",
+    add: "add",
+    modify: "modify",
+    reconcile: "reconcile",
+    delete: "delete"
+  )
+```
+
+```elixir
+resource = %{
+  "apiVersion" => "example.com/v1",
+  "kind" => "MyApp",
+  "metadata" => %{
+    "name" => "foo",
+    "namespace" => "default",
+    "uid" => "e19b6f40-3293-11ed-a261-0242ac120002",
+    "generation" => 1
+  },
+  "status" => %{"observedGeneration" => 1}
+}
+
+axn = Bonny.Axn.new!(action: Kino.Input.read(action), conn: nil, resource: resource)
+MyThirdResourceController.call(axn, [])
+:ok
+```
+
+## Conditions
+
+[Conditions](https://maelvls.dev/kubernetes-conditions/) provide a way to communicate the resource's status in a machine readable state. One use case for conditions are [custom health checks in ArgoCD](https://argo-cd.readthedocs.io/en/stable/operator-manual/health/#custom-health-checks). If you define conditions on your resources, users of your operator can - when using ArgoCD - define a custom health check which changes the status of resources to. `degraded` if specified conditions fail.
+
+### Preparations
+
+In order to use conditions on custom resources, they have to be [initialized in your CRD manifest](./crd_versions.livemd#skipped-observed-generations):
+
+```elixir
+defmodule MyOperator.API.V1.CronTab2 do
+  use Bonny.API.Version
+
+  @impl Bonny.API.Version
+  def manifest() do
+    defaults()
+    |> add_conditions()
+  end
+end
+
+MyOperator.API.V1.CronTab2.manifest()
+```
+
+### Usage
+
+I find the most elegant usage of conditions is in combination with a `with` statement. In the following code example, let's assume the controller needs to lookup a secret and a configmap in order to finally create a descendant resource:
+
+```elixir
+defmodule MyFourthResourceController do
+  use Bonny.ControllerV2
+
+  step :handle_event
+
+  def handle_event(axn, _) when axn.action in [:add, :modify, :reconcile] do
+    with {:secret, {:ok, secret}} <- {:secret, get_secret(axn.resource)},
+         axn <- set_condition(axn, "Secret", true, "the secret was loaded successfully."),
+         {:configmap, axn, {:ok, cm}} <- {:configmap, axn, get_configmap(axn.resource)},
+         axn <- set_condition(axn, "Configmap", true, "the configmap was loaded successfully."),
+         {:descendant, axn, :ok} <-
+           {:descendant, axn, create_descendant(axn.resource, secret, cm)} do
+      axn
+      |> success_event()
+      |> set_condition("Descendant", true, "Descendant was created successfully")
+    else
+      {:secret, {:error, error}} ->
+        axn
+        |> failure_event(message: error)
+        |> set_condition("Secret", false, error)
+
+      {:configmap, axn, {:error, error}} ->
+        axn
+        |> failure_event(message: error)
+        |> set_condition("Configmap", false, error)
+
+      {:descendant, axn, {:error, error}} ->
+        axn
+        |> failure_event(message: error)
+        |> set_condition("Descendant", false, error)
+    end
+  end
+
+  # dummy functions:
+  def get_secret(_), do: {:ok, :secret}
+  def get_configmap(_), do: {:ok, :configmap}
+  def create_descendant(_, :secret, :configmap), do: {:error, "Something went wrong"}
+end
+
+Bonny.Axn.new!(action: :add, conn: nil, resource: %{})
+|> MyFourthResourceController.call([])
 |> Map.get(:status)
 ```
 
@@ -235,65 +388,4 @@ defmodule MySecondResourceController do
 end
 
 MySecondResourceController.rbac_rules()
-```
-
-## Skipping Observed Generations
-
-One of the kubernetes operator best practices is observing generations. [This blog post explains it really well](https://alenkacz.medium.com/kubernetes-operator-best-practices-implementing-observedgeneration-250728868792). It is extremly useful especially when you work with status subresources to not get another `modify` event for updating the status.
-
-Bonny skips observed generations if you add the `Bonny.Pluggable.SkipObservedGenrations` step to your controller.
-
-`Bonny.Pluggable.SkipObservedGenrations` compares the current resource's fields `.metadata.generation` with the field defined by the `:observed_generation_key` option (`.status.observedGeneration` by default). It halts the pipeline if the two values match, i.e. if the resource generation had already been observed.
-
-You can define for which actions this rule applies by adding the option `:actions` when placing the step. By default this rule applies to `[:add, :modify]` actions.
-
-Finally, before the resource status is applied, the module copies the value in `.metadata.generation` to the field defined by the `:observed_generation_key` option (`.status.observedGeneration` by default).
-
-### Example
-
-This example shows how only `:reconcile` and `:delete` events are handled by the controller:
-
-```elixir
-defmodule MyThirdResourceController do
-  use Bonny.ControllerV2
-
-  step Bonny.Pluggable.SkipObservedGenerations,
-    #  default
-    actions: [:add, :modify],
-    #  default
-    observed_generation_key: ["status", "observedGeneration"]
-
-  step :handle_event
-
-  def handle_event(axn, _) do
-    IO.puts("handling #{axn.action} event.")
-    axn
-  end
-end
-
-action =
-  Kino.Input.select("Test Events",
-    add: "add",
-    modify: "modify",
-    reconcile: "reconcile",
-    delete: "delete"
-  )
-```
-
-```elixir
-resource = %{
-  "apiVersion" => "example.com/v1",
-  "kind" => "MyApp",
-  "metadata" => %{
-    "name" => "foo",
-    "namespace" => "default",
-    "uid" => "e19b6f40-3293-11ed-a261-0242ac120002",
-    "generation" => 1
-  },
-  "status" => %{"observedGeneration" => 1}
-}
-
-axn = Bonny.Axn.new!(action: Kino.Input.read(action), conn: nil, resource: resource)
-MyThirdResourceController.call(axn, [])
-:ok
 ```

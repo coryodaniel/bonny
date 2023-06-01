@@ -10,24 +10,24 @@ Application.put_env(:bonny, :operator_name, "livebook-operator")
 
 When defining your operator (`use Bonny.Operator`), you have to implement the callback `crds/0` where you define your custom resources. A custom resource definition (CRD) is represented by a `%Bonny.API.CRD{}` struct which defines 4 fields:
 
-- `:scope` - either `:Namespaced` or `:Cluster`
+* `:scope` - either `:Namespaced` or `:Cluster`
 
-- `:group` - The API group of your controller / this resource
+* `:group` - The API group of your controller / this resource
 
-- `:names` - A map with 3-4 keys defining the names of this resource.
+* `:names` - A map with 3-4 keys defining the names of this resource.
 
-  - `plural`: name to be used in the URL: `/apis/<group>/<version>/<plural>` - e.g. crontabs
-  - `singular`: singular name to be used as an alias on the CLI and for display - e.g. crontab
-  - `kind`: is normally the CamelCased singular type. Your resource manifests use this. - e.g. CronTab
-  - `shortnames`: allow shorter string to match your resource on the CLI - e.g. [ct]
+  * `plural`: name to be used in the URL: `/apis/<group>/<version>/<plural>` - e.g. crontabs
+  * `singular`: singular name to be used as an alias on the CLI and for display - e.g. crontab
+  * `kind`: is normally the CamelCased singular type. Your resource manifests use this. - e.g. CronTab
+  * `shortnames`: allow shorter string to match your resource on the CLI - e.g. [ct]
 
-- `versions`: list of API Version modules for this Resource, defaults to the versions in config.exs
+* `versions`: list of API Version modules for this Resource, defaults to the versions in config.exs
 
 ```elixir
 defmodule MyOperator.Operator do
   use Bonny.Operator, default_watch_namespace: "default"
 
-  step :delegate_to_controller
+  step(:delegate_to_controller)
 
   def controllers(_watching_namespace, _opts), do: []
 
@@ -129,7 +129,34 @@ end
 YourOperator.API.V1Alpha1.Widget.manifest()
 ```
 
-Note that the usage of `Bonny.API.Version` imports the helper `add_observed_generation_status/1` to your module. Use it to add the fields to your manifest required by the `Bonny.Pluggable.SkipObservedGeneartions` pluggable step. See the [controllers guide](./controllers.livemd#skipping-observed-generations) for further information on this.
+## The Status Subresource
+
+In the [controllers guide](./controllers.livemd#the-status-subresource) we explain the importance of using of the status subresource. In order to use the status subresource, it has to be enabled and its schema has to be defined in the CRD. You can see an example in the code snipped above in the [`YourOperator.API.V1Alpha1.Widget`](#version-manifest-declaration).
+
+Two special use cases of the status subresource are [skipping obeserved generations](./controllers.livemd#skipping-observed-generations) and [conditions](./controllers.livemd#conditions). In order to use these concepts with custom resources, they have to be configured on the CRD. When `use`ing `Bonny.API.Version`, helper functions `add_observed_generation_status/1` and `add_conditions/1` are imported to your module. Use them to add the required fields to your manifest:
+
+```elixir
+defmodule YourOperator.API.V1Alpha1.Feature do
+  use Bonny.API.Version
+
+  @impl true
+  def manifest() do
+    defaults()
+    |> struct!(
+      schema:
+        %{
+          # your openAPIV3schema
+        }
+    )
+    # initialize the usage of the observed generations pluggable step
+    |> add_observed_generation_status()
+    # initialize the usage of conditions.
+    |> add_conditions()
+  end
+end
+
+YourOperator.API.V1Alpha1.Widget.manifest()
+```
 
 ## Multi-Version APIs
 
