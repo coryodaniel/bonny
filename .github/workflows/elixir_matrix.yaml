@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         # See https://hexdocs.pm/elixir/1.13/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
-        otp: ["23.x", "24.x", "25.x"]
+        otp: ["23.x", "24.x", "25.x", "26.x"]
         elixir: ["1.14.x"]
     steps:
       - uses: actions/checkout@v3.5.2
