@@ -11,14 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+## [1.2.0] - 2023-06-13
+
+## Changed
+
+- Start leader election by default - [#195](https://github.com/coryodaniel/bonny/pull/195)
+
 ## Fixed
 
 - `mix bonny.gen.manifest` - Merge RBAC rules for the same resources - [#213](https://github.com/coryodaniel/bonny/pull/213)
 - Compile time dependency at runtime - [#212](https://github.com/coryodaniel/bonny/pull/212)
 
-## Changed
-
-- Start leader election by default - [#195](https://github.com/coryodaniel/bonny/pull/195)
+<!-- No new entries below this line! -->
 
 ## [1.1.3] - 2023-04-09
 
@@ -37,8 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Chores
 
 - Upgrade k8s to 2.1.1
-
-<!-- No new entries below this line! -->
 
 ## [1.1.1] - 2023-02-24
 
