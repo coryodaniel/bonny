@@ -1,3 +1,7 @@
 erlang 26.0.1
+<<<<<<< HEAD
 elixir 1.14.5
+=======
+elixir 1.15.0
+>>>>>>> fb2e613 (upgrade elixir in ci)
 kind 0.17.0
