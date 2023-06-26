@@ -11,13 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+## [1.2.1] - 2023-06-126
+
+### Fixed
+
+- BONNY_OPERATOR_NAME env var is not a reference
+
 ## [1.2.0] - 2023-06-13
 
-## Changed
+### Changed
 
 - Start leader election by default - [#195](https://github.com/coryodaniel/bonny/pull/195)
 
-## Fixed
+### Fixed
 
 - `mix bonny.gen.manifest` - Merge RBAC rules for the same resources - [#213](https://github.com/coryodaniel/bonny/pull/213)
 - Compile time dependency at runtime - [#212](https://github.com/coryodaniel/bonny/pull/212)
