@@ -16,7 +16,7 @@ jobs:
       matrix:
         k8s_version: [v1.27.3]
     steps:
-      - uses: actions/checkout@v3.5.3
+      - uses: actions/checkout@v3.6.0
 
       - uses: engineerd/setup-kind@v0.5.0
         id: kind

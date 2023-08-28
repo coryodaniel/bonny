@@ -20,7 +20,7 @@ jobs:
         with:
           version: v0.17.0
           image: kindest/node:${{ matrix.k8s_version }}
-      - uses: actions/checkout@v3.5.3
+      - uses: actions/checkout@v3.6.0
       - uses: erlef/setup-beam@v1
         with:
           version-file: .tool-versions
