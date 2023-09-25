@@ -11,13 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+<!-- No new entries below this line! -->
+
+## [1.3.0] - 2023-09-25
+
 ### Changed
 
 - `Bonny.Axn.register_descendant/3` - Add option `group` to define in what group to apply a descendant and apply descendants in groups.
 
-<!-- No new entries below this line! -->
-
-## [1.2.1] - 2023-06-126
+## [1.2.1] - 2023-06-26
 
 ### Fixed
 
