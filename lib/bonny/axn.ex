@@ -56,7 +56,7 @@ defmodule Bonny.Axn do
   @type t :: %__MODULE__{
           action: :add | :modify | :reconcile | :delete,
           conn: K8s.Conn.t(),
-          descendants: %{{name :: binary(), namespace :: binary()} => Resource.t()},
+          descendants: %{{name :: binary(), namespace :: binary()} => {integer, Resource.t()}},
           events: list(Bonny.Event.t()),
           resource: Resource.t(),
           status: map() | nil,
@@ -211,9 +211,44 @@ defmodule Bonny.Axn do
 
   @doc """
   Registers a decending object to be applied.
-  Owner reference will be added automatically.
-  Adding the owner reference can be disabled by passing the option
-  `omit_owner_ref: true`.
+  Owner reference will be added automatically. unless disabled through
+  the option `omit_owner_ref`.
+
+  If you need some resources to be applied before others, use the `group`
+  option to indicate which group a resourceis added. Groups are applied in
+  ascending order. Resources within a group are applied simultaneously.
+
+  ## Options
+
+  * `omit_owner_ref` - when `true`, adding the owner reference is omitted.
+    Default: `false`
+  * `group` - Integer (posittive or negative). Controls the order in which
+    descendants are applied to the cluster. Default: `0`
+
+  ## Example
+
+  The following code registers a namespace and a pod as descendants. The
+  namespace is assigned to group `-1` as it needs to exist when the pod
+  is created within it. With `omit_owner_ref: true`, we indicate that no
+  owner reference is created for the namespace.
+
+  ```
+  ns = %{
+    "apiVersion" => "v1",
+    "kind" => "namespace",
+    "metadata" => %{"name" => "my_ns"}
+  }
+  pod = %{
+    "apiVersion" => "v1",
+    "kind" => "pod",
+    "metadata" => %{"namespace" => "my_ns", "name" => "my_pod"},
+    ...
+  }
+
+  axn
+  |> Bonny.Axn.register_descendant(resource, ns, group: -1, omit_owner_ref: true)
+  |> Bonny.Axn.register_descendant(resource, pod)
+  ```
   """
   @spec register_descendant(t(), Resource.t(), Keyword.t()) :: t()
   def register_descendant(axn, descendant, opts \\ [])
@@ -223,6 +258,8 @@ defmodule Bonny.Axn do
   end
 
   def register_descendant(axn, descendant, opts) do
+    group = Keyword.get(opts, :group, 0)
+
     descendant =
       if opts[:omit_owner_ref],
         do: descendant,
@@ -230,7 +267,7 @@ defmodule Bonny.Axn do
 
     key = Bonny.Resource.gvkn(descendant)
 
-    %__MODULE__{axn | descendants: Map.put(axn.descendants, key, descendant)}
+    %__MODULE__{axn | descendants: Map.put(axn.descendants, key, {group, descendant})}
   end
 
   @doc """
@@ -353,7 +390,7 @@ defmodule Bonny.Axn do
   end
 
   @doc """
-  Applies the dependants to the cluster.
+  Applies the dependants to the cluster in groups.
   If `:create_events` is true, will create an event for each successful apply.
   Always creates events upon failed applies.
 
@@ -371,14 +408,26 @@ defmodule Bonny.Axn do
   end
 
   def apply_descendants(axn, opts) do
+    axn.descendants
+    |> Map.values()
+    |> Enum.group_by(
+      fn {group_id, _descendant} -> group_id end,
+      fn {_, descendant} -> descendant end
+    )
+    |> Enum.sort_by(fn {group_id, _descendants} -> group_id end)
+    |> Enum.map(fn {_, descendant_group} -> descendant_group end)
+    |> Enum.reduce(axn, &apply_descendant_group(&2, &1, opts))
+    |> mark_descendants_applied()
+  end
+
+  @spec apply_descendant_group(t(), [map()], Keyword.t()) :: t()
+  defp apply_descendant_group(axn, descendants, opts) do
     {create_events, apply_opts} = Keyword.pop(opts, :create_events, [])
-    %__MODULE__{descendants: descendants, conn: conn} = axn
 
     descendants
-    |> Map.values()
     |> run_before_apply_descendants(axn)
     |> Enum.map(&Bonny.Resource.drop_managed_fields/1)
-    |> Resource.apply_async(conn, apply_opts)
+    |> Resource.apply_async(axn.conn, apply_opts)
     |> Enum.reduce(axn, fn
       {_, {:ok, descendant}}, acc ->
         if create_events do
@@ -405,7 +454,6 @@ defmodule Bonny.Axn do
 
         raise "#{inspect(id)} - #{message}"
     end)
-    |> mark_descendants_applied()
   end
 
   @doc ~S"""
