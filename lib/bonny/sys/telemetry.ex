@@ -7,7 +7,8 @@ defmodule Bonny.Sys.Telemetry do
     [:reconciler, :reconcile],
     [:watcher, :watch],
     [:scheduler, :binding],
-    [:task, :execution]
+    [:task, :execution],
+    [:operator, :run]
   ]
 
   @events Enum.flat_map(@spans, fn span ->

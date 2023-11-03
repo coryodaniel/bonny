@@ -145,18 +145,31 @@ defmodule Bonny.Operator do
   @doc false
   @spec run({atom(), Bonny.Resource.t()}, {module(), keyword()}, module(), K8s.Conn.t()) :: :ok
   def run({action, resource}, controller, operator, conn) do
-    Axn.new!(
-      conn: conn,
-      action: action,
-      resource: resource,
+    metadata = %{
+      operator: operator,
       controller: controller,
-      operator: operator
-    )
-    |> operator.call([])
-    |> Bonny.Axn.emit_events()
-    |> Bonny.Axn.run_after_processed()
+      action: action,
+      name: K8s.Resource.name(resource),
+      namespace: K8s.Resource.namespace(resource),
+      kind: K8s.Resource.kind(resource),
+      api_version: resource["apiVersion"],
+      library: :bonny
+    }
 
-    :ok
+    :telemetry.span([:operator, :run], metadata, fn ->
+      Axn.new!(
+        conn: conn,
+        action: action,
+        resource: resource,
+        controller: controller,
+        operator: operator
+      )
+      |> operator.call([])
+      |> Bonny.Axn.emit_events()
+      |> Bonny.Axn.run_after_processed()
+
+      {:ok, metadata}
+    end)
   end
 
   @doc false
