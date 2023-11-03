@@ -44,10 +44,12 @@ defmodule Bonny.Server.Watcher do
        ) do
     metadata = %{
       module: controller,
+      type: type,
       name: K8s.Resource.name(resource),
       namespace: K8s.Resource.namespace(resource),
       kind: K8s.Resource.kind(resource),
-      api_version: resource["apiVersion"]
+      api_version: resource["apiVersion"],
+      library: :bonny
     }
 
     :telemetry.span([:watcher, :watch], metadata, fn ->
