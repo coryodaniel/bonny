@@ -168,7 +168,7 @@ defmodule Bonny.Operator do
       |> Bonny.Axn.emit_events()
       |> Bonny.Axn.run_after_processed()
 
-      {:ok, %{metadata}}
+      {:ok, metadata}
     end)
   end
 
