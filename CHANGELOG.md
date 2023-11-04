@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+<!-- No new entries below this line! -->
+
+## [1.4.0] - 2023-11-04
+
 ### Added
 
 - Added telemetry events to the Operator module - [#244](https://github.com/coryodaniel/bonny/pull/244)
-
-<!-- No new entries below this line! -->
 
 ## [1.3.0] - 2023-09-25
 
