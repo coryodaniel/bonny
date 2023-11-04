@@ -60,7 +60,7 @@ defmodule Bonny.MixProject do
       {:owl, "~> 0.8.0", runtime: false},
       {:pluggable, "~> 1.0"},
       {:telemetry, "~> 1.0"},
-      {:ymlr, "~> 4.0"},
+      {:ymlr, "~> 5.0"},
 
       # Dev deps
       {:mix_test_watch, "~> 1.1", only: :dev, runtime: false},
