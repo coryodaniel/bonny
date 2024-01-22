@@ -28,14 +28,14 @@ jobs:
           install-hex: true
 
       - name: Retrieve Build Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: build-folder-cache
         with:
           path: _build
           key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-build-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
 
       - name: Retrieve Mix Dependencies Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: mix-cache
         with:
           path: deps
