@@ -13,10 +13,12 @@ jobs:
       matrix:
         # See https://hexdocs.pm/elixir/1.13/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
         otp: ["23.x", "24.x", "25.x", "26.x"]
-        elixir: ["1.14.x", "1.15.x"]
+        elixir: ["1.14.x", "1.15.x", "1.16.x"]
         exclude:
           # OTP 23
           - elixir: "1.15.x"
+            otp: "23.x"
+          - elixir: "1.16.x"
             otp: "23.x"
     steps:
       - uses: actions/checkout@v4.1.4
