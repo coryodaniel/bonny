@@ -19,7 +19,7 @@ jobs:
           - elixir: "1.15.x"
             otp: "23.x"
     steps:
-      - uses: actions/checkout@v4.1.3
+      - uses: actions/checkout@v4.1.4
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{matrix.otp}}
