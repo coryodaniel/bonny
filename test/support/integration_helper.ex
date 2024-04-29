@@ -13,8 +13,7 @@ defmodule Bonny.Test.IntegrationHelper do
       conn
       | discovery_driver: K8s.Discovery.Driver.HTTP,
         discovery_opts: [],
-        http_provider: K8s.Client.MintHTTPProvider,
-        insecure_skip_tls_verify: true
+        http_provider: K8s.Client.MintHTTPProvider
     }
   end
 end
