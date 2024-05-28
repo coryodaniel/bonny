@@ -287,7 +287,7 @@ defmodule Bonny.Operator.LeaderElector do
 
   defp lease_name(operator) do
     operator_hash =
-      :crypto.hash(:sha, Atom.to_string(operator)) |> Base.encode16() |> String.downcase()
+      :crypto.hash(:sha, Atom.to_string(operator)) |> String.slice(0..15) |> Base.encode16() |> String.downcase()
 
     "#{Bonny.Config.namespace()}-#{Bonny.Config.name()}-#{operator_hash}"
   end
