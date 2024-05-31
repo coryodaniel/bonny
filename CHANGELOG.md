@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
 
+### Fixed
+
+- Use SHA hashing algorithm tolerated when running in FIPS mode - [#276](https://github.com/coryodaniel/bonny/pull/276), [#275](https://github.com/coryodaniel/bonny/issues/275)
+
 <!-- No new entries below this line! -->
 
 ## [1.4.0] - 2023-11-04
