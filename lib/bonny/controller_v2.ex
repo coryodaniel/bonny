@@ -128,6 +128,7 @@ defmodule Bonny.ControllerV2 do
     query = Keyword.fetch!(init_args, :query)
     controller = Keyword.fetch!(init_args, :controller)
     operator = Keyword.fetch!(init_args, :operator)
+    reconcile_timeout = Keyword.get(init_args, :reconcile_timeout, 5_000)
     conn = Keyword.get_lazy(init_args, :conn, fn -> Bonny.Config.conn() end)
 
     watcher_stream =
@@ -137,7 +138,7 @@ defmodule Bonny.ControllerV2 do
     reconciler_stream =
       conn
       |> Bonny.Server.Reconciler.get_raw_stream(ensure_list_query(query))
-      |> Task.async_stream(&Bonny.Operator.run({:reconcile, &1}, controller, operator, conn))
+      |> Task.async_stream(&Bonny.Operator.run({:reconcile, &1}, controller, operator, conn),[timeout: reconcile_timeout])
 
     children = [
       {Bonny.Server.AsyncStreamRunner, id: Watcher, stream: watcher_stream},
