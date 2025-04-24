@@ -4,57 +4,10 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
-
 jobs:
   test:
-    runs-on: ubuntu-20.04
-    name: Test - OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
-    strategy:
-      matrix:
-        # See https://hexdocs.pm/elixir/1.13/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
-        otp: ["23.x", "24.x", "25.x", "26.x", "27.x"]
-        elixir: ["1.14.x", "1.15.x", "1.16.x", "1.17.x"]
-        exclude:
-          # OTP 23
-          - elixir: "1.15.x"
-            otp: "23.x"
-          - elixir: "1.16.x"
-            otp: "23.x"
-          - elixir: "1.17.x"
-            otp: "23.x"
-          # OTP 24
-          - elixir: "1.17.x"
-            otp: "24.x"
-          # OTP 27
-          - elixir: "1.14.x"
-            otp: "27.x"
-          - elixir: "1.15.x"
-            otp: "27.x"
-          - elixir: "1.16.x"
-            otp: "27.x"
-    steps:
-      - uses: actions/checkout@v4.1.6
-      - uses: erlef/setup-beam@v1
-        with:
-          otp-version: ${{matrix.otp}}
-          elixir-version: ${{matrix.elixir}}
-          install-rebar: true
-          install-hex: true
-
-      - name: Retrieve Build Cache
-        uses: actions/cache@v4
-        id: build-folder-cache
-        with:
-          path: _build
-          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-build-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
-
-      - name: Retrieve Mix Dependencies Cache
-        uses: actions/cache@v4
-        id: mix-cache
-        with:
-          path: deps
-          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
-
-      - run: mix deps.get
-      - run: mix compile --warnings-as-errors
-      - run: mix test
+    uses: mruoss/action_elixir_run_tests/.github/workflows/elixir-run-tests.yml@main
+    with:
+      checkout: true
+      warnings-as-errors: true
+      compile-for: prod
