@@ -214,10 +214,12 @@ defmodule Bonny.Axn do
   Owner reference will be added automatically unless disabled through
   the option `omit_owner_ref` or if the resource is cluster-scoped.
 
-  **Note:** Cluster-scoped resources (resources without a namespace) will
-  automatically have owner references omitted, regardless of the
-  `omit_owner_ref` option, as they should never have owner references
-  according to Kubernetes best practices.
+  > #### No Owner References for Cluster-scoped Resources {: .info}
+  >
+  > Cluster-scoped resources (resources without a namespace) will
+  > automatically have owner references omitted, regardless of the
+  > `omit_owner_ref` option, as they should never have owner references
+  > according to Kubernetes best practices.
 
   If you need some resources to be applied before others, use the `group`
   option to indicate which group a resourceis added. Groups are applied in
@@ -264,7 +266,6 @@ defmodule Bonny.Axn do
   }
 
   axn |> Bonny.Axn.register_descendant(resource, pv)  # No owner ref added
-  ```
   ```
   """
   @spec register_descendant(t(), Resource.t(), Keyword.t()) :: t()
