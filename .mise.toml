@@ -1,0 +1,90 @@
+[tools]
+erlang = "27.3.4.2"
+elixir = "1.18.4"
+rebar = "latest"
+kind = "0.29.0"
+
+[vars]
+kubeconfig = "integration.yaml"
+cluster_name = "bonny-ex"
+
+[tasks.init]
+description = "Run initialization for this repo."
+run = [
+  "mise settings experimental=true",
+  "mise install --yes",
+  "mise generate git-pre-commit --write --task=pre-commit",
+]
+
+[tasks.deps]
+description = "Get dependencies"
+run = ["mise exec elixir erlang rebar -- mix deps.get"]
+sources = ["mix.exs"]
+outputs = ["deps"]
+
+[tasks.compile-prod]
+description = "Run `mix compile --warnings-as-errors`"
+env = { MIX_ENV = "prod" }
+depends = ["deps"]
+run = ["mise exec elixir erlang rebar -- mix compile --warnings-as-errors"]
+
+[tasks.compile-test]
+description = "Run `mix compile --warnings-as-errors`"
+env = { MIX_ENV = "test" }
+depends = ["deps"]
+run = ["mise exec elixir erlang rebar -- mix compile"]
+
+[tasks.format]
+env = { "MIX_ENV" = "prod" }
+description = "Run `mix format`"
+depends = ["deps"]
+run = ["mise exec elixir erlang rebar -- mix format"]
+
+[tasks.dialyzer]
+description = "Run `mix dialyzer`"
+depends = ["deps"]
+run = ["mise exec elixir erlang rebar -- mix dialyzer"]
+
+[tasks.credo]
+description = "Run `mix credo --strict`"
+depends = ["deps"]
+run = ["mise exec elixir erlang rebar -- mix credo --strict"]
+
+[tasks.pre-commit]
+description = "Run pre-commit tasks"
+depends = ["compile-prod", "format", "dialyzer", "credo"]
+
+[tasks.test]
+description = "Run unit tests"
+run = ["mise x elixir erlang rebar -- mix test"]
+
+[tasks.setup-kind]
+run = [
+  "mise x kind -- kind get clusters | grep {{ vars.cluster_name }} || kind create cluster --name {{ vars.cluster_name }}",
+]
+
+[tasks.kubeconfig]
+depends = ["setup-kind"]
+run = [
+  "mise x kind -- kind export kubeconfig --name {{ vars.cluster_name }} --kubeconfig {{vars.kubeconfig}}",
+]
+
+[tasks.load-manifest]
+run = [
+  "mise x elixir erlang -- mix bonny.gen.manifest -o - | kubectl --kubeconfig={{vars.kubeconfig}} apply -f -",
+]
+env = { MIX_ENV = "test" }
+depends = ["compile-test", "setup-kind", "kubeconfig"]
+
+[tasks.integration-tests]
+description = "Run integration tests"
+depends = ["load-manifest"]
+run = ["mise x elixir erlang rebar -- mix test --include integration"]
+
+[tasks.integration-tests-ci]
+env = { TEST_WAIT_TIMEOUT = 10000 }
+description = "Run integration tests on CI"
+depends = ["load-manifest"]
+run = [
+  "mise x elixir erlang rebar -- mix coveralls.github --include integration --timeout 12000",
+]

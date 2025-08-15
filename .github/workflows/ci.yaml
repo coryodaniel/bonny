@@ -5,10 +5,6 @@ on:
   pull_request:
     branches: [master]
 
-env:
-  MIX_ENV: test
-  KUBECONFIG: /home/runner/.kube/config
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -18,20 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - uses: engineerd/setup-kind@v0.5.0
-        id: kind
-        with:
-          version: v0.29.0
-          image: kindest/node:${{ matrix.k8s_version }}
+      - name: Setup Mise JDX
+        run: |
+          curl https://mise.run | sh
+          echo "$HOME/.local/share/mise/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/share/mise/shims" >> $GITHUB_PATH
+          echo "eval \"\$(mise activate bash)\"" >> ~/.bash_profile
 
-      - name: Setup elixir
-        id: beam
-        uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
-          install-rebar: true
-          install-hex: true
+      - name: Install Hex
+        run: mise x elixir erlang -- mix local.hex --force
+
+      - name: Setup Kind
+        run: mise run setup-kind --image kindest/node:${{ matrix.k8s_version }}
 
       - name: Retrieve Build Cache
         uses: actions/cache@v4
@@ -59,28 +53,25 @@ jobs:
             priv/plts
 
       - name: Install Mix Dependencies
-        run: mix deps.get
+        run: mise run deps
 
       - name: Check Formatting
-        run: mix format --check-formatted
+        run: mise run format --check-formatted
 
       - name: Run Credo
-        run: mix credo --strict
+        run: mise run credo
 
       - name: Run Coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          MIX_ENV=test mix compile
-          MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
-          TEST_WAIT_TIMEOUT=10000 TEST_KUBECONFIG=$KUBECONFIG mix coveralls.github --include integration --timeout 12000
+        run: mise run integration-tests-ci
 
       # Create PLTs if no cache was found
       - name: Create PLTs
         if: steps.plt-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p priv/plts
-          mix dialyzer
+          mise run dialyzer --plt
 
       - name: Run dialyzer
-        run: mix dialyzer --format github
+        run: mise run dialyzer --format github

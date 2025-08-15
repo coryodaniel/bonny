@@ -5,28 +5,28 @@ on:
   pull_request:
     branches: [master]
 
-env:
-  KUBECONFIG: /home/runner/.kube/config
-
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         k8s_version: [v1.29.14, v1.30.10, v1.31.6, v1.32.3, v1.33.0]
     steps:
-      - uses: engineerd/setup-kind@v0.5.0
-        id: kind
-        with:
-          version: v0.29.0
-          image: kindest/node:${{ matrix.k8s_version }}
       - uses: actions/checkout@v4.2.2
-      - uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
-          install-rebar: true
-          install-hex: true
+
+      - name: Setup Mise JDX
+        run: |
+          curl https://mise.run | sh
+          echo "$HOME/.local/share/mise/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/share/mise/shims" >> $GITHUB_PATH
+          echo "eval \"\$(mise activate bash)\"" >> ~/.bash_profile
+
+      - name: Setup Kind
+        run: mise run setup-kind --image kindest/node:${{ matrix.k8s_version }}
+
+      - name: Install Hex
+        run: MIX_ENV=test mise x elixir erlang -- mix local.hex --force
 
       - name: Retrieve Build Cache
         uses: actions/cache@v4
@@ -42,9 +42,7 @@ jobs:
           path: deps
           key: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
 
-      - run: mix deps.get
       - name: Run Integration Tests
-        run: |
-          MIX_ENV=test mix compile
-          MIX_ENV=test mix bonny.gen.manifest -o - | kubectl apply -f -
-          TEST_WAIT_TIMEOUT=10000 TEST_KUBECONFIG=$KUBECONFIG mix test --only integration --timeout 12000
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mise run integration-tests-ci
