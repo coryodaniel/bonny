@@ -14,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        k8s_version: [v1.30.10]
+        k8s_version: [v1.33.0]
     steps:
       - uses: actions/checkout@v4.2.2
 
       - uses: engineerd/setup-kind@v0.5.0
         id: kind
         with:
-          version: v0.20.0
+          version: v0.29.0
           image: kindest/node:${{ matrix.k8s_version }}
 
       - name: Setup elixir
