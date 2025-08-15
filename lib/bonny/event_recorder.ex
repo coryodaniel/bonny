@@ -57,11 +57,6 @@ defmodule Bonny.EventRecorder do
       "type" => event.event_type
     }
 
-    ns = event.regarding["namespace"]
-
-    event_manifest =
-      if ns, do: put_in(event_manifest, ~w(metadata namespace), ns), else: event_manifest
-
     event_manifest =
       get_cache(agent_name, key, event_manifest)
       |> increment_series_count()

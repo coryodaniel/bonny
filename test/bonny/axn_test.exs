@@ -444,6 +444,29 @@ defmodule Bonny.AxnTest do
       assert is_nil(registered_descendant["metadata"]["ownerReferences"])
     end
 
+    test "Automatically omits owner reference for cluster-scoped resources", %{axn: axn} do
+      # Create a cluster-scoped resource (no namespace)
+      cluster_scoped_resource = %{
+        "apiVersion" => "v1",
+        "kind" => "PersistentVolume",
+        "metadata" => %{
+          "name" => "test-pv",
+          "uid" => "test-uid"
+          # No namespace - makes this cluster-scoped
+        },
+        "spec" => %{
+          "capacity" => %{"storage" => "1Gi"},
+          "accessModes" => ["ReadWriteOnce"]
+        }
+      }
+
+      %{descendants: descendants} = MUT.register_descendant(axn, cluster_scoped_resource)
+      [{_, registered_descendant} | []] = Map.values(descendants)
+
+      # Should not have owner references even though omit_owner_ref was not explicitly set
+      assert is_nil(registered_descendant["metadata"]["ownerReferences"])
+    end
+
     test "raises DescendantsAlreadyAppliedError if descendants already applied", %{
       axn: axn,
       related: related
