@@ -6,8 +6,12 @@ on:
     branches: [master]
 jobs:
   test:
-    uses: mruoss/action_elixir_run_tests/.github/workflows/elixir-run-tests.yml@main
+    uses: mruoss/action_elixir_run_tests/.github/workflows/elixir-run-tests.yml@v1.3.0
     with:
       checkout: true
       warnings-as-errors: true
+      with-kubernetes: false
+      include-integration-tests: false
       compile-for: prod
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
