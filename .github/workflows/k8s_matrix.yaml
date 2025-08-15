@@ -15,7 +15,7 @@ jobs:
       matrix:
         k8s_version: [v1.29.14, v1.30.10, v1.31.6, v1.32.3, v1.33.0]
     steps:
-      - uses: engineerd/setup-kind@v0.5.0
+      - uses: engineerd/setup-kind@v0.6.2
         id: kind
         with:
           version: v0.29.0
