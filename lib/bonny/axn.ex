@@ -211,8 +211,15 @@ defmodule Bonny.Axn do
 
   @doc """
   Registers a decending object to be applied.
-  Owner reference will be added automatically. unless disabled through
-  the option `omit_owner_ref`.
+  Owner reference will be added automatically unless disabled through
+  the option `omit_owner_ref` or if the resource is cluster-scoped.
+
+  > #### No Owner References for Cluster-scoped Resources {: .info}
+  >
+  > Cluster-scoped resources (resources without a namespace) will
+  > automatically have owner references omitted, regardless of the
+  > `omit_owner_ref` option, as they should never have owner references
+  > according to Kubernetes best practices.
 
   If you need some resources to be applied before others, use the `group`
   option to indicate which group a resourceis added. Groups are applied in
@@ -221,33 +228,44 @@ defmodule Bonny.Axn do
   ## Options
 
   * `omit_owner_ref` - when `true`, adding the owner reference is omitted.
-    Default: `false`
+    Default: `false`. Note: This is automatically set to `true` for
+    cluster-scoped resources.
   * `group` - Integer (posittive or negative). Controls the order in which
     descendants are applied to the cluster. Default: `0`
 
-  ## Example
+  ## Examples
 
   The following code registers a namespace and a pod as descendants. The
   namespace is assigned to group `-1` as it needs to exist when the pod
-  is created within it. With `omit_owner_ref: true`, we indicate that no
-  owner reference is created for the namespace.
+  is created within it. The namespace is cluster-scoped so owner references
+  are automatically omitted.
 
   ```
   ns = %{
     "apiVersion" => "v1",
-    "kind" => "namespace",
+    "kind" => "Namespace",
     "metadata" => %{"name" => "my_ns"}
   }
   pod = %{
     "apiVersion" => "v1",
-    "kind" => "pod",
+    "kind" => "Pod",
     "metadata" => %{"namespace" => "my_ns", "name" => "my_pod"},
     ...
   }
 
   axn
-  |> Bonny.Axn.register_descendant(resource, ns, group: -1, omit_owner_ref: true)
+  |> Bonny.Axn.register_descendant(resource, ns, group: -1)
   |> Bonny.Axn.register_descendant(resource, pod)
+
+  # Cluster-scoped resource like PersistentVolume automatically omits owner ref
+  pv = %{
+    "apiVersion" => "v1",
+    "kind" => "PersistentVolume",
+    "metadata" => %{"name" => "my-pv"},
+    "spec" => %{"capacity" => %{"storage" => "1Gi"}}
+  }
+
+  axn |> Bonny.Axn.register_descendant(resource, pv)  # No owner ref added
   ```
   """
   @spec register_descendant(t(), Resource.t(), Keyword.t()) :: t()
@@ -260,14 +278,26 @@ defmodule Bonny.Axn do
   def register_descendant(axn, descendant, opts) do
     group = Keyword.get(opts, :group, 0)
 
+    # Automatically omit owner references for cluster-scoped resources
+    should_omit_owner_ref = opts[:omit_owner_ref] || cluster_scoped_resource?(descendant)
+
     descendant =
-      if opts[:omit_owner_ref],
+      if should_omit_owner_ref,
         do: descendant,
         else: Resource.add_owner_reference(descendant, axn.resource)
 
     key = Bonny.Resource.gvkn(descendant)
 
     %__MODULE__{axn | descendants: Map.put(axn.descendants, key, {group, descendant})}
+  end
+
+  # Determines if a resource is cluster-scoped by checking if it has no namespace
+  @spec cluster_scoped_resource?(Resource.t()) :: boolean()
+  defp cluster_scoped_resource?(resource) do
+    namespace =
+      get_in(resource, ["metadata", "namespace"]) || get_in(resource, [:metadata, :namespace])
+
+    is_nil(namespace) || namespace == ""
   end
 
   @doc """

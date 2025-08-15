@@ -10,10 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- Add your changelog entry to the relevant subsection -->
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
+### Changed
+
+- Cluster-scoped resources (resources without a namespace) will  automatically have owner references omitted [#321](https://github.com/coryodaniel/bonny/pull/321)
 
 ### Fixed
 
 - Use SHA hashing algorithm tolerated when running in FIPS mode - [#276](https://github.com/coryodaniel/bonny/pull/276), [#275](https://github.com/coryodaniel/bonny/issues/275)
+- removed duplicated code logic for adding the namespace to the event_manifest in the EventRecorder [#321](https://github.com/coryodaniel/bonny/pull/321)
 
 <!-- No new entries below this line! -->
 
