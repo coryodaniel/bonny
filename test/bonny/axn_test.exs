@@ -1,9 +1,11 @@
 defmodule Bonny.AxnTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Bonny.Axn, as: MUT
 
   alias Bonny.Test.ResourceHelper
+
+  require Logger
 
   setup do
     conn = Bonny.Config.conn()
@@ -412,6 +414,137 @@ defmodule Bonny.AxnTest do
         |> MUT.apply_status()
         |> MUT.apply_status()
       end
+    end
+  end
+
+  describe "safe_apply_status/2" do
+    defmodule SafeApplyStatusK8sMock do
+      require Logger
+      import K8s.Client.HTTPTestHelper
+      alias Bonny.Test.ResourceHelper
+
+      def request(:patch, %URI{} = uri, body, _headers, _opts) do
+        resource = Jason.decode!(body)
+
+        case get_in(resource, ["status", "scenario"]) do
+          "ok" ->
+            if ref = get_in(resource, ["status", "ref"]) do
+              send(self(), {:status_applied, ResourceHelper.string_to_ref(ref), uri.query})
+            end
+
+            render(resource)
+
+          "not_found" ->
+            name = get_in(resource, ["metadata", "name"])
+            {:error, %K8s.Client.HTTPError{message: ~s|resource "#{name}" not found|}}
+
+          "other_error" ->
+            {:error, %K8s.Client.HTTPError{message: "some error"}}
+
+          other ->
+            {:error, %K8s.Client.HTTPError{message: "invalid status.scenario: #{inspect(other)}"}}
+        end
+      end
+
+      def request(_method, _uri, _body, _headers, _opts) do
+        Logger.error("Call to #{__MODULE__}.request/5 not handled: #{inspect(binding())}")
+        {:error, %K8s.Client.HTTPError{message: "request not mocked"}}
+      end
+    end
+
+    setup do
+      K8s.Client.DynamicHTTPProvider.register(self(), SafeApplyStatusK8sMock)
+      previous_level = Logger.level()
+      Logger.configure(level: :debug)
+      on_exit(fn -> Logger.configure(level: previous_level) end)
+      :ok
+    end
+
+    test "applies status successfully", %{axn: axn} do
+      ref = make_ref()
+
+      result =
+        axn
+        |> MUT.update_status(fn _ ->
+          %{"scenario" => "ok", "ref" => ResourceHelper.to_string(ref)}
+        end)
+        |> MUT.safe_apply_status()
+
+      assert_receive {:status_applied, ^ref, _}
+      assert result.resource["status"]["scenario"] == "ok"
+    end
+
+    test "logs warning and returns axn on NotFound error", %{axn: axn} do
+      log =
+        ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+          result =
+            axn
+            |> MUT.update_status(fn _ -> %{"scenario" => "not_found"} end)
+            |> MUT.safe_apply_status()
+
+          # Returns axn without marking status as applied
+          assert result.status == %{"scenario" => "not_found"}
+          assert result.resource["status"] == %{"scenario" => "not_found"}
+        end)
+
+      assert log =~
+               "Skipping status update for ConfigMap/foo in namespace default - resource was deleted during reconciliation"
+    end
+
+    test "logs warning without namespace for cluster-scoped resources" do
+      conn = Bonny.Config.conn()
+
+      cluster_resource = %{
+        "apiVersion" => "example.com/v1",
+        "kind" => "Widget",
+        "metadata" => %{
+          "name" => "my-widget",
+          "uid" => "widget-uid",
+          "generation" => 1
+        }
+      }
+
+      axn = MUT.new!(action: :add, resource: cluster_resource, conn: conn)
+
+      log =
+        ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+          _result =
+            axn
+            |> MUT.update_status(fn _ -> %{"scenario" => "not_found"} end)
+            |> MUT.safe_apply_status()
+        end)
+
+      assert log =~
+               "Skipping status update for Widget/my-widget - resource was deleted during reconciliation"
+
+      refute log =~ "namespace"
+    end
+
+    test "re-raises non-NotFound errors", %{axn: axn} do
+      assert_raise RuntimeError, ~r/some error/, fn ->
+        axn
+        |> MUT.update_status(fn _ -> %{"scenario" => "other_error"} end)
+        |> MUT.safe_apply_status()
+      end
+    end
+
+    test "raises StatusAlreadyAppliedError when status already applied", %{axn: axn} do
+      ref = make_ref()
+
+      assert_raise Bonny.Axn.StatusAlreadyAppliedError, fn ->
+        axn
+        |> MUT.update_status(fn _ ->
+          %{"scenario" => "ok", "ref" => ResourceHelper.to_string(ref)}
+        end)
+        |> MUT.safe_apply_status()
+        |> MUT.safe_apply_status()
+      end
+    end
+
+    test "marks status applied (noop) when status is nil", %{axn: axn} do
+      result = MUT.safe_apply_status(axn)
+      # status is nil, so it should just mark as applied (noop)
+      assert result != axn
     end
   end
 

@@ -381,17 +381,95 @@ defmodule Bonny.Axn do
         mark_status_applied(axn)
 
       {:error, error} ->
-        id = identifier(axn)
-        message = apply_status_error_message(error)
-
-        Logger.error("#{inspect(id)} - #{message}",
-          library: :bonny,
-          resource: resource,
-          error: error
-        )
-
-        raise "#{inspect(id)} - #{message}"
+        raise_apply_status_error(axn, resource, error)
     end
+  end
+
+  @doc """
+  Applies the status to the resource's status subresource in the cluster,
+  gracefully handling "NotFound" errors.
+
+  This is useful for operators where a resource may be deleted while
+  reconciliation is still in progress. When the status update fails because
+  the resource no longer exists, a warning is logged and the unmodified
+  `axn` is returned instead of raising.
+
+  All other errors still raise as in `apply_status/2`.
+
+  ## Options
+
+  Same as `apply_status/2`: `:field_manager`, `:force`, etc.
+
+  ## Examples
+
+      # In a controller step
+      Bonny.Axn.safe_apply_status(axn, field_manager: "MyOperator", force: true)
+  """
+  @spec safe_apply_status(t(), Keyword.t()) :: t()
+  def safe_apply_status(axn, apply_opts \\ [])
+
+  def safe_apply_status(axn, _) when is_status_applied(axn) do
+    raise StatusAlreadyAppliedError
+  end
+
+  def safe_apply_status(%__MODULE__{status: nil} = axn, _) do
+    mark_status_applied(axn)
+  end
+
+  def safe_apply_status(%Bonny.Axn{resource: resource} = axn, apply_opts) do
+    axn = put_in(axn.resource["status"], axn.status)
+
+    result =
+      axn.resource
+      |> run_before_apply_status(axn)
+      |> Resource.apply_status(axn.conn, apply_opts)
+
+    case result do
+      {:ok, _} ->
+        mark_status_applied(axn)
+
+      {:error, %{message: message} = error} when is_binary(message) ->
+        if String.contains?(message, "not found") do
+          log_notfound_warning(axn)
+          axn
+        else
+          raise_apply_status_error(axn, resource, error)
+        end
+
+      {:error, error} ->
+        raise_apply_status_error(axn, resource, error)
+    end
+  end
+
+  defp raise_apply_status_error(axn, resource, error) do
+    id = identifier(axn)
+    message = apply_status_error_message(error)
+
+    Logger.error("#{inspect(id)} - #{message}",
+      library: :bonny,
+      resource: resource,
+      error: error
+    )
+
+    raise "#{inspect(id)} - #{message}"
+  end
+
+  defp log_notfound_warning(axn) do
+    resource_kind = axn.resource["kind"]
+    resource_name = get_in(axn.resource, ["metadata", "name"])
+    resource_namespace = get_in(axn.resource, ["metadata", "namespace"])
+
+    location =
+      if resource_namespace do
+        "#{resource_kind}/#{resource_name} in namespace #{resource_namespace}"
+      else
+        "#{resource_kind}/#{resource_name}"
+      end
+
+    Logger.warning(
+      "Skipping status update for #{location} - resource was deleted during reconciliation",
+      library: :bonny
+    )
   end
 
   defp apply_error_message(%{message: message}), do: [" ", message]
