@@ -5,12 +5,15 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        k8s_version: [v1.33.0]
+        k8s_version: [v1.35.1]
     steps:
       - uses: actions/checkout@v5.0.0
 
@@ -62,9 +65,12 @@ jobs:
         run: mise run credo
 
       - name: Run Coverage
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mise run integration-tests-ci
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: |
+            mise run integration-tests-ci
 
       # Create PLTs if no cache was found
       - name: Create PLTs

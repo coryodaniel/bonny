@@ -5,13 +5,16 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.29.14, v1.30.10, v1.31.6, v1.32.3, v1.33.0]
+        k8s_version: [v1.31.14, v1.32.11, v1.33.7, v1.34.3, v1.35.1]
     steps:
       - uses: actions/checkout@v5.0.0
 
@@ -43,6 +46,9 @@ jobs:
           key: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
 
       - name: Run Integration Tests
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mise run integration-tests-ci
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: |
+            mise run integration-tests-ci

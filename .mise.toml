@@ -72,6 +72,14 @@ run = [
 [tasks.load-manifest]
 run = [
   "mise x elixir erlang -- mix bonny.gen.manifest -o - | kubectl --kubeconfig={{vars.kubeconfig}} apply -f -",
+  "kubectl wait --for=condition=Established crd/testresources.example.com --timeout=60s",
+  """
+  until echo '{"apiVersion":"example.com/v1","kind":"TestResource","metadata":{"name":"probe"}}' | \
+  kubectl apply --dry-run=server -f - > /dev/null 2>&1; do
+    echo "Waiting for storage initialization..."
+    sleep 1
+  done
+  """,
 ]
 env = { MIX_ENV = "test" }
 depends = ["compile-test", "setup-kind", "kubeconfig"]
