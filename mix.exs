@@ -13,7 +13,6 @@ defmodule Bonny.MixProject do
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: cli_env(),
       docs: docs(),
       package: package(),
       aliases: aliases(),
@@ -39,7 +38,7 @@ defmodule Bonny.MixProject do
     ]
   end
 
-  defp cli_env do
+  def cli do
     [
       coveralls: :test,
       "coveralls.detail": :test,

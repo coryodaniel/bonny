@@ -197,7 +197,7 @@ defmodule Bonny.Axn do
     raise EventsAlreadyEmittedError
   end
 
-  defp add_event(axn, event), do: %__MODULE__{axn | events: [event | axn.events]}
+  defp add_event(%Bonny.Axn{} = axn, event), do: %__MODULE__{axn | events: [event | axn.events]}
 
   @doc """
   Empties the list of events without emitting them.
@@ -275,7 +275,7 @@ defmodule Bonny.Axn do
     raise DescendantsAlreadyAppliedError
   end
 
-  def register_descendant(axn, descendant, opts) do
+  def register_descendant(%Bonny.Axn{} = axn, descendant, opts) do
     group = Keyword.get(opts, :group, 0)
 
     # Automatically omit owner references for cluster-scoped resources
