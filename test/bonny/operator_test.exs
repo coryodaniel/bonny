@@ -24,7 +24,9 @@ defmodule Bonny.OperatorTest do
 
       step :delegate_to_controller
 
+      @impl true
       def controllers(_, _), do: []
+      @impl true
       def crds(), do: []
     end
   end
@@ -34,7 +36,10 @@ defmodule Bonny.OperatorTest do
 
     step :delegate_to_controller
 
+    @impl true
     def controllers(_, _), do: []
+
+    @impl true
     def crds(), do: []
   end
 
