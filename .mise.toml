@@ -81,7 +81,7 @@ run = [
   done
   """,
 ]
-env = { MIX_ENV = "test" }
+env = { MIX_ENV = "test", BONNY_POD_NAMESPACE="default" }
 depends = ["compile-test", "setup-kind", "kubeconfig"]
 
 [tasks.integration-tests]
