@@ -81,16 +81,17 @@ run = [
   done
   """,
 ]
-env = { MIX_ENV = "test", BONNY_POD_NAMESPACE="default" }
+env = { MIX_ENV = "test" }
 depends = ["compile-test", "setup-kind", "kubeconfig"]
 
 [tasks.integration-tests]
+env = { BONNY_POD_NAMESPACE="default" }
 description = "Run integration tests"
 depends = ["load-manifest"]
 run = ["mise x elixir erlang rebar -- mix test --include integration"]
 
 [tasks.integration-tests-ci]
-env = { TEST_WAIT_TIMEOUT = 10000 }
+env = { TEST_WAIT_TIMEOUT = 10000, BONNY_POD_NAMESPACE="default" }
 description = "Run integration tests on CI"
 depends = ["load-manifest"]
 run = [
