@@ -1,8 +1,8 @@
 [tools]
-erlang = "27.3.4.2"
-elixir = "1.18.4"
+erlang = "28.3.1"
+elixir = "1.19.5"
 rebar = "latest"
-kind = "0.29.0"
+kind = "0.31.0"
 
 [vars]
 kubeconfig = "integration.yaml"
