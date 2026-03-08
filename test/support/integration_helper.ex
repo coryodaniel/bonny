@@ -3,7 +3,7 @@ defmodule Bonny.Test.IntegrationHelper do
 
   @spec conn() :: K8s.Conn.t()
   def conn() do
-    {:ok, conn} =
+    {:ok, %K8s.Conn{} = conn} =
       "TEST_KUBECONFIG"
       |> System.get_env("./integration.yaml")
       |> K8s.Conn.from_file()
