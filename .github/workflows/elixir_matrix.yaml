@@ -6,7 +6,7 @@ on:
     branches: [master]
 jobs:
   test:
-    uses: mruoss/action_elixir_run_tests/.github/workflows/elixir-run-tests.yml@v1.3.0
+    uses: mruoss/action_elixir_run_tests/.github/workflows/elixir-run-tests.yml@v2.2.0
     with:
       checkout: true
       warnings-as-errors: true
