@@ -142,7 +142,7 @@ defmodule Mix.Tasks.Bonny.Init do
           |> get_input()
         end
 
-      length(input[:crds]) > 0 && is_nil(input[:create_controllers]) ->
+      input[:crds] == [] && is_nil(input[:create_controllers]) ->
         create_controllers =
           Owl.IO.confirm(
             message: "Would you like to create controllers for your custom resources?",

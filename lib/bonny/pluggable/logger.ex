@@ -59,6 +59,7 @@ defmodule Bonny.Pluggable.Logger do
 
         Logger.log(
           level,
+          # credo:disable-for-next-line
           fn ->
             inspect(id) <> " - Applying descendant #{inspect(gvkn)}"
           end,
