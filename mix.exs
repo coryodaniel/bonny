@@ -40,14 +40,16 @@ defmodule Bonny.MixProject do
 
   def cli do
     [
-      coveralls: :test,
-      "coveralls.detail": :test,
-      "coveralls.post": :test,
-      "coveralls.html": :test,
-      "coveralls.travis": :test,
-      "coveralls.github": :test,
-      "coveralls.xml": :test,
-      "coveralls.json": :test
+      preferred_envs: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.travis": :test,
+        "coveralls.github": :test,
+        "coveralls.xml": :test,
+        "coveralls.json": :test
+      ]
     ]
   end
 
