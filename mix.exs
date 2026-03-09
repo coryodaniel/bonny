@@ -19,7 +19,7 @@ defmodule Bonny.MixProject do
       dialyzer: [
         plt_add_deps: :apps_direct,
         plt_add_apps: [:mix, :eex, :owl, :yaml_elixir],
-        plt_file: {:no_warn, "priv/plts/project.plt"}
+        plt_file: {:no_warn, "priv/plts/project.plt"},
         plt_core_path: "priv/plts",
       ],
       xref: [exclude: [EEx]]
