@@ -1,6 +1,6 @@
 defmodule Bonny.MixProject do
   use Mix.Project
-  @version "1.4.0"
+  @version "1.5.0"
   @source_url "https://github.com/coryodaniel/bonny"
 
   def project do
@@ -97,7 +97,7 @@ defmodule Bonny.MixProject do
     [
       main: "readme",
       logo: "assets/bonny.png",
-      assets: "assets",
+      assets: %{"assets" => "assets"},
       source_ref: "v#{@version}",
       source_url: @source_url,
       extras: [
