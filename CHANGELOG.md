@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- Add your changelog entry to the relevant subsection -->
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
+### Added
+
+- `Bonny.Pluggable.ApplyStatus`: Added `safe_mode` option to gracefully handle `NotFound` errors when a resource is deleted during reconciliation. Instead of crashing, a warning is logged and reconciliation continues. Defaults to `false` for backwards compatibility. Can be configured globally via `config :bonny, apply_status_safe_mode: true`. Recommended to enable in production - [#335](https://github.com/coryodaniel/bonny/pull/335)
+- `Bonny.Axn.safe_apply_status/2`: New function that applies resource status while gracefully handling `NotFound` errors - [#335](https://github.com/coryodaniel/bonny/pull/335)
+
 ### Changed
 
 - Cluster-scoped resources (resources without a namespace) will  automatically have owner references omitted [#321](https://github.com/coryodaniel/bonny/pull/321)
