@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- Add your changelog entry to the relevant subsection -->
 
 <!-- ### Added | Changed | Deprecated | Removed | Fixed | Security -->
+
+<!-- No new entries below this line! -->
+
+## [1.5.0] - 2026-03-10
+
 ### Added
 
 - `Bonny.Pluggable.ApplyStatus`: Added `safe_mode` option to gracefully handle `NotFound` errors when a resource is deleted during reconciliation. Instead of crashing, a warning is logged and reconciliation continues. Defaults to `false` for backwards compatibility. Can be configured globally via `config :bonny, apply_status_safe_mode: true`. Recommended to enable in production - [#335](https://github.com/coryodaniel/bonny/pull/335)
@@ -23,8 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Use SHA hashing algorithm tolerated when running in FIPS mode - [#276](https://github.com/coryodaniel/bonny/pull/276), [#275](https://github.com/coryodaniel/bonny/issues/275)
 - removed duplicated code logic for adding the namespace to the event_manifest in the EventRecorder [#321](https://github.com/coryodaniel/bonny/pull/321)
-
-<!-- No new entries below this line! -->
 
 ## [1.4.0] - 2023-11-04
 
