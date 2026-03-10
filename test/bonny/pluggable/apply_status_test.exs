@@ -55,8 +55,24 @@ defmodule Bonny.Pluggable.ApplyStatusTest do
   end
 
   describe "init/1" do
-    test "defaults safe_mode to false" do
+    test "defaults safe_mode to false when no global config is set" do
       opts = MUT.init()
+      assert opts[:safe_mode] == false
+    end
+
+    test "uses global config for safe_mode default" do
+      Application.put_env(:bonny, :apply_status_safe_mode, true)
+      on_exit(fn -> Application.delete_env(:bonny, :apply_status_safe_mode) end)
+
+      opts = MUT.init()
+      assert opts[:safe_mode] == true
+    end
+
+    test "per-step option takes precedence over global config" do
+      Application.put_env(:bonny, :apply_status_safe_mode, true)
+      on_exit(fn -> Application.delete_env(:bonny, :apply_status_safe_mode) end)
+
+      opts = MUT.init(safe_mode: false)
       assert opts[:safe_mode] == false
     end
 
