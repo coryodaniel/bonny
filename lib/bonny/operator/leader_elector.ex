@@ -225,6 +225,14 @@ defmodule Bonny.Operator.LeaderElector do
             :locked
         end
 
+      {:error, %K8s.Client.APIError{} = exception} ->
+        Logger.warning(
+          "{Operator=#{inspect(operator)}} - Kubernetes API error while getting the lease. #{Exception.message(exception)}",
+          library: :bonny
+        )
+
+        :error
+
       {:ok, old_lease} ->
         if locked_by_sbdy_else?(now, old_lease, my_lease) do
           Logger.debug(
